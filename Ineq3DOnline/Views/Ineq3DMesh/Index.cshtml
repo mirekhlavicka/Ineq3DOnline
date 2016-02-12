@@ -1,0 +1,180 @@
+﻿@model Ineq3DOnline.MeshSamples
+
+@{
+
+    ViewBag.Title = "Ineq3D Online";
+    Layout = "_LayoutThree.cshtml";
+}
+
+@section Samples
+{
+    <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Samples ...<span class="caret"></span></a>
+        <ul class="dropdown-menu">
+
+            @foreach (var m in Model.Samples)
+            {
+                <li>@Html.ActionLink(m, "GetMesh", "Ineq3DMesh", new { Mesh = m }, htmlAttributes: new { data_modal = "" })</li>
+            }
+        </ul>
+    </li>
+}
+
+@section Scripts
+{
+    <script>
+        var camera, scene, renderer, controls, mesh;
+        var rotation_x = 0;
+        var rotation_y = 0;
+        var currentMeshUrl = '@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = ViewBag.CurrentMesh })';
+        var spinner;
+
+        var init = function () {
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+
+            camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 1e10);
+            camera.position.z = 2.2;
+
+            scene = new THREE.Scene();
+            scene.add(camera);
+
+            var dirLight = new THREE.DirectionalLight(0xffffff);
+            dirLight.position.set(200, 200, 1000).normalize();
+            camera.add(dirLight);
+            camera.add(dirLight.target);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(width, height);
+            $('body').append(renderer.domElement);
+
+            controls = new THREE.TrackballControls(camera, renderer.domElement);
+            controls.rotateSpeed = 5.0;
+            controls.zoomSpeed = 5;
+            controls.panSpeed = 2;
+            controls.noZoom = false;
+            controls.noPan = false;
+            controls.staticMoving = false;
+            controls.dynamicDampingFactor = 0.3;
+        }
+
+        var loadMesh = function (url) {
+            showSpinner();
+            currentMeshUrl = url;
+            var loader = new THREE.PLYLoader();
+            loader.load(url, function (geometry) {
+
+                var renderStyle = parseInt($('input[name=radioRenderStyle]:checked').val());
+
+                geometry.normalize();
+                geometry.computeFaceNormals();
+
+                if ($('#chckSmooth').prop('checked')) {
+                    geometry.computeVertexNormals();
+                }
+
+                var material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, /*specular: 0x111111, shininess: 200,*/ side: THREE.DoubleSide, shading: THREE.SmoothShading, wireframe: renderStyle == 1 });
+
+                mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+
+                if (renderStyle == 2) {
+                    edges = new THREE.WireframeHelper(mesh, 0x000000);
+                    scene.add(edges);
+                }
+
+                mesh.rotation.x = rotation_x;
+                mesh.rotation.y = rotation_y;
+
+                hideSpinner(spinner);
+
+            });
+        }
+
+        var clearScene = function () {
+            for (var i = 0; i < scene.children.length; i++) {
+                var current = scene.children[i];
+                if (current instanceof THREE.Mesh || current instanceof THREE.WireframeHelper) {
+                    current.geometry.dispose();
+                    scene.remove(current);
+                    i--;
+                }
+            }
+        }
+
+        var render = function () {
+            requestAnimationFrame(render);
+            controls.update();
+
+            if (mesh && $('#chckAutoRotate').prop('checked')) {
+                mesh.rotation.x += 0.005;
+                mesh.rotation.y += 0.01;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        var onWindowResize = function () {
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        $(function () {
+            init();
+            render();
+            loadMesh(currentMeshUrl);
+            $(window).resize(onWindowResize)
+        });
+
+        $(document).on('click', 'a[data-modal]', function (e) {
+            clearScene();
+            rotation_x = 0;
+            rotation_y = 0;
+            loadMesh(this.href);
+            return false;
+        });
+
+        $('input[name=radioRenderStyle],#chckSmooth').on('change', function () {
+            if (mesh) {
+                rotation_x = mesh.rotation.x;
+                rotation_y = mesh.rotation.y;
+            }
+            clearScene();
+            loadMesh(currentMeshUrl);
+        });
+
+        function showSpinner() {
+
+            var opts = {
+                lines: 13, // The number of lines to draw
+                length: 20, // The length of each line
+                width: 10, // The line thickness
+                radius: 30, // The radius of the inner circle
+                corners: 1, // Corner roundness (0..1)
+                rotate: 0, // The rotation offset
+                direction: 1, // 1: clockwise, -1: counterclockwise
+                color: '#ffffff', // #rgb or #rrggbb or array of colors
+                speed: 1, // Rounds per second
+                trail: 60, // Afterglow percentage
+                shadow: false, // Whether to render a shadow
+                hwaccel: false, // Whether to use hardware acceleration
+                className: 'spinner', // The CSS class to assign to the spinner
+                zIndex: 2e9, // The z-index (defaults to 2000000000)
+                top: 'auto', // Top position relative to parent in px
+                left: 'auto' // Left position relative to parent in px
+            };
+            var target = $('body').get(0); //document.getElementById('WebGL-output');
+            spinner = new Spinner(opts).spin(target);
+            return spinner;
+        }
+
+        function hideSpinner(spinner) {
+            spinner.stop();
+        }
+
+
+    </script>
+}

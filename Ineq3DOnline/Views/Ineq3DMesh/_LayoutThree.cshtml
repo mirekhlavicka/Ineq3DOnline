@@ -1,0 +1,83 @@
+﻿@*<!DOCTYPE html>*@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("Ineq3D Online", "Index", "Ineq3DMesh", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    @RenderSection("Samples", required: false)
+                </ul>
+
+
+                <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-cog"></span>&nbsp;<span class="caret"></span></a>
+                        <ul class="dropdown-menu dropdown-menu-form">
+                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckSmooth" checked="checked">&nbsp;Smooth</label></a></li>
+                            <li class="divider"></li>
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle0" name="radioRenderStyle" value="0">&nbsp;Fill</label></a></li>
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle1" name="radioRenderStyle" value="1">&nbsp;Wireframe</label></a></li>
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle2" name="radioRenderStyle" value="2" checked="checked">&nbsp;Fill and wireframe</label></a></li>
+                            <li class="divider"></li>
+                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckAutoRotate" checked="checked">&nbsp;Rotate</label></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                @*<div class="navbar-form navbar-left" >
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Search">
+                    </div>
+                    <div class="checkbox navbar-btn">
+                        <label class="navbar-link" for="chckAutoRotate">
+                            <input type="checkbox"  id="chckAutoRotate" value="true">
+                            Rotate
+                        </label>
+                    </div>
+                </div>*@
+
+            </div>
+        </div>
+    </div>
+
+    @RenderBody()
+
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/three")
+    @RenderSection("scripts", required: false)
+
+    <script type="text/javascript">
+        $('.dropdown-menu').on('click', function (e) {
+            if ($(this).hasClass('dropdown-menu-form')) {
+                e.stopPropagation();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1176 @@
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Collections;
+
+namespace MeshData
+{
+    public class IneqMesh : Mesh
+    {
+        private const double maxWarpDist = 0.5d;// 0.48d 
+        
+        public double X0 { get; set; }
+        public double Y0 { get; set; }
+        public double Z0 { get; set; }
+        public double X1 { get; set; }
+        public double Y1 { get; set; }
+        public double Z1 { get; set; }
+
+        public double D { get; set; }
+
+        public Action<double> OnProgress { get; set; }
+
+        private IneqTree ineqTreeBoxed;
+        private IneqTree ineqTree;
+
+        private int currentDomaiNumber = 0;
+
+        public IneqTree IneqTree
+        {
+            get { return ineqTree; }
+            set { ineqTree = value; }
+        }
+
+        public IneqTree IneqTreeBoxed
+        {
+            get { return ineqTreeBoxed; }
+        }
+
+
+        public bool Boxed { get; set; }
+
+        public void Create()
+        {
+            Clear();
+            
+            if (Boxed)
+            {
+                ineqTreeBoxed = ineqTree &
+                    ((IneqTree)
+                    ((x, y, z) => Math.Abs(x - (X0 + X1) / 2.0d) - 0.5d * (X1 - X0)) &
+                    ((x, y, z) => Math.Abs(y - (Y0 + Y1) / 2.0d) - 0.5d * (Y1 - Y0)) &
+                    ((x, y, z) => Math.Abs(z - (Z0 + Z1) / 2.0d) - 0.5d * (Z1 - Z0)));
+            }
+            else
+                ineqTreeBoxed = ineqTree;
+
+            CreateBackgroundMesh();
+            
+            ResolveMeshApriori(ineqTreeBoxed.Root, 0);
+            SpreadTetrahedronsBoundaryFlags();
+            foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => t.BoundaryCount == 0 && !t.IsIn[0]).ToArray())
+                DeleteTetrahedron(t);  
+            DeleteLonelyPoints();
+
+            ResolveMesh(ineqTreeBoxed.Root, 0);
+            foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => !t.IsIn[0]).ToArray())
+                DeleteTetrahedron(t);            
+            DeleteLonelyPoints();
+
+            Jiggle(3);
+        }
+        
+        private void ResolveMesh(IneqTree.IneqNode node, int domaiNumber)
+        {
+            if (domaiNumber == 0)
+                currentDomaiNumber = 0;
+
+            if (node.NodeType == IneqTree.NodeType.NodeExpression)
+            {
+                ResolveIneq(node.ExpressionIndex, domaiNumber);
+            }
+            else
+            {
+                int domaiNumberLeft = ++currentDomaiNumber;
+                int domaiNumberRight = ++currentDomaiNumber;
+
+                ResolveMesh(node.Left, domaiNumberLeft);
+                ResolveMesh(node.Right, domaiNumberRight);
+
+                Parallel.ForEach(Tetrahedrons, t =>
+                {
+                    if (node.NodeType == IneqTree.NodeType.NodeOr)
+                    {
+                        t.IsIn[domaiNumber] = t.IsIn[domaiNumberLeft] || t.IsIn[domaiNumberRight];
+                    }
+                    if (node.NodeType == IneqTree.NodeType.NodeAnd)
+                    {
+                        t.IsIn[domaiNumber] = t.IsIn[domaiNumberLeft] && t.IsIn[domaiNumberRight];
+                    }
+                });
+
+                int[] expressionIndexes = node.ExpressionIndexes.ToArray();
+
+                Points.AsParallel()
+                    .Where(p => p.Tetrahedrons.All(t => t.IsIn[domaiNumber]) || p.Tetrahedrons.All(t => !t.IsIn[domaiNumber]))
+                    .ForAll(p =>
+                        {
+                            foreach (int i in expressionIndexes)
+                                p.Boundary[i] = false;
+                        });                
+
+                Parallel.ForEach(Points, p =>
+                {
+                    foreach (int ineqNumber in p.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i).ToArray())
+                    {
+                        if (!p.Points.Any(p1 => p1.Boundary[ineqNumber]))
+                            p.Boundary[ineqNumber] = false;
+                    }
+                });
+            }
+        }
+
+        private void ResolveIneq(int ineqNumber, int domaiNumber)
+        {
+            if (OnProgress != null)
+                OnProgress(0.5 +  0.5 * (double)(ineqNumber + 1) / (ineqTreeBoxed.ExpressionList.Count));
+
+            Func<Point, bool> isBoundaryPoint = (p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber]));
+
+            Points.AsParallel().Where(p => isBoundaryPoint(p)).ForAll(p =>
+            {
+                Eval(p, ineqNumber);
+                if (p.Boundary[ineqNumber])
+                    p.U = 0;
+            });            
+            
+            ResolveEdges(EdgesForBoundary(ineqNumber).Where(e => (e.P1.U * e.P2.U < 0 && e.P1.HasAnyBoundary(e.P2))), ineqNumber, true);
+
+            foreach (Point p in Points.AsParallel().Where(p => p.U == 0 && p.BoundaryCount > 0 && isBoundaryPoint(p)))
+            {
+                foreach (int bi in p.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i))
+                {
+                    if (p.Points.Where(p1 => p1.Boundary[bi] && isBoundaryPoint(p1)).All(p1 => p1.U <= 0))
+                    {
+                        p.U = -1;
+                        CenterPoint(p, 100, true);
+                    }
+                    else if (p.Points.Where(p1 => p1.Boundary[bi] && isBoundaryPoint(p1)).All(p1 => p1.U >= 0))
+                    {
+                        p.U = 1;
+                        CenterPoint(p, 100, true);
+                    }
+                }
+            }
+
+            ResolveEdges(EdgesForBoundary(ineqNumber).Where(e => (e.P1.U * e.P2.U < 0)), ineqNumber, false);
+
+            foreach (Point p in Points.Where(p => isBoundaryPoint(p)))
+            {
+                if (p.U < 0)
+                {
+                    p.Boundary[ineqNumber] = false;
+                }
+                else if (p.U > 0)
+                {
+                    p.Boundary[ineqNumber] = false;
+                }
+                else
+                {
+                    if (p.Points.Where(p1 => isBoundaryPoint(p1)).All(p1 => p1.U <= 0))
+                    {
+                        p.U = -1;
+                        p.Boundary[ineqNumber] = false;
+                        CenterPoint(p, 100, true);
+                    }
+                    else if (p.Points.Where(p1 => isBoundaryPoint(p1)).All(p1 => p1.U >= 0))
+                    {
+                        p.U = 1;
+                        p.Boundary[ineqNumber] = false;
+                        CenterPoint(p, 100, true);
+                    }
+                    else
+                    {
+                        p.Boundary[ineqNumber] = true;
+                    }
+                }
+            }
+
+            Edge[] innerEdges = Points.Where(p => p.U == 0 && isBoundaryPoint(p))
+                    .SelectMany(
+                        p1 => p1.Tetrahedrons.Where(t => t.Boundary[ineqNumber]).SelectMany(t => t.Points.Where(p2 => p2 > p1 && p2.U == 0)).Distinct(),
+                        (p1, p2) => new Edge(p1, p2)
+                        ).ToArray();
+
+            foreach (Edge e in innerEdges)
+            {
+                if (!e.Valid)
+                    continue;
+
+                if (e.P1.Tetrahedrons.Where(t => t.Boundary[ineqNumber]).Intersect(e.P2.Tetrahedrons).All(t => t.Points.All(p => p.U >= 0)))
+                {
+                    Point newPoint = DivideEdge(e, -1, (e.P1 + e.P2) / 2);
+                    newPoint.U = 1;
+                    newPoint.Boundary[ineqNumber] = false;
+                    CenterPoint(newPoint, 100, true);
+                }
+            }
+
+            foreach (Edge e in innerEdges)
+            {
+                if (!e.Valid)
+                    continue;
+
+                if (e.P1.Tetrahedrons.Where(t => t.Boundary[ineqNumber]).Intersect(e.P2.Tetrahedrons).All(t => t.Points.All(p => p.U <= 0)))
+                {
+                    Point newPoint = DivideEdge(e, -1, (e.P1 + e.P2) / 2);
+                    newPoint.U = -1;
+                    newPoint.Boundary[ineqNumber] = false;
+                    CenterPoint(newPoint, 100, true);
+                }
+            }
+
+            Tetrahedrons.AsParallel().Where(t => t.Boundary[ineqNumber]).ForAll(t =>
+            {
+                t.IsIn[domaiNumber] = t.Points.Any(p => p.U < 0);
+            });
+        }  
+ 
+        private void ResolveEdges(ParallelQuery<Edge> qEdges, int ineqNumber, bool onSurface)
+        {
+            var edges = qEdges
+                .Select(e =>
+                            {
+                                Point p = Bisection(e, ineqNumber);
+                                Point nearPoint, farPoint;
+                                bool movable;
+                                double dist1, dist2, dist, length;
+
+                                dist1 = p.Distance(e.P1);
+                                dist2 = p.Distance(e.P2);
+                                length = e.P1.Distance(e.P2);
+
+                                if(dist1 < dist2)
+                                {
+                                    nearPoint = e.P1;
+                                    farPoint = e.P2;
+                                    movable = e.P1.HasAllBoundary(e.P2);
+                                    dist = (length != 0 ? dist1 / length : 0);
+                                }
+                                else
+                                {
+                                    nearPoint = e.P2;
+                                    farPoint = e.P1;
+                                    movable = e.P2.HasAllBoundary(e.P1);
+                                    dist = (length != 0 ? dist2 / length : 0);
+                                }
+
+                                if (dist >= maxWarpDist)
+                                    movable = false;
+
+                                if (nearPoint.BoundaryCount >= 3 && dist < 0.05) //less then 1/2^n in bisection is enough
+                                    nearPoint.U = 0;
+
+                                return new
+                                {
+                                    Edge = e,
+                                    MidPoint = p,
+                                    Dist = dist,
+                                    NearPoint = nearPoint,
+                                    FarPoint = farPoint,
+                                    Movable = movable
+                                };
+                            }
+                    )
+                .ToArray();
+
+            foreach(var e in edges.Where(e => e.Movable).OrderBy(e => e.Dist))
+            {
+                ResolveEdge(e.Edge, e.MidPoint, e.NearPoint, true, ineqNumber);
+            }
+
+            if (!onSurface)
+            {
+                foreach (var fanEdges in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && !e.Movable && e.NearPoint.BoundaryCount == 1 && e.Dist < maxWarpDist).GroupBy(e => e.NearPoint))
+                {
+                    var e = fanEdges.Where(e1 => e1.Edge.Valid).OrderBy(e1 => e1.Dist).FirstOrDefault();
+                    
+                    if (e == null)
+                        continue;
+
+                    ReplicateSurfacePoint(
+                        e.NearPoint, 
+                        e.FarPoint, 
+                        fanEdges.Select(e1 => e1.Edge).ToArray(),
+                        fanEdges.Select(e1 => e1.MidPoint).ToArray(),
+                        e.NearPoint.BoundaryFirstIndex);                        
+                }
+            }
+
+            foreach (var e in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && e.Edge.Valid)) 
+            {
+                ResolveEdge(e.Edge, e.MidPoint, e.NearPoint, false, ineqNumber);
+            }
+        }
+
+        private Point ReplicateSurfacePoint(Point p, Point p1, Edge[] edges, Point[] midPoints,  int ineqNumber)
+        {
+            if (edges.Length < 2)
+                return null;
+            
+            HashSet<Tetrahedron> fan = new HashSet<Tetrahedron>();
+
+            foreach (var t in p.Tetrahedrons.Intersect(p1.Tetrahedrons))
+                fan.Add(t);
+
+            bool added = true;
+            while(added)
+            {
+                added = false;
+                foreach (var pp in fan.SelectMany(tt => tt.Points).Where(pp => pp != p && !pp.Boundary[ineqNumber]).ToArray())
+                {
+                    foreach (var t in p.Tetrahedrons.Intersect(pp.Tetrahedrons))
+                    {
+                        if(!fan.Contains(t))
+                        {
+                            fan.Add(t);
+                            added = true;
+                        }
+                    }                    
+                }
+            }
+
+            Point newPoint = new Point(p.X, p.Y, p.Z, p.Boundary.Length);
+            newPoint.U = p.U;
+            for (int i = 0; i < newPoint.Boundary.Length; i++)
+            {
+                newPoint.Boundary[i] = (i != ineqNumber) && p.Boundary[i];
+            }
+
+            AddPoint(newPoint);
+
+            List<Tetrahedron> newTetrahedrons = new List<Tetrahedron>();
+
+            foreach(var t in fan.Where(t => t.Points.Count(pp => pp != p && pp.Boundary[ineqNumber]) == 2))
+            {
+                Point[] fp = t.Points.Where(pp => pp != p && pp.Boundary[ineqNumber]).ToArray();
+
+                newPoint.MoveTo(t.Points.Where(pp => !pp.Boundary[ineqNumber]).Single(), false);
+
+                Tetrahedron tt = AddTetrahedron(newPoint, p, fp[0], fp[1]);
+                tt.IsIn.Or(t.IsIn);
+                tt.Boundary.Or(t.Boundary);
+                tt.IsOnBoundary.Or(t.IsOnBoundary);               
+
+                newTetrahedrons.Add(tt);
+            }
+            newPoint.MoveTo(p, false);
+
+            foreach (var t in fan)
+            {
+                t.ReplacePoint(p, newPoint);
+            }
+
+            bool resolved = false;
+            for (int i = 0; i < edges.Length; i++)
+            {
+                if (newPoint.CanMoveTo(midPoints[i]))
+                {
+                    ResolveEdge(edges[i], midPoints[i], newPoint, true, ineqNumber);
+                    resolved = true;
+                }
+            }
+
+            if (!resolved)
+            {
+                foreach (var t in fan)
+                {
+                    t.ReplacePoint(newPoint, p);
+                }
+                foreach (Tetrahedron t in newTetrahedrons)
+                {
+                    DeleteTetrahedron(t);
+                }
+            }
+
+            return newPoint;
+        } 
+        
+        private void ResolveEdge(Edge e, Point midPoint, Point nearPoint, bool movable, int ineqNumber)
+        {
+            if (e.P1.U * e.P2.U >= 0)
+                return;
+
+            if (movable)
+            {
+                nearPoint.MoveTo(midPoint, true);
+                nearPoint.U = 0;
+
+                if (nearPoint.BoundaryCount == 1)
+                    ProjectToEdge(nearPoint, ineqNumber, nearPoint.BoundaryFirstIndex, true);
+                else if (nearPoint.BoundaryCount == 2)
+                {
+                    ProjectToCorner(nearPoint, ineqNumber, nearPoint.BoundaryFirstIndex, nearPoint.BoundarySecondIndex, true);
+                }                
+            }
+            else
+            {
+                DivideEdge(e, ineqNumber, midPoint); 
+            }
+        }
+
+        public Point DivideEdge(Edge e, int ineqNumber, Point newPoint)
+        {
+            if (newPoint == null)
+                newPoint = Bisection(e, ineqNumber);
+
+            for (int i = 0; i < newPoint.Boundary.Length; i++)
+            {
+                newPoint.Boundary[i] = e.P1.Boundary[i] && e.P2.Boundary[i];
+            }
+
+            newPoint.U = 0;
+            AddPoint(newPoint);
+
+            foreach (Tetrahedron t in e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons).ToArray())
+            {
+                Point[] p = t.Points.Where(pp => pp != e.P1 && pp != e.P2).ToArray();
+
+                Tetrahedron tt = AddTetrahedron(p[0], p[1], e.P1, newPoint);
+                tt.IsIn.Or(t.IsIn);
+                tt.Boundary.Or(t.Boundary);
+                tt.IsOnBoundary.Or(t.IsOnBoundary);
+
+
+                tt = AddTetrahedron(p[0], p[1], e.P2, newPoint);
+                tt.IsIn.Or(t.IsIn);
+                tt.Boundary.Or(t.Boundary);
+                tt.IsOnBoundary.Or(t.IsOnBoundary);
+
+
+                DeleteTetrahedron(t);
+            }
+
+            if (newPoint.BoundaryCount == 1 && ineqNumber>=0)
+                ProjectToEdge(newPoint, ineqNumber, newPoint.BoundaryFirstIndex, true);
+            else if (newPoint.BoundaryCount == 2 && ineqNumber >= 0)
+            {
+                ProjectToCorner(newPoint, ineqNumber, newPoint.BoundaryFirstIndex, newPoint.BoundarySecondIndex, true);
+            }
+
+            return newPoint;
+        }
+
+        public bool CollapseEdge(Edge e, Point toPoint, bool jiggle = false)
+        {
+            Point fromPoint = null;
+
+            if (toPoint == null)
+            {
+                if (e.P2.HasAllBoundary(e.P1))
+                {
+                    toPoint = e.P1;
+                    fromPoint = e.P2;
+                }
+                else if (e.P1.HasAllBoundary(e.P2))
+                {
+                    toPoint = e.P2;
+                    fromPoint = e.P1;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                fromPoint = (toPoint == e.P1 ? e.P2 : e.P1);
+                if (!fromPoint.HasAllBoundary(toPoint))
+                    return false;
+            }           
+
+            if (!fromPoint.CanMoveTo(toPoint, fromPoint.Tetrahedrons.Intersect(toPoint.Tetrahedrons), 0.15d))
+            {
+                return false;
+            }
+
+            foreach (Tetrahedron t in fromPoint.Tetrahedrons.Intersect(toPoint.Tetrahedrons).ToArray())
+            {
+                DeleteTetrahedron(t);
+            }
+
+            foreach (Tetrahedron t in fromPoint.Tetrahedrons.ToArray())
+            {
+                t.ReplacePoint(fromPoint, toPoint);
+            }
+            
+            DeletePoint(fromPoint);
+
+            if (jiggle)
+            {
+                Jiggle(2, toPoint.Points.SelectMany(p => p.Points));
+            }
+            return true;
+        }
+
+        protected Point Bisection(Edge e, int ineqNumber)
+        {
+            Point a = new Point(e.P1.X, e.P1.Y, e.P1.Z, e.P1.Boundary.Length);
+            Point b = new Point(e.P2.X, e.P2.Y, e.P2.Z, e.P1.Boundary.Length);
+            Point c = null;
+            double ua = e.P1.U;
+            double ub = e.P2.U;
+            double uc = 0;
+
+            for (int i = 0; i < 8; i++)
+            {
+                c = (a + b) / 2;
+                uc = Eval(c.X, c.Y, c.Z, ineqNumber);
+
+                if (uc == 0)
+                    return c;
+
+                if (ua * uc < 0)
+                {
+                    ub = uc;
+                    b = c;
+                }
+                else
+                {
+                    ua = uc;
+                    a = c;
+                }
+            }
+
+            return c;
+        }
+
+        protected bool ProjectToSurface(Point P, double precision, int ineqNumber, bool safe)
+        {
+            double n1, n2, n3, n;
+            double dx, dy, dz;
+            double w, wx, wy, wz;
+            dx = D / 10000000d;
+            dy = D / 10000000d;
+            dz = D / 10000000d;
+
+            w = Eval(P.X, P.Y, P.Z, ineqNumber);
+
+            wx = Eval(P.X + dx, P.Y, P.Z, ineqNumber);
+            wy = Eval(P.X, P.Y + dy, P.Z, ineqNumber);
+            wz = Eval(P.X, P.Y, P.Z + dz, ineqNumber);
+            n1 = (wx - w) / dx;
+            n2 = (wy - w) / dy;
+            n3 = (wz - w) / dz;
+
+            n = Math.Sqrt(n1 * n1 + n2 * n2 + n3 * n3);
+            if (n != 0)
+            {
+                n1 = n1 / n; n2 = n2 / n; n3 = n3 / n;
+            }
+            else
+            {
+                return false;
+            }
+            Point A, B;
+            double w1, tet;
+
+            A = new Point(P.X, P.Y, P.Z);
+            tet = -w / n;
+            B = new Point(P.X + tet * n1, P.Y + tet * n2, P.Z + tet * n3);
+
+            double stopdist = D / precision;
+            double errordist = 2 * D;
+            int p = 0;
+            int maxItCount = 20;
+            while (Math.Abs(tet) > stopdist && p < maxItCount)
+            {
+                p++;
+                w1 = Eval(B.X, B.Y, B.Z, ineqNumber);
+                if (w1 == w || tet > errordist)
+                {
+                    p = maxItCount;
+                    break;
+                }
+                tet = -w1 * tet / (w1 - w);
+                A.MoveTo(B, false);
+                w = w1;
+                B.MoveTo(B.X + tet * n1, B.Y + tet * n2, B.Z + tet * n3, false);
+            }
+            if (p < maxItCount && Math.Abs(P.X - B.X) + Math.Abs(P.Y - B.Y) + Math.Abs(P.Z - B.Z) < errordist)
+            {
+                return P.MoveTo(B, safe);
+            }
+            else
+                return false;
+        }
+
+        protected bool ProjectToEdge(Point P, int ineqNumber1, int ineqNumber2, bool safe)
+        {
+            double nx1, ny1, nz1, n1;
+            double nx2, ny2, nz2, n2;
+            double dx, dy, dz;
+            double w, wx, wy, wz;
+            dx = D / 100000d;
+            dy = D / 100000d;
+            dz = D / 100000d;
+
+            w = Eval(P.X, P.Y, P.Z, ineqNumber1);
+            wx = Eval(P.X + dx, P.Y, P.Z, ineqNumber1);
+            wy = Eval(P.X, P.Y + dy, P.Z, ineqNumber1);
+            wz = Eval(P.X, P.Y, P.Z + dz, ineqNumber1);
+            nx1 = (wx - w) / dx;
+            ny1 = (wy - w) / dy;
+            nz1 = (wz - w) / dz;
+            n1 = Math.Sqrt(nx1 * nx1 + ny1 * ny1 + nz1 * nz1);
+
+            w = Eval(P.X, P.Y, P.Z, ineqNumber2);
+            wx = Eval(P.X + dx, P.Y, P.Z, ineqNumber2);
+            wy = Eval(P.X, P.Y + dy, P.Z, ineqNumber2);
+            wz = Eval(P.X, P.Y, P.Z + dz, ineqNumber2);
+            nx2 = (wx - w) / dx;
+            ny2 = (wy - w) / dy;
+            nz2 = (wz - w) / dz;
+            n2 = Math.Sqrt(nx1 * nx1 + ny1 * ny1 + nz1 * nz1);
+
+            double hh1 = 0, hh2 = 0;
+            if (Numeric.Newton2d(ref hh1, ref hh2,
+                (h1, h2) => Eval(P.X + h1 * nx1 + h2 * nx2, P.Y + h1 * ny1 + h2 * ny2, P.Z + h1 * nz1 + h2 * nz2, ineqNumber1),
+                (h1, h2) => Eval(P.X + h1 * nx1 + h2 * nx2, P.Y + h1 * ny1 + h2 * ny2, P.Z + h1 * nz1 + h2 * nz2, ineqNumber2), D))
+            {
+                return P.MoveTo(
+                        P.X + hh1 * nx1 + hh2 * nx2,
+                        P.Y + hh1 * ny1 + hh2 * ny2,
+                        P.Z + hh1 * nz1 + hh2 * nz2,
+                        safe
+                    );
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        protected bool ProjectToCorner(Point P, int ineqNumber1, int ineqNumber2, int ineqNumber3, bool safe)
+        {
+            double x0 = P.X, y0 = P.Y, z0 = P.Z;
+            if (Numeric.Newton3d(ref x0, ref y0, ref z0, (x, y, z) => Eval(x, y, z, ineqNumber1), (x, y, z) => Eval(x, y, z, ineqNumber2), (x, y, z) => Eval(x, y, z, ineqNumber3), D))
+            {
+                return P.MoveTo(x0, y0, z0, safe);
+            }
+            else
+                return false;
+        }
+
+        private  void CreateBackgroundMesh()
+        {
+            double x0, y0, z0, x1, y1, z1;
+
+            x0 = X0 - D;
+            x1 = X1 + D;
+            y0 = Y0 - D;
+            y1 = Y1 + D;
+            z0 = Z0 - D;
+            z1 = Z1 + D;
+            
+            int xCount = (int)Math.Ceiling(((x1 - x0) / D));
+            int yCount = (int)Math.Ceiling(((y1 - y0) / D));
+            int zCount = (int)Math.Ceiling(((z1 - z0) / D));
+
+            Point[, ,] points = new Point[xCount + 1, yCount + 1, zCount + 1];
+            Point[, ,] shiftPoints = new Point[xCount + 1, yCount + 1, zCount + 1];
+
+            for (int k = 0; k <= zCount; k++)
+            {
+                for (int j = 0; j <= yCount; j++)
+                {
+                    for (int i = 0; i <= xCount; i++)
+                    {
+                            points[i, j, k] = CreatePoint(x0 + i * D, y0 + j * D, z0 + k * D);
+                            shiftPoints[i, j, k] = CreatePoint(x0 + i * D + D / 2.0d, y0 + j * D + D / 2.0d, z0 + k * D + D / 2.0d);
+                    }
+                }
+            }
+
+            this.points = new HashSet<Point>(points.Cast<Point>().Concat(shiftPoints.Cast<Point>()));
+
+            Tetrahedron[] tetrahedrons = new Tetrahedron[xCount * yCount * zCount * 12];
+            int p = 0;
+            for (int k = 0; k < zCount; k++)
+            {
+                for (int j = 0; j < yCount; j++)
+                {
+                    for (int i = 0; i < xCount; i++)
+                    {
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i + 1, j, k], points[i + 1, j, k], points[i + 1, j + 1, k]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i + 1, j, k], points[i + 1, j, k + 1], points[i + 1, j + 1, k + 1]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i + 1, j, k], points[i + 1, j, k], points[i + 1, j, k + 1]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i + 1, j, k], points[i + 1, j + 1, k], points[i + 1, j + 1, k + 1]);
+
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j + 1, k], points[i, j + 1, k], points[i + 1, j + 1, k]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j + 1, k], points[i, j + 1, k + 1], points[i + 1, j + 1, k + 1]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j + 1, k], points[i, j + 1, k], points[i, j + 1, k + 1]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j + 1, k], points[i + 1, j + 1, k], points[i + 1, j + 1, k + 1]);
+
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j, k + 1], points[i, j, k + 1], points[i, j + 1, k + 1]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j, k + 1], points[i + 1, j, k + 1], points[i + 1, j + 1, k + 1]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j, k + 1], points[i, j, k + 1], points[i + 1, j, k + 1]);
+                        tetrahedrons[p++] = CreateTetrahedron(shiftPoints[i, j, k], shiftPoints[i, j, k + 1], points[i, j + 1, k + 1], points[i + 1, j + 1, k + 1]);
+                    }
+                }
+            }
+            this.tetrahedrons= new HashSet<Tetrahedron>(tetrahedrons);
+        }
+
+        public void Jiggle(int count)
+        {
+            for (int i = 0; i < count; i++)
+                Points.AsParallel().ForAll(point =>
+                {
+                    CenterPoint(point, i == count - 1 ? 1000 : 100, true);
+                });
+        }
+
+        public void Jiggle(int count, IEnumerable<Point> points)
+        {
+            for (int i = 0; i < count; i++)
+                points.AsParallel().ForAll(point =>
+                {
+                    CenterPoint(point, i == count - 1 ? 1000 : 100, true);
+                });
+        }
+
+
+        private void CenterPoint(Point point, double precision, bool safe)
+        {
+            int boundaryCount = point.BoundaryCount;
+            if (boundaryCount == 0)
+            {
+
+                Point average = point.Points.Average();
+                point.MoveTo(average, safe);
+            }
+            else if (boundaryCount == 1)
+            {
+                int ineqNumber = point.BoundaryFirstIndex;
+                Point average = point.Points.Where(p => p.Boundary[ineqNumber]).Average();
+                if (average != null)
+                {
+                    point.MoveTo(average, safe);
+                    ProjectToSurface(point, precision, ineqNumber, safe);
+                }
+            }
+            else if (boundaryCount == 2)
+            {
+                int ineqNumber1 = point.BoundaryFirstIndex;
+                int ineqNumber2 = point.BoundarySecondIndex;
+                Point average = point.Points.Where(p => p.Boundary[ineqNumber1] && p.Boundary[ineqNumber2]).Average();
+                if (average != null)
+                {
+                    point.MoveTo(average, safe);
+                    ProjectToEdge(point, ineqNumber1, ineqNumber2, safe);
+                }
+            }
+            else if (boundaryCount == 3)
+            {
+                int ineqNumber1 = point.BoundaryFirstIndex;
+                int ineqNumber2 = point.BoundarySecondIndex;
+                int ineqNumber3 = point.BoundaryThirdIndex;
+                ProjectToCorner(point, ineqNumber1, ineqNumber2, ineqNumber3, safe);
+            } 
+        }
+
+        private void Eval(Point p, int ineqNumber)
+        {
+            p.U = Eval(p.X, p.Y, p.Z, ineqNumber);
+        }
+
+        private double Eval(double x, double y, double z, int ineqNumber)
+        {
+            return ineqTreeBoxed.ExpressionList[ineqNumber](x, y, z);
+        }
+
+        public Func<double, double, double, double> EvalTotalFunc { get; set; }
+        
+        public double EvalTotal(Point p)
+        {
+            if (EvalTotalFunc != null)
+                return EvalTotalFunc(p.X, p.Y, p.Z);
+            
+            double res = 0;
+            for (int i = 0; i < ineqTreeBoxed.ExpressionList.Count; i++)
+            {
+                res += Math.Pow(Eval(p.X, p.Y, p.Z, i), 2);
+            }
+            return res;
+        }        
+
+        public override Point AddPoint(double x, double y, double z)
+        {
+            Point p = new Point(x, y, z, ineqTreeBoxed.ExpressionList.Count);
+            points.Add(p);
+            return p;
+        }
+
+        private Point CreatePoint(double x, double y, double z)
+        {
+            Point p = new Point(x, y, z, ineqTreeBoxed.ExpressionList.Count);
+            return p;
+        }
+
+        public Tetrahedron CreateTetrahedron(Point p0, Point p1, Point p2, Point p3)
+        {
+            Tetrahedron t = new Tetrahedron(p0, p1, p2, p3);
+            return t;
+        }
+
+
+        private void ResolveMeshApriori(IneqTree.IneqNode node, int domaiNumber)
+        {
+            if (domaiNumber == 0)
+                currentDomaiNumber = 0;
+
+            if (node.NodeType == IneqTree.NodeType.NodeExpression)
+            {
+                ResolveIneqApriori(node.ExpressionIndex, domaiNumber);
+            }
+            else
+            {
+                int domaiNumberLeft = ++currentDomaiNumber;
+                int domaiNumberRight = ++currentDomaiNumber;
+
+                ResolveMeshApriori(node.Left, domaiNumberLeft);
+                ResolveMeshApriori(node.Right, domaiNumberRight);
+
+                int[] expressionIndexes = node.ExpressionIndexes.ToArray();
+                
+                Parallel.ForEach(Tetrahedrons, t =>
+                {
+                    if (node.NodeType == IneqTree.NodeType.NodeOr)
+                    {
+                        if ( t.IsInDomain(domaiNumberLeft) || t.IsInDomain(domaiNumberRight))
+                        {
+                            t.IsIn[domaiNumber] = true;
+                            t.IsOnBoundary[domaiNumber] = false;
+                        }
+                        else if (t.IsOnBoundaryDomain(domaiNumberLeft) || t.IsOnBoundaryDomain(domaiNumberRight))
+                        {
+                            t.IsIn[domaiNumber] = false;
+                            t.IsOnBoundary[domaiNumber] = true;
+                        }
+                        else
+                        {
+                            t.IsIn[domaiNumber] = false;
+                            t.IsOnBoundary[domaiNumber] = false;
+                        }
+                    }
+                    if (node.NodeType == IneqTree.NodeType.NodeAnd)
+                    {
+                        if (t.IsOutDomain(domaiNumberLeft) || t.IsOutDomain(domaiNumberRight))
+                        {
+                            t.IsIn[domaiNumber] = false;
+                            t.IsOnBoundary[domaiNumber] = false;
+                        }
+                        else if (t.IsOnBoundaryDomain(domaiNumberLeft) || t.IsOnBoundaryDomain(domaiNumberRight))
+                        {
+                            t.IsIn[domaiNumber] = false;
+                            t.IsOnBoundary[domaiNumber] = true;
+                        }
+                        else
+                        {
+                            t.IsIn[domaiNumber] = true;
+                            t.IsOnBoundary[domaiNumber] = false;
+                        }
+                    }
+                    if (!t.IsOnBoundary[domaiNumber])
+                    {
+                        foreach (int i in expressionIndexes)
+                        {
+                            t.Boundary[i] = false;
+                        }
+                    }
+                });
+            }
+        }
+
+        private void ResolveIneqApriori(int ineqNumber, int domaiNumber)
+        {
+            if (OnProgress != null)
+                OnProgress(0.5 * (double)(ineqNumber + 1) / (ineqTreeBoxed.ExpressionList.Count));
+
+            Parallel.ForEach(Points, p =>
+            {
+                Eval(p, ineqNumber);
+            });
+
+            Parallel.ForEach(Tetrahedrons, t =>
+            {
+                if(t.Points.All(p => p.U < 0))
+                {
+                    t.IsIn[domaiNumber] = true;
+                    t.IsOnBoundary[domaiNumber] = false;
+                    t.Boundary[ineqNumber] = false;
+                }
+                else if (t.Points.All(p => p.U > 0))
+                {
+                    t.IsIn[domaiNumber] = false;
+                    t.IsOnBoundary[domaiNumber] = false;
+                    t.Boundary[ineqNumber] = false;
+                } else
+                {
+                    t.IsIn[domaiNumber] = false;
+                    t.IsOnBoundary[domaiNumber] = true;
+                    t.Boundary[ineqNumber] = true;
+                }
+            });
+        }
+
+        private void SpreadTetrahedronsBoundaryFlags()
+        {
+            foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => t.BoundaryCount > 0))
+            {
+                foreach (Point p in t.Points)
+                {
+                    for (int i = 0; i < p.Boundary.Length; i++)
+                    {
+                        p.Boundary[i] = p.Boundary[i] || t.Boundary[i];
+                    }
+                }
+            }
+
+            foreach (Tetrahedron t in Tetrahedrons.AsParallel())
+            {
+                for (int i = 0; i < t.Boundary.Length; i++)
+                {
+                    t.Boundary[i] = t.Boundary[i] || t.Points.Any(p => p.Boundary[i]);
+                }
+            }
+
+            Points.AsParallel().ForAll(p => p.Boundary.SetAll(false)); 
+        }
+
+        public void RefineBoundaryTriangle(Triangle t0)
+        {
+            LinkedList<Edge> refineEdges = new LinkedList<Edge>();
+            Nullable<Triangle> t = t0;
+
+            Edge e = t0.Edges().OrderByDescending(ee => ee.SqrLength).First();
+
+            while (t != null)
+            {
+                refineEdges.AddFirst(e);
+
+                Triangle[] trians = e
+                    .P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons)
+                    .SelectMany(tt => tt.Triangles())
+                    .Where(tr => tr.Contains(e.P1) && tr.Contains(e.P2) && !tr.Equals(t.Value))
+                    .GroupBy(tr => tr)
+                    .Where(gr => gr.Count() == 1)
+                    .Select(gr => gr.Single())
+                    .ToArray();
+
+                if (trians.Length == 1)
+                {
+                    Edge e1 = trians[0].Edges().OrderByDescending(ee => ee.SqrLength).First();
+                    if (!e1.Equals(e))
+                    {
+                        e = e1;
+                        t = trians[0];
+                    }
+                    else
+                        t = null;
+                }
+                else
+                    t = null;
+            }
+
+            foreach (Edge ee in refineEdges)
+            {
+                DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
+            }
+        }
+
+        public void RefineBoundaryTriangles(IEnumerable<Triangle> triangleList)
+        {
+            foreach (Triangle t in triangleList.ToArray())
+            {
+                if (t.Valid)
+                    RefineBoundaryTriangle(t);
+            }
+        }
+
+        public int CheckQuality(double minQuality, bool allowDivide, Tetrahedron[] badTetra = null)
+        {
+            if (badTetra == null)
+            {
+                badTetra = Tetrahedrons
+                    .AsParallel()
+                    .Where(t => t.Quality < minQuality)
+                    .OrderBy(t => t.Quality)
+                    .ToArray();
+            }
+            
+            foreach (var t in badTetra)
+            {
+                if (!Tetrahedrons.Contains(t) || t.Quality >=  minQuality)
+                    continue;
+
+                var divideAndCollapse = t.Edges().Select(e =>
+                        {
+                            Point toPoint = null;
+                            double minPQuality = 0;
+
+                            TryDivideAndCollapse(e, ref toPoint, ref minPQuality, allowDivide);
+
+                            return new { Edge = e, MinQuality = minPQuality, ToPoint = toPoint };
+                        }
+                    )
+                    .OrderByDescending(ee => ee.MinQuality)
+                    .First();
+
+                if (divideAndCollapse.MinQuality > 0)
+                {
+                    Point midPoint = DivideEdge(divideAndCollapse.Edge, -1, (divideAndCollapse.Edge.P1 + divideAndCollapse.Edge.P2) / 2);
+                    if (divideAndCollapse.ToPoint != null)
+                    {
+                        CollapseEdge(new Edge(midPoint, divideAndCollapse.ToPoint), divideAndCollapse.ToPoint, true);
+                    }
+                    else
+                    {
+                        Jiggle(2, midPoint.Points.SelectMany(p => p.Points));
+                    }
+                }
+                else
+                {
+                    Edge shortEdge = t.Edges().Where(e => e.P1.HasAllBoundary(e.P2) || e.P2.HasAllBoundary(e.P1)).OrderBy(ee => ee.SqrLength).FirstOrDefault();
+
+                    if (shortEdge.P1 != null && Math.Sqrt(shortEdge.SqrLength) < D / 2.0)
+                    {
+                        CollapseEdge(shortEdge, null, true);
+                    }
+                }
+            }
+
+            return badTetra.Length;
+        }
+
+
+        private void TryDivideAndCollapse(Edge e, ref Point toPoint, ref double minQuality, bool allowDivide) 
+        {
+            Point midPoint = (e.P1 + e.P2) / 2;
+
+            HashSet<Point> fanPoints = new HashSet<Point>();
+            HashSet<Tetrahedron> fanTetrahedrons = new HashSet<Tetrahedron>();
+
+            double origMinQuality = 1000;
+            double pMinQuality = 1000;
+            
+            for (int i = 0; i < midPoint.Boundary.Length; i++)
+            {
+                midPoint.Boundary[i] = e.P1.Boundary[i] && e.P2.Boundary[i];
+            }
+
+            foreach (Tetrahedron t in e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons))
+            {
+                Point[] p = t.Points.Where(pp => pp != e.P1 && pp != e.P2).ToArray();
+
+                fanPoints.Add(p[0]);
+                fanPoints.Add(p[1]);
+
+                Tetrahedron tt = new Tetrahedron(p[0], p[1], e.P1, midPoint, true);
+                fanTetrahedrons.Add(tt);
+                tt = new Tetrahedron(p[0], p[1], e.P2, midPoint, true);
+                fanTetrahedrons.Add(tt);
+
+                if (t.Quality < origMinQuality)
+                {
+                    origMinQuality = t.Quality;
+                }
+            }
+
+            toPoint = null;
+            minQuality = 0;
+
+            foreach (Point p in fanPoints)
+            {
+                if (!midPoint.HasAllBoundary(p))
+                    continue;
+
+                pMinQuality = 1000;
+
+                midPoint.MoveTo(p, false); 
+                foreach (var t in fanTetrahedrons.Where(t => !t.Points.Contains(p)))
+                {
+                    if (!t.CheckVolume(0.15d))
+                    {
+                        pMinQuality = -1;
+                    }
+                    else if (t.Quality < pMinQuality)
+                    {
+                        pMinQuality = t.Quality;
+                    }                    
+                }
+
+                if (pMinQuality > minQuality)
+                {
+                    minQuality = pMinQuality;
+                    toPoint = p;
+                }
+            }
+
+            if (allowDivide && minQuality <= origMinQuality)
+            {
+                Point average = fanPoints.Union(e).Average();
+                midPoint.MoveTo(average, false);
+                pMinQuality = 1000;
+                foreach (var t in fanTetrahedrons)
+                {
+                    if (!t.CheckVolume(0.05d))
+                    {
+                        pMinQuality = -1;
+                    }
+                    else if (t.Quality < pMinQuality)
+                    {
+                        pMinQuality = t.Quality;
+                    }
+                }
+
+                if (pMinQuality > minQuality)
+                {
+                    minQuality = pMinQuality;
+                    toPoint = null;
+                }
+            }
+
+            if (minQuality < origMinQuality)
+            {
+                minQuality = 0;
+                toPoint = null;
+            }
+        }
+
+        /*private void PrecalsCorners()
+        {
+            List<Point> corners = new List<Point>(20);
+
+            foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => t.BoundaryCount >= 3))
+            {
+                int[] ineqNumbers = t.Boundary.Cast<bool>().Select((b, i) => new { IsSet = b, index = i }).Where(bf => bf.IsSet).Take(3).Select(bi => bi.index).ToArray();
+
+                Point p = t.Points.Average();
+
+                if (ProjectToCorner(p, ineqNumbers[0], ineqNumbers[1], ineqNumbers[2], false) && !corners.Any(cp => cp.Distance(p) < D /10))
+                {
+                    Point p1 = t.Points.OrderBy(pp => pp.Distance(p)).First();
+
+                    if (p1.MoveTo(p, true))
+                    {
+                        corners.Add(p);
+
+                        p1.Boundary[ineqNumbers[0]] = true;
+                        p1.Boundary[ineqNumbers[1]] = true;
+                        p1.Boundary[ineqNumbers[2]] = true;
+
+                        foreach(var pp in p1.Points)
+                        {
+                            CenterPoint(pp, 100, true);
+                        }
+                    }
+                } 
+            }               
+        }*/
+    }
+}
