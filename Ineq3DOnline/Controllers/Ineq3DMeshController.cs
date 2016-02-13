@@ -48,8 +48,8 @@ end_header
 
             if (String.IsNullOrEmpty(Mesh))
             {
-                //Mesh = samples.Samples.Skip(new Random().Next(samples.Samples.Count())).First();
-                Mesh = "Ball";
+                Mesh = samples.Samples.Skip(new Random().Next(samples.Samples.Count())).First();
+                //Mesh = "Ball";
             }
 
             ViewBag.CurrentMesh = Mesh;
