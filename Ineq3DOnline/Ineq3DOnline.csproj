@@ -138,6 +138,36 @@
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="Samples\4-Ball, cylinder, ball, planes.ply" />
+    <Content Include="Samples\AntiAnuloids.ply" />
+    <Content Include="Samples\Anuliod, balls.ply" />
+    <Content Include="Samples\Anuloid, balls.ply" />
+    <Content Include="Samples\Anuloid.ply" />
+    <Content Include="Samples\Anuloids.ply" />
+    <Content Include="Samples\Anuloids1.ply" />
+    <Content Include="Samples\Anuloids2.ply" />
+    <Content Include="Samples\Anuloids3.ply" />
+    <Content Include="Samples\Ball in ball.ply" />
+    <Content Include="Samples\Ball in box.ply" />
+    <Content Include="Samples\Ball minus cylinders.ply" />
+    <Content Include="Samples\Ball.ply" />
+    <Content Include="Samples\Balls in 4-ball.ply" />
+    <Content Include="Samples\Balls.ply" />
+    <Content Include="Samples\Cone 1.ply" />
+    <Content Include="Samples\Cone.ply" />
+    <Content Include="Samples\Cuted cylinders.ply" />
+    <Content Include="Samples\Cylinders, ball, planes.ply" />
+    <Content Include="Samples\Cylinders.ply" />
+    <Content Include="Samples\Half ball and balls.ply" />
+    <Content Include="Samples\Many cylinders 1.ply" />
+    <Content Include="Samples\Many cylinders.ply" />
+    <Content Include="Samples\Planes.ply" />
+    <Content Include="Samples\Sharp cone.ply" />
+    <Content Include="Samples\Sin 1.ply" />
+    <Content Include="Samples\Sin 2.ply" />
+    <Content Include="Samples\SnowWoman.ply" />
+    <Content Include="Samples\Tetra cylinder.ply" />
+    <Content Include="Samples\Viviani.ply" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />
@@ -171,7 +201,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Samples\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
