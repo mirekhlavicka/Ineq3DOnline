@@ -227,6 +227,26 @@ namespace Ineq3DOnline
                      &
                     (IneqTree)((x, y, z) => x * x + y * y + (z * z) / 2 - 2.25 )
             };
+                        
+            samples["Cone 1"] = new IneqMesh
+            {
+                X0 = -1.0,
+                Y0 = -1.0,
+                Z0 = -1.0,
+                X1 = 1.0,
+                Y1 = 1.0,
+                Z1 = 1.0,
+                D = 0.055d,
+                Boxed = true,
+                IneqTree =
+                    (
+                        (IneqTree)
+                            ((x, y, z) => (x - 0.12) * (x - 0.12) + (y + 0.171) * (y + 0.171) - (z - 0.037) * (z - 0.037) / 4)
+                    ) &
+                    (IneqTree)((x, y, z) => z - 0.037)
+                     &
+                    (IneqTree)((x, y, z) => (x - 0.12) * (x - 0.12) + (y + 0.171) * (y + 0.171) - 0.15f)
+            };
 
             samples["Ball minus cylinders"] = new IneqMesh
             {
