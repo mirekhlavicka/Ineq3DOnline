@@ -48,8 +48,8 @@ end_header
 
             if (String.IsNullOrEmpty(Mesh))
             {
-                Mesh = samples.Samples.Skip(new Random().Next(samples.Samples.Count())).First();
-                //Mesh = "Ball";
+                //Mesh = samples.Samples.Skip(new Random().Next(samples.Samples.Count())).First();
+                Mesh = "BallEx";
             }
 
             ViewBag.CurrentMesh = Mesh;
@@ -65,7 +65,7 @@ end_header
             string path = System.IO.Path.Combine(Server.MapPath("~/Samples"), FileName);
             if (System.IO.File.Exists(path))
             {
-                return File(path, "application/octet-stream");
+                //return File(path, "application/octet-stream");
             }
 
             var ineqMesh = samples[Mesh]; 

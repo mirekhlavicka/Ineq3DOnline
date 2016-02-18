@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using MeshData;
+using Jace;
 
 namespace Ineq3DOnline
 {
@@ -14,6 +15,7 @@ namespace Ineq3DOnline
         {
             get { return samples.Keys; }
         }
+
 
         public MeshSamples()
         {
@@ -508,6 +510,34 @@ namespace Ineq3DOnline
                 IneqTree =
                         ((IneqTree)((x, y, z) => x * x + y * y + z * z - 1))
             };
+
+            //https://github.com/pieterderycke/Jace/wiki
+            //http://www.codeproject.com/Articles/682589/Jace-NET-Just-another-calculation-engine-for-NET
+            CalculationEngine engine = new CalculationEngine();
+            Func<double, double, double, double> formula = (Func<double, double, double, double>)engine.Formula("(x^2)/2+y^4+4*z^2-1")
+                .Parameter("x", DataType.FloatingPoint)
+                .Parameter("y", DataType.FloatingPoint)
+                .Parameter("z", DataType.FloatingPoint)
+                .Result(DataType.FloatingPoint)
+                .Build();
+
+            samples["BallEx"] = new IneqMesh
+            {
+                X0 = -1.0,
+                Y0 = -1.0,
+                Z0 = -1.0,
+                X1 = 1.0,
+                Y1 = 1.0,
+                Z1 = 1.0,
+                D = 0.1d,
+                Boxed = true,
+                IneqTree =
+                        ((IneqTree)((x, y, z) => {
+                            return formula(x, y, z);
+                        }))
+            };
+
+
 
             samples["Tetra cylinder"] = new IneqMesh
             {

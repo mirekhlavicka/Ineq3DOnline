@@ -75,6 +75,8 @@
                 }
 
                 var material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, /*specular: 0x111111, shininess: 200,*/ side: THREE.DoubleSide, shading: THREE.SmoothShading, wireframe: renderStyle == 1 });
+                //var material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors,  side: THREE.DoubleSide, shading: THREE.SmoothShading, wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
+
 
                 mesh = new THREE.Mesh(geometry, material);
                 scene.add(mesh);
