@@ -6,6 +6,43 @@
     Layout = "_LayoutThree.cshtml";
 }
 
+<!-- Modal -->
+<div class="modal fade" id="modalCreateMesh" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Mesh</h4>
+            </div>
+            <div class="modal-body">
+                <form role="form" class="form-horizontal">
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <div class="checkbox">
+                                @Html.CheckBox("quality")
+                                @Html.Label("quality", "Quality")
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        @Html.Label("formula", "Formula", htmlAttributes: new { @class = "control-label col-md-2" })
+                        <div class="col-md-10">
+                            @Html.TextArea("formula", "x^2 + y^2 + z^2 < 1 && (x + y) < 0 || (x^2 + z^2 < 0,25)",  new { @class = "form-control" })
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" id="btnCreateMesh">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Samples
 {
     <li class="dropdown">
@@ -64,6 +101,8 @@
             currentMeshUrl = url;
             var loader = new THREE.PLYLoader();
             loader.load(url, function (geometry) {
+
+                clearScene();
 
                 var renderStyle = parseInt($('input[name=radioRenderStyle]:checked').val());
 
@@ -128,11 +167,23 @@
             init();
             render();
             loadMesh(currentMeshUrl);
-            $(window).resize(onWindowResize)
+            $(window).resize(onWindowResize);
+
+            $('#btnCreateMesh').click(function () {
+                $.post('@Url.Action("SetIneqMesh")',
+                    {
+                        formula: $('#formula').val()
+                    }, function (data) {
+                        //clearScene();
+                        //rotation_x = 0;
+                        //rotation_y = 0;
+                        loadMesh('@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = "[custom]" })');
+                    });
+            })
         });
 
         $(document).on('click', 'a[data-modal]', function (e) {
-            clearScene();
+            //clearScene();
             rotation_x = 0;
             rotation_y = 0;
             loadMesh(this.href);
@@ -144,7 +195,7 @@
                 rotation_x = mesh.rotation.x;
                 rotation_y = mesh.rotation.y;
             }
-            clearScene();
+            //clearScene();
             loadMesh(currentMeshUrl);
         });
 
@@ -176,7 +227,5 @@
         function hideSpinner(spinner) {
             spinner.stop();
         }
-
-
     </script>
 }

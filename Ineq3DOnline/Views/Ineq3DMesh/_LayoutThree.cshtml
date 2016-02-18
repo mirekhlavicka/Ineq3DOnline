@@ -32,10 +32,7 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     @RenderSection("Samples", required: false)
-                </ul>
-
-
-                <ul class="nav navbar-nav">
+                    <li><a href="#" id="lnkCreateMesh" data-toggle="modal" data-target="#modalCreateMesh" data-keyboard="true">New mesh</a></li>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-cog"></span>&nbsp;<span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-form">
@@ -49,19 +46,6 @@
                         </ul>
                     </li>
                 </ul>
-
-                @*<div class="navbar-form navbar-left" >
-                    <div class="form-group">
-                        <input type="text" class="form-control" placeholder="Search">
-                    </div>
-                    <div class="checkbox navbar-btn">
-                        <label class="navbar-link" for="chckAutoRotate">
-                            <input type="checkbox"  id="chckAutoRotate" value="true">
-                            Rotate
-                        </label>
-                    </div>
-                </div>*@
-
             </div>
         </div>
     </div>

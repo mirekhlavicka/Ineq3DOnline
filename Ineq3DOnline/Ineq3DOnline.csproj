@@ -129,6 +129,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\IneqTreeParser.cs" />
     <Compile Include="Models\MeshSamples.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -172,7 +173,6 @@
     <Content Include="Samples\SnowWoman.ply" />
     <Content Include="Samples\Tetra cylinder.ply" />
     <Content Include="Samples\Viviani.ply" />
-    <Content Include="Samples\BallEx.ply" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />

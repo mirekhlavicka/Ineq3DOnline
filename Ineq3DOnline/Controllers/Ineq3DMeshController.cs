@@ -48,8 +48,8 @@ end_header
 
             if (String.IsNullOrEmpty(Mesh))
             {
-                //Mesh = samples.Samples.Skip(new Random().Next(samples.Samples.Count())).First();
-                Mesh = "BallEx";
+                Mesh = samples.Samples.Skip(new Random().Next(samples.Samples.Count())).First();
+                //Mesh = "Ball";
             }
 
             ViewBag.CurrentMesh = Mesh;
@@ -58,20 +58,42 @@ end_header
 
         public ActionResult GetMesh(string Mesh = "")
         {
-            MeshSamples samples = new MeshSamples();
+            IneqMesh ineqMesh = null;
+            string path = null;
 
-
-            string FileName = Mesh  + ".ply";
-            string path = System.IO.Path.Combine(Server.MapPath("~/Samples"), FileName);
-            if (System.IO.File.Exists(path))
+            if (Mesh == "[custom]")
             {
-                //return File(path, "application/octet-stream");
+                ineqMesh = new IneqMesh
+                {
+                    X0 = -1.0,
+                    Y0 = -1.0,
+                    Z0 = -1.0,
+                    X1 = 1.0,
+                    Y1 = 1.0,
+                    Z1 = 1.0,
+                    D = 0.15d,
+                    Boxed = true,
+                    IneqTree = IneqTreeParser.FromFormula((string)Session["formula"])
+                };
+            }
+            else
+            {
+                MeshSamples samples = new MeshSamples();
+
+                string FileName = Mesh + ".ply";
+                path = System.IO.Path.Combine(Server.MapPath("~/Samples"), FileName);
+                if (System.IO.File.Exists(path))
+                {
+                    return File(path, "application/octet-stream");
+                }
+
+                ineqMesh = samples[Mesh];
             }
 
-            var ineqMesh = samples[Mesh]; 
             ineqMesh.Create();
-            CheckQuality(ineqMesh);
-            ineqMesh.DeleteLonelyPoints();
+            
+            /*CheckQuality(ineqMesh);
+            ineqMesh.DeleteLonelyPoints();*/
 
             if(Mesh == "Cone 1")
             {
@@ -128,10 +150,22 @@ end_header
 
             string ply = String.Format(plyFormat, pointsCount, boundaryTriangles.Length, sbPoints, sbTriangles);
 
-            System.IO.File.WriteAllText(path, ply);
-            return File(path, "application/octet-stream");
+            if (path != null)
+            {
+                System.IO.File.WriteAllText(path, ply);
+                return File(path, "application/octet-stream");
+            }
+            else
+            {
+                return Content(ply);
+            }
+        }
 
-            //return Content(String.Format(plyFormat, pointsCount, boundaryTriangles.Length, sbPoints, sbTriangles));
+        public ActionResult SetIneqMesh(string formula)
+        {
+            Session["formula"] = formula;
+
+            return Json(new { });
         }
 
         double minQuality = 0.3d;
