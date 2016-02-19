@@ -63,18 +63,7 @@ end_header
 
             if (Mesh == "[custom]")
             {
-                ineqMesh = new IneqMesh
-                {
-                    X0 = -1.0,
-                    Y0 = -1.0,
-                    Z0 = -1.0,
-                    X1 = 1.0,
-                    Y1 = 1.0,
-                    Z1 = 1.0,
-                    D = 0.15d,
-                    Boxed = true,
-                    IneqTree = IneqTreeParser.FromFormula((string)Session["formula"])
-                };
+                ineqMesh = (IneqMesh)Session["formula"];
             }
             else
             {
@@ -163,9 +152,29 @@ end_header
 
         public ActionResult SetIneqMesh(string formula)
         {
-            Session["formula"] = formula;
+            try
+            {
+                IneqTree ineqTree = IneqTreeParser.FromFormula(formula);
 
-            return Json(new { });
+                Session["formula"] = new IneqMesh
+                {
+                    X0 = -1.0,
+                    Y0 = -1.0,
+                    Z0 = -1.0,
+                    X1 = 1.0,
+                    Y1 = 1.0,
+                    Z1 = 1.0,
+                    D = 0.15d,
+                    Boxed = true,
+                    IneqTree = ineqTree
+                };
+            }
+            catch (Exception exc)
+            {
+                return Json(new { success = false, message = exc.Message });
+            }
+
+            return Json(new { success = true });
         }
 
         double minQuality = 0.3d;

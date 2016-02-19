@@ -16,6 +16,9 @@
             width: 100%;
             height: 100%;
         }
+        a:focus {
+            outline:none;
+        }
     </style>
 </head>
 <body>
@@ -32,7 +35,7 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     @RenderSection("Samples", required: false)
-                    <li><a href="#" id="lnkCreateMesh" data-toggle="modal" data-target="#modalCreateMesh" data-keyboard="true">New mesh</a></li>
+                    <li><a href="#modalCreateMesh" id="lnkCreateMesh" data-toggle="modal" data-target="#modalCreateMesh" data-keyboard="true">New mesh</a></li>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-cog"></span>&nbsp;<span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-form">

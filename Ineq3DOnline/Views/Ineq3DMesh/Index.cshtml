@@ -29,7 +29,8 @@
                     <div class="form-group">
                         @Html.Label("formula", "Formula", htmlAttributes: new { @class = "control-label col-md-2" })
                         <div class="col-md-10">
-                            @Html.TextArea("formula", "x^2 + y^2 + z^2 < 1 && (x + y) < 0 || (x^2 + z^2 < 0,25)",  new { @class = "form-control" })
+                            @Html.TextArea("formula", @"(x^2 + y^2 + z^2 < 1 && 
+(x + y) < 0) || (x^2 + z^2 < 0.25)",  new { @class = "form-control" })
                         </div>
                     </div>
                 </form>
@@ -177,7 +178,11 @@
                         //clearScene();
                         //rotation_x = 0;
                         //rotation_y = 0;
-                        loadMesh('@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = "[custom]" })');
+                        if (data.success) {
+                            loadMesh('@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = "[custom]" })');
+                        } else {
+                            alert(data.message);
+                        }
                     });
             })
         });
