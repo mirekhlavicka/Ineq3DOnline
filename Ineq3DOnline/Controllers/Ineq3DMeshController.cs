@@ -1,4 +1,5 @@
-﻿using MeshData;
+﻿using Ineq3DOnline.Models;
+using MeshData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,12 +59,32 @@ end_header
 
         public ActionResult GetMesh(string Mesh = "")
         {
+            IneqMeshViewModel ineqMeshViewModel = null;
             IneqMesh ineqMesh = null;
             string path = null;
 
             if (Mesh == "[custom]")
             {
-                ineqMesh = (IneqMesh)Session["formula"];
+                ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
+
+                if (ineqMeshViewModel == null)
+                {
+                    return Content(null);
+                }
+
+                if (!String.IsNullOrEmpty(ineqMeshViewModel.PLY))
+                {
+                    return Content(ineqMeshViewModel.PLY);
+                }
+
+                ineqMesh = ineqMeshViewModel.IneqMesh;
+                ineqMesh.Create();
+
+                if (ineqMeshViewModel.Quality)
+                {
+                    CheckQuality(ineqMesh);
+                    ineqMesh.DeleteLonelyPoints();
+                }
             }
             else
             {
@@ -77,36 +98,35 @@ end_header
                 }
 
                 ineqMesh = samples[Mesh];
+                ineqMesh.Create();
+                CheckQuality(ineqMesh);
+                ineqMesh.DeleteLonelyPoints();
             }
 
-            ineqMesh.Create();
-            
-            /*CheckQuality(ineqMesh);
-            ineqMesh.DeleteLonelyPoints();*/
 
-            if(Mesh == "Cone 1")
-            {
-                Point p = new Point(0.12, -0.171, 0.037);
-                Point np = null;
-                double d = Double.MaxValue;
-                foreach (var mp in ineqMesh.Points.Where(pp => pp.BoundaryCount == 1))
-                {
-                    if (mp.Distance(p) < d)
-                    {
-                        d = mp.Distance(p);
-                        np = mp;
-                    }
-                }
+            //if (Mesh == "Cone 1")
+            //{
+            //    Point p = new Point(0.12, -0.171, 0.037);
+            //    Point np = null;
+            //    double d = Double.MaxValue;
+            //    foreach (var mp in ineqMesh.Points.Where(pp => pp.BoundaryCount == 1))
+            //    {
+            //        if (mp.Distance(p) < d)
+            //        {
+            //            d = mp.Distance(p);
+            //            np = mp;
+            //        }
+            //    }
 
-                np.MoveTo(p, false);
-                np.Boundary[np.Boundary.Length - 1] = true;
-                ineqMesh.Jiggle(3);
+            //    np.MoveTo(p, false);
+            //    np.Boundary[np.Boundary.Length - 1] = true;
+            //    ineqMesh.Jiggle(3);
 
-                ineqMesh.RefineBoundaryTriangles(np.Tetrahedrons.SelectMany(t => t.Triangles()).Where(t => t.All(pp => pp.BoundaryCount > 0)));
-                ineqMesh.Jiggle(3);
-                ineqMesh.RefineBoundaryTriangles(ineqMesh.Triangles.Where(tt => tt.All(pp => pp.Boundary[0])));
-                ineqMesh.Jiggle(3);
-            }
+            //    ineqMesh.RefineBoundaryTriangles(np.Tetrahedrons.SelectMany(t => t.Triangles()).Where(t => t.All(pp => pp.BoundaryCount > 0)));
+            //    ineqMesh.Jiggle(3);
+            //    ineqMesh.RefineBoundaryTriangles(ineqMesh.Triangles.Where(tt => tt.All(pp => pp.Boundary[0])));
+            //    ineqMesh.Jiggle(3);
+            //}
 
             //ineqMesh.RefineBoundaryTriangles(ineqMesh.Triangles.Where(tt => tt.All(p => p.Boundary[5])));
             //ineqMesh.Jiggle(3);
@@ -116,7 +136,6 @@ end_header
             int pointsCount = 0;
 
             var boundaryTriangles = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => /*tr.BoundaryCount == 1 &&*/ tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1)).ToArray();
-
 
             for (int ineqNumber = 0; ineqNumber < ineqMesh.IneqTree.ExpressionList.Count + 3; ineqNumber++)
             {
@@ -144,19 +163,22 @@ end_header
                 System.IO.File.WriteAllText(path, ply);
                 return File(path, "application/octet-stream");
             }
+            else if (ineqMeshViewModel != null)
+            {
+                ineqMeshViewModel.PLY = ply;
+                return Content(ply);
+            }
             else
             {
-                return Content(ply);
+                return Content(null);
             }
         }
 
-        public ActionResult SetIneqMesh(string formula)
+        public ActionResult SetIneqMesh(IneqMeshViewModel ineqMeshViewModel)
         {
             try
             {
-                IneqTree ineqTree = IneqTreeParser.FromFormula(formula);
-
-                Session["formula"] = new IneqMesh
+                ineqMeshViewModel.IneqMesh = new IneqMesh
                 {
                     X0 = -1.0,
                     Y0 = -1.0,
@@ -166,8 +188,10 @@ end_header
                     Z1 = 1.0,
                     D = 0.15d,
                     Boxed = true,
-                    IneqTree = ineqTree
+                    IneqTree = IneqTreeParser.FromFormula(ineqMeshViewModel.Formula)
                 };
+
+                Session["IneqMeshViewModel"] = ineqMeshViewModel;
             }
             catch (Exception exc)
             {

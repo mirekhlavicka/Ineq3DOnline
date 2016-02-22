@@ -22,3 +22,11 @@ select,
 textarea {
     max-width: 280px;
 }
+
+.modal-content input, .modal-content select, .modal-content textarea{
+    max-width: 1024px;
+}
+
+.modal-content input[type="checkbox"] {
+    margin-left: 0px!important;
+}
