@@ -23,7 +23,7 @@ textarea {
     max-width: 280px;
 }
 
-.modal-content input, .modal-content select, .modal-content textarea{
+.modal-content textarea{
     max-width: 1024px;
 }
 

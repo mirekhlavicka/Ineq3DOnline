@@ -3,23 +3,46 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>@ViewBag.Title</title>
     <link rel="icon" type="image/x-icon" href="~/Content/img/favicon.ico">
     <link rel="apple-touch-icon-precomposed" href="~/Content/img/color-star-2-152-217609.png">
-    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/css?ver=1.01")
     @Scripts.Render("~/bundles/modernizr")
     @Scripts.Render("~/bundles/jquery")
     <style>
         body {
-            margin: 0;
+            margin: 0px;
+            overflow: hidden;
         }
 
         canvas {
             width: 100%;
             height: 100%;
         }
+
         a:focus {
             outline:none;
+        }
+
+        .navbar-inverse {
+            background: rgba(70,70,70,0.8);
+            border:none!important
+        }
+        .dropdown-menu {
+            background: rgba(70,70,70,0.8);
+        }
+
+        .navbar-inverse .navbar-nav .open .dropdown-menu > li > a {
+            color:#aaa;
+        }
+
+        /*.bounding-box input {
+            width: 100px!important;
+        }*/
+
+        .bounding-box .row {
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -47,7 +70,7 @@
                             <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle1" name="radioRenderStyle" value="1">&nbsp;Wireframe</label></a></li>
                             <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle2" name="radioRenderStyle" value="2" checked="checked">&nbsp;Fill and wireframe</label></a></li>
                             <li class="divider"></li>
-                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckAutoRotate">&nbsp;Rotate</label></a></li>
+                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckAutoRotate" checked="checked">&nbsp;Rotate</label></a></li>
                         </ul>
                     </li>
                 </ul>

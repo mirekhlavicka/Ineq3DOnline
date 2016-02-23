@@ -6,65 +6,7 @@
     Layout = "_LayoutThree.cshtml";
 }
 
-<!-- Modal -->
-<div class="modal fade" id="modalCreateMesh" role="dialog">
-    <div class="modal-dialog">
-
-        <!-- Modal content-->
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">Create mesh</h4>
-            </div>
-            <div class="modal-body">
-                <div class="tabbable">
-                    <!-- Only required for left/right tabs -->
-                    <ul class="nav nav-tabs">
-                        <li class="active"><a href="#tab1" data-toggle="tab">Formula</a></li>
-                        <li><a href="#tab2" data-toggle="tab">Quality</a></li>
-                    </ul>
-                    <div class="tab-content">
-                        <div class="tab-pane active" id="tab1">
-                            <form role="form" class="form-horizontal">
-                                <div class="form-group">
-                                    @*@Html.Label("formula", "Formula", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                                    <div class="col-md-12">
-                                        @Html.TextArea("formula", @"(
-    x^2 + y^2 + z^2 < 1 &&
-    x + y < z^2
-) ||
-(
-    x^2 + z^2 < 0.25
-)", new { @class = "form-control", style = "height:200px; margin-top: 10px", spellcheck = "false" })
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="tab-pane" id="tab2">
-                            <form role="form" class="form-horizontal">
-                                <div class="form-group">
-                                    <div class="col-md-offset-1 col-md-11">
-                                        <div class="checkbox">
-                                            @Html.CheckBox("quality")
-                                            @Html.Label("quality", "Improve quality")
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" data-dismiss="modal" id="btnCreateMesh">Create</button>
-            </div>
-        </div>
-    </div>
-</div>
-
+@{ Html.RenderPartial("_CreateMeshDialog", Ineq3DOnline.Models.IneqMeshViewModel.DefaultModel()); }
 
 @section Samples
 {
@@ -82,6 +24,14 @@
 
 @section Scripts
 {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script type="text/javascript">
+            $.validator.setDefaults({
+                ignore: ""
+            });
+    </script>
+
     <script>
         var camera, scene, renderer, controls, mesh;
         var rotation_x = 0;
@@ -197,11 +147,17 @@
             $("textarea").getTab();
 
             $('#btnCreateMesh').click(function () {
+                $('#modalCreateMesh form').validate();
+                if (!$('#modalCreateMesh form').valid()) {
+                    return false;
+                }
+
                 $.post('@Url.Action("SetIneqMesh")',
-                    {
-                        formula: $('#formula').val(),
-                        quality: $('#quality').prop('checked')
-                    }, function (data) {
+                    $('#modalCreateMesh form').serialize()
+                    /*{
+                        formula: $('#Formula').val(),
+                        quality: $('#Quality').prop('checked')
+                    }*/, function (data) {
                         if (data.success) {
                             loadMesh('@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = "[custom]" })' + '&ts=' + $.now());
                         } else {

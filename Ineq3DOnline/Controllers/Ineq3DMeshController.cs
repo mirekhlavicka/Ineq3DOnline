@@ -178,18 +178,7 @@ end_header
         {
             try
             {
-                ineqMeshViewModel.IneqMesh = new IneqMesh
-                {
-                    X0 = -1.0,
-                    Y0 = -1.0,
-                    Z0 = -1.0,
-                    X1 = 1.0,
-                    Y1 = 1.0,
-                    Z1 = 1.0,
-                    D = 0.15d,
-                    Boxed = true,
-                    IneqTree = IneqTreeParser.FromFormula(ineqMeshViewModel.Formula)
-                };
+                ineqMeshViewModel.SetIneqMesh();
 
                 Session["IneqMeshViewModel"] = ineqMeshViewModel;
             }

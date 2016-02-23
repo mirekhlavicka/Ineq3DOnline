@@ -208,6 +208,7 @@
     <Content Include="Views\Home\__Index.cshtml" />
     <Content Include="Views\Ineq3DMesh\Index.cshtml" />
     <Content Include="Views\Ineq3DMesh\_LayoutThree.cshtml" />
+    <Content Include="Views\Ineq3DMesh\_CreateMeshDialog.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
