@@ -121,6 +121,8 @@ namespace Ineq3DOnline
                     //  upravim nerovnost, ukoncim vetev, ulozim retezec
                     PrepareFormula(ref vyraz, pozice_operatoru);
 
+                    engine.AddFunction("exp", (Func<double, double>)((a) => Math.Exp(a)));
+
                     Func<double, double, double, double> formula = (Func<double, double, double, double>)engine.Formula(vyraz)
                         .Parameter("x", DataType.FloatingPoint)
                         .Parameter("y", DataType.FloatingPoint)
@@ -154,7 +156,7 @@ namespace Ineq3DOnline
             if ( vyraz[pozice_nerovnosti] == '<' )
             {
                 if (prava == "0") vyraz = leva;   // je to neco oper 0
-                else if (leva == "0") vyraz = prava;   // je to 0 oper neco
+                else if (leva == "0") vyraz = "-(" + prava + ")";   // je to 0 oper neco
                 else vyraz = leva + "-(" + prava + ")";
             }
             else // je to neco > neco

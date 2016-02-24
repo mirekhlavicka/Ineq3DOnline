@@ -174,6 +174,7 @@ end_header
             }
         }
 
+        [HttpPost, ValidateInput(false)]
         public ActionResult SetIneqMesh(IneqMeshViewModel ineqMeshViewModel)
         {
             try
