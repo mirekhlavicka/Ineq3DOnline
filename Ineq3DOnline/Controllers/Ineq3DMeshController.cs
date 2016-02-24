@@ -177,18 +177,23 @@ end_header
         [HttpPost, ValidateInput(false)]
         public ActionResult SetIneqMesh(IneqMeshViewModel ineqMeshViewModel)
         {
-            try
+            if (ModelState.IsValid)
             {
-                ineqMeshViewModel.SetIneqMesh();
+                try
+                {
+                    ineqMeshViewModel.SetIneqMesh();
 
-                Session["IneqMeshViewModel"] = ineqMeshViewModel;
-            }
-            catch (Exception exc)
-            {
-                return Json(new { success = false, message = exc.Message });
+                    Session["IneqMeshViewModel"] = ineqMeshViewModel;
+                }
+                catch (Exception exc)
+                {
+                    return Json(new { success = false, message = exc.Message });
+                }
+
+                return Json(new { success = true });
             }
 
-            return Json(new { success = true });
+            return Json(new { success = false, message = "Invalid data" });
         }
 
         double minQuality = 0.3d;

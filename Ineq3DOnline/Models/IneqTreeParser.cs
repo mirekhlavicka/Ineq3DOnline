@@ -130,6 +130,8 @@ namespace Ineq3DOnline
                         .Result(DataType.FloatingPoint)
                         .Build();
 
+                    double testEval = formula(0, 0, 0);
+
                     vysledek = new IneqTree(formula);
                 }
                 else // vsechny zavorky jsou zavrene, ale nenasel se operator

@@ -27,9 +27,9 @@
     @Scripts.Render("~/bundles/jqueryval")
 
     <script type="text/javascript">
-            $.validator.setDefaults({
-                ignore: ""
-            });
+        $.validator.setDefaults({
+            ignore: ""
+        });
     </script>
 
     <script>
@@ -93,7 +93,7 @@
 
                 var material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, /*specular: 0x111111, shininess: 200,*/ side: THREE.DoubleSide, shading: THREE.SmoothShading, wireframe: renderStyle == 1 });
                 //var material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors,  side: THREE.DoubleSide, shading: THREE.SmoothShading, wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
-                
+
                 mesh = new THREE.Mesh(geometry, material);
                 scene.add(mesh);
 
@@ -146,26 +146,26 @@
             $(window).resize(onWindowResize);
             $("textarea").getTab();
 
-            $('#btnCreateMesh').click(function () {
-                $('#modalCreateMesh form').validate();
-                if (!$('#modalCreateMesh form').valid()) {
-                    return false;
+            $('#btnCreateMesh').click(function (e) {
+                $('#formCreateMesh').validate();
+                if ($('#formCreateMesh').valid()) {
+                    $.post('@Url.Action("SetIneqMesh")',
+                        $('#formCreateMesh').serialize(),
+                        function (data) {
+                            if (data.success) {
+                                $('#modalCreateMesh').modal('hide');
+                                loadMesh('@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = "[custom]" })' + '&ts=' + $.now());
+                            } else {
+                                //alert(data.message);
+                                $("[data-valmsg-for='Formula']").text(data.message)
+                            }
+                        });
                 }
-
-                $.post('@Url.Action("SetIneqMesh")',
-                    $('#modalCreateMesh form').serialize()
-                    /*{
-                        formula: $('#Formula').val(),
-                        quality: $('#Quality').prop('checked')
-                    }*/, function (data) {
-                        if (data.success) {
-                            loadMesh('@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = "[custom]" })' + '&ts=' + $.now());
-                        } else {
-                            alert(data.message);
-                        }
-                    });
+                //e.preventDefault();
+                //return false;
             })
         });
+
 
         $(document).on('click', 'a[data-mesh]', function (e) {
             loadMesh(this.href);
