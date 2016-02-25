@@ -50,7 +50,7 @@ z^2+y^2 > 0.5^2",
         public string Formula { get; set; }
 
         [Required(ErrorMessage = "The Division count is required.")]
-        [Range(5, 30, ErrorMessage = "Value for {0} must be between {1} and {2}.")]
+        [Range(5, 25, ErrorMessage = "Value for {0} must be between {1} and {2}.")]
         [Display(Name = "Division count")]
         public int MaxDivisionCount { get; set; }
 

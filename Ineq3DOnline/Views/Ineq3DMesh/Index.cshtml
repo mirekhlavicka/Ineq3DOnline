@@ -33,7 +33,7 @@
     </script>
 
     <script>
-        var camera, scene, renderer, controls, mesh;
+        var camera, scene, renderer, controls, mesh, bbox;
         var rotation_x = 0;
         var rotation_y = 0;
         var currentMeshUrl = '@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = ViewBag.CurrentMesh })';
@@ -102,11 +102,24 @@
                     scene.add(edges);
                 }
 
+                if ($('#chckBoundingBox').prop('checked')) {
+                    bbox = new THREE.BoundingBoxHelper(mesh, 0xff0000);
+                    bbox.material = new THREE.MeshLambertMaterial({ color: 0xffffff, opacity: 0.25, transparent: true });
+                    bbox.update();
+                    bbox.scale.x = 1.05 * bbox.scale.x;
+                    bbox.scale.y = 1.05 * bbox.scale.y;
+                    bbox.scale.z = 1.05 * bbox.scale.z;
+                    scene.add(bbox);
+                }                
+
                 mesh.rotation.x = rotation_x;
                 mesh.rotation.y = rotation_y;
 
-                hideSpinner(spinner);
+                if (bbox) {
+                    bbox.rotation.copy(mesh.rotation);
+                }
 
+                hideSpinner(spinner);
             });
         }
 
@@ -128,6 +141,10 @@
             if (mesh && $('#chckAutoRotate').prop('checked')) {
                 mesh.rotation.x += 0.005;
                 mesh.rotation.y += 0.01;
+
+                if (bbox) {
+                    bbox.rotation.copy(mesh.rotation);
+                }
             }
 
             renderer.render(scene, camera);
@@ -156,7 +173,6 @@
                                 $('#modalCreateMesh').modal('hide');
                                 loadMesh('@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = "[custom]" })' + '&ts=' + $.now());
                             } else {
-                                //alert(data.message);
                                 $("[data-valmsg-for='Formula']").text(data.message)
                             }
                         });
@@ -172,7 +188,7 @@
             return false;
         });
 
-        $('input[name=radioRenderStyle],#chckSmooth').on('change', function () {
+        $('input[name=radioRenderStyle],#chckSmooth,#chckBoundingBox').on('change', function () {
             loadMesh(currentMeshUrl);
         });
 

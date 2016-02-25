@@ -196,7 +196,7 @@ end_header
             return Json(new { success = false, message = "Invalid data" });
         }
 
-        double minQuality = 0.3d;
+        double minQuality = 0.25d;
         private void CheckQuality(IneqMesh mesh)
         {
             if (mesh == null)
