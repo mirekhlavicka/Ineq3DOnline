@@ -76,9 +76,14 @@
                 <ul class="nav navbar-nav">
                     @RenderSection("Samples", required: false)
                     <li><a href="#modalCreateMesh" id="lnkCreateMesh" data-toggle="modal" data-target="#modalCreateMesh" data-keyboard="true">Create mesh</a></li>
+                    <li><a href="#" id="lnkResetCamera" >Reset camera</a></li>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-cog"></span>&nbsp;<span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-form">
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioMaterial0" name="radioMaterial" value="0" checked="checked">&nbsp;Phong</label></a></li>
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioMaterial1" name="radioMaterial" value="1">&nbsp;Lambert</label></a></li>
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioMaterial2" name="radioMaterial" value="2">&nbsp;Normal</label></a></li>
+                            <li class="divider"></li>
                             <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckSmooth" checked="checked">&nbsp;Smooth</label></a></li>
                             <li class="divider"></li>
                             <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle0" name="radioRenderStyle" value="0">&nbsp;Fill</label></a></li>

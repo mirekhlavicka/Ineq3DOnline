@@ -33,7 +33,7 @@
     </script>
 
     <script>
-        var camera, scene, renderer, controls, mesh, bbox;
+        var camera, scene, renderer, controls, geometry, material, mesh, bbox;
         var rotation_x = 0;
         var rotation_y = 0;
         var currentMeshUrl = '@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = ViewBag.CurrentMesh })';
@@ -69,58 +69,90 @@
             controls.dynamicDampingFactor = 0.3;
         }
 
+        var refreshGeometry = function (newGeometry) {
+
+            if (newGeometry) {
+                geometry = newGeometry;
+                geometry.normalize();
+                geometry.computeFaceNormals();
+            }
+
+            if ($('#chckSmooth').prop('checked')) {
+                if (geometry.faces[0].vertexNormals.length == 0) {
+                    geometry.computeVertexNormals();
+                    if (!newGeometry) {
+                        geometry = geometry.clone();
+                    }
+                }
+            } else {
+                if (geometry.faces[0].vertexNormals.length != 0) {
+                    for (var i = 0; i < geometry.faces.length; i++) {
+                        geometry.faces[i].vertexNormals = []; // remove vertex normals
+                    }
+                    if (!newGeometry) {
+                        geometry = geometry.clone();
+                    }
+                }
+            }
+
+            if (mesh) {
+                rotation_x = mesh.rotation.x;
+                rotation_y = mesh.rotation.y;
+            }
+
+            clearScene();
+
+            var renderStyle = parseInt($('input[name=radioRenderStyle]:checked').val());
+            var mat = parseInt($('input[name=radioMaterial]:checked').val());
+
+            switch(mat) {
+                case 0:
+                    material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, specular: 0x111111, shininess: 70, side: THREE.FrontSide, shading: $('#chckSmooth').prop('checked') || renderStyle == 1 ? THREE.SmoothShading : THREE.FlatShading, wireframe: renderStyle == 1 });                    
+                    break;
+                case 1:
+                    material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors, side: THREE.FrontSide, wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
+                    break;
+                case 2:
+                    material = new THREE.MeshNormalMaterial({ side: THREE.FrontSide, wireframe: renderStyle == 1 });
+                    break;
+            }
+
+            //material.needsUpdate = true;
+            //geometry.needsUpdate = true;
+
+            mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            if (renderStyle == 2) {
+                edges = new THREE.WireframeHelper(mesh, 0x000000);
+                scene.add(edges);
+            }
+
+            if ($('#chckBoundingBox').prop('checked')) {
+                bbox = new THREE.BoundingBoxHelper(mesh, 0xff0000);
+                bbox.material = new THREE.MeshLambertMaterial({ color: 0xffffff, opacity: 0.25, transparent: true });
+                bbox.update();
+                bbox.scale.x = 1.02 * bbox.scale.x;
+                bbox.scale.y = 1.02 * bbox.scale.y;
+                bbox.scale.z = 1.02 * bbox.scale.z;
+                scene.add(bbox);
+            }                
+
+            mesh.rotation.x = rotation_x;
+            mesh.rotation.y = rotation_y;
+
+            if (bbox) {
+                bbox.rotation.copy(mesh.rotation);
+            }
+
+            hideSpinner(spinner);
+        }
+
         var loadMesh = function (url) {
             showSpinner();
             currentMeshUrl = url;
             var loader = new THREE.PLYLoader();
-            loader.load(url, function (geometry) {
-
-                if (mesh) {
-                    rotation_x = mesh.rotation.x;
-                    rotation_y = mesh.rotation.y;
-                }
-
-                clearScene();
-
-                var renderStyle = parseInt($('input[name=radioRenderStyle]:checked').val());
-
-                geometry.normalize();
-                geometry.computeFaceNormals();
-
-                if ($('#chckSmooth').prop('checked')) {
-                    geometry.computeVertexNormals();
-                }
-
-                var material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, /*specular: 0x111111, shininess: 200,*/ side: THREE.DoubleSide, shading: THREE.SmoothShading, wireframe: renderStyle == 1 });
-                //var material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors,  side: THREE.DoubleSide, shading: THREE.SmoothShading, wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
-
-                mesh = new THREE.Mesh(geometry, material);
-                scene.add(mesh);
-
-                if (renderStyle == 2) {
-                    edges = new THREE.WireframeHelper(mesh, 0x000000);
-                    scene.add(edges);
-                }
-
-                if ($('#chckBoundingBox').prop('checked')) {
-                    bbox = new THREE.BoundingBoxHelper(mesh, 0xff0000);
-                    bbox.material = new THREE.MeshLambertMaterial({ color: 0xffffff, opacity: 0.25, transparent: true });
-                    bbox.update();
-                    bbox.scale.x = 1.05 * bbox.scale.x;
-                    bbox.scale.y = 1.05 * bbox.scale.y;
-                    bbox.scale.z = 1.05 * bbox.scale.z;
-                    scene.add(bbox);
-                }                
-
-                mesh.rotation.x = rotation_x;
-                mesh.rotation.y = rotation_y;
-
-                if (bbox) {
-                    bbox.rotation.copy(mesh.rotation);
-                }
-
-                hideSpinner(spinner);
-            });
+            loader.load(url, refreshGeometry);
         }
 
         var clearScene = function () {
@@ -163,6 +195,10 @@
             $(window).resize(onWindowResize);
             $("textarea").getTab();
 
+            $('#lnkResetCamera').click(function (e) {
+                controls.reset();
+            });
+
             $('#btnCreateMesh').click(function (e) {
                 $('#formCreateMesh').validate();
                 if ($('#formCreateMesh').valid()) {
@@ -188,8 +224,9 @@
             return false;
         });
 
-        $('input[name=radioRenderStyle],#chckSmooth,#chckBoundingBox').on('change', function () {
-            loadMesh(currentMeshUrl);
+        $('input[name=radioRenderStyle],input[name=radioMaterial],#chckSmooth,#chckBoundingBox').on('change', function () {
+            //loadMesh(currentMeshUrl);
+            refreshGeometry();
         });
 
         function showSpinner() {
