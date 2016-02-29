@@ -538,7 +538,7 @@ namespace MeshData
             return c;
         }
 
-        protected bool ProjectToSurface(Point P, double precision, int ineqNumber, bool safe)
+        public bool ProjectToSurface(Point P, double precision, int ineqNumber, bool safe)
         {
             double n1, n2, n3, n;
             double dx, dy, dz;

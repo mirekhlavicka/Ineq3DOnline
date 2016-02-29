@@ -11,7 +11,13 @@ namespace Ineq3DOnline.Models
     {
 
         private static string[] sampleFormulas =
-        {
+        {   @"z < (sin(6*x)+sin(6*y))/4",
+            @"(
+	x^2 + y^2 + z^2 < 0.75^2
+) ||
+(
+	x^2 + y^2 + (z-0.75)^2 < 0.25^2
+)",
             @"(
     x^2 + y^2 + z^2 < 1.25 ^ 2
 ) &&
@@ -69,6 +75,9 @@ x^2+y^2+(z-.8)^2<0.25"
         [Display(Name = "Improve mesh quality")]
         public bool Quality { get; set; }
 
+        [Display(Name = "Improve mesh curvature")]
+        public bool CurvatureQuality { get; set; }
+        
         public IneqMesh IneqMesh { get; set; }
 
         public void SetIneqMesh()

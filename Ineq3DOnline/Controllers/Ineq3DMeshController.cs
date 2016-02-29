@@ -85,6 +85,32 @@ end_header
                     CheckQuality(ineqMesh);
                     ineqMesh.DeleteLonelyPoints();
                 }
+
+                if (ineqMeshViewModel.CurvatureQuality)
+                {
+                    var centerPoints = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles()
+                                    .Where(tr => tr.BoundaryCount == 1 && tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
+                                    .Select(tr => new { bf = tr.CommonBoundaryFlag.Value, p = tr.Average(), tr = tr });
+
+                    List<Triangle> refList = new List<Triangle>();
+
+                    foreach (var cp in centerPoints)
+                    {
+                        Point origp = new Point(cp.p.X, cp.p.Y, cp.p.Z);
+
+                        ineqMesh.ProjectToSurface(cp.p, 100, cp.bf, false);
+
+                        double dist = origp.Distance(cp.p);
+
+                        if (dist >= ineqMesh.D / 20.0d)
+                        {
+                            refList.Add(cp.tr);
+                        }
+                    }
+
+                    ineqMesh.RefineBoundaryTriangles(refList);
+                    ineqMesh.Jiggle(3);
+                }
             }
             else
             {
@@ -102,7 +128,6 @@ end_header
                 CheckQuality(ineqMesh);
                 ineqMesh.DeleteLonelyPoints();
             }
-
 
             //if (Mesh == "Cone 1")
             //{
