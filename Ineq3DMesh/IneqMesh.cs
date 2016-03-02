@@ -1026,11 +1026,11 @@ namespace MeshData
                     Point midPoint = DivideEdge(divideAndCollapse.Edge, -1, (divideAndCollapse.Edge.P1 + divideAndCollapse.Edge.P2) / 2);
                     if (divideAndCollapse.ToPoint != null)
                     {
-                        CollapseEdge(new Edge(midPoint, divideAndCollapse.ToPoint), divideAndCollapse.ToPoint, true);
+                        CollapseEdge(new Edge(midPoint, divideAndCollapse.ToPoint), divideAndCollapse.ToPoint, false); //partial Jiggle is problematic
                     }
                     else
                     {
-                        Jiggle(2, midPoint.Points.SelectMany(p => p.Points));
+                        //Jiggle(2, midPoint.Points.SelectMany(p => p.Points)); //partial Jiggle is problematic
                     }
                 }
                 else
@@ -1039,7 +1039,7 @@ namespace MeshData
 
                     if (shortEdge.P1 != null && Math.Sqrt(shortEdge.SqrLength) < D / 2.0)
                     {
-                        CollapseEdge(shortEdge, null, true);
+                        CollapseEdge(shortEdge, null, false); //partial Jiggle is problematic
                     }
                 }
             }

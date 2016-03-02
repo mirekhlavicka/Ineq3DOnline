@@ -75,7 +75,7 @@ x^2+y^2+(z-.8)^2<0.25"
         [Display(Name = "Improve mesh quality")]
         public bool Quality { get; set; }
 
-        [Display(Name = "Improve mesh curvature")]
+        [Display(Name = "Improve approximation by curvature")]
         public bool CurvatureQuality { get; set; }
         
         public IneqMesh IneqMesh { get; set; }
