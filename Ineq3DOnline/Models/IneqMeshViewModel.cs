@@ -11,42 +11,60 @@ namespace Ineq3DOnline.Models
     {
 
         private static string[] sampleFormulas =
-        {   @"z < (sin(6*x)+sin(6*y))/4",
-            @"(
+        {
+@"z < (sin(6*x)+sin(6*y))/4",
+//------------------------------------------------------------
+@"(
 	x^2 + y^2 + z^2 < 0.75^2
 ) ||
 (
 	x^2 + y^2 + (z-0.75)^2 < 0.25^2
 )",
-            @"(
+//------------------------------------------------------------
+@"(
     x^2 + y^2 + z^2 < 1.25 ^ 2
 ) &&
 x^2+y^2 > 0.5^2 &&
 x^2+z^2 > 0.5^2 &&
 z^2+y^2 > 0.5^2",
-
-            @"(
+//------------------------------------------------------------
+@"(
     x^2 + y^2 + z^2 < 1 &&
     x + y < z^2
 ) ||
 (
     x^2 + z^2 < 0.25
 )",
-            @"(
+//------------------------------------------------------------
+@"(
 	x^2+y^2+z^2<1 &&
 	z<0+(cos(5*x)+cos(5*y))/3
 ) ||
-x^2+y^2+(z-.8)^2<0.25"
+x^2+y^2+(z-.8)^2<0.25",
+//------------------------------------------------------------
+@"abs(x)<0.25 ||
+0.5*x^2+y^2+z^2<0.5"
+
         };
 
 
-        public static IneqMeshViewModel DefaultModel()
+        public int SampleIndex { get; set; }
+
+        public static IneqMeshViewModel DefaultModel(int sample = -1)
         {
-            int sample = new Random().Next(sampleFormulas.Length);
+            if (sample == -1)
+            {
+                sample = new Random().Next(sampleFormulas.Length);
+            }
+            else
+            {
+                sample = sample % sampleFormulas.Length;
+            }
 
             return new IneqMeshViewModel
             {
                 Formula = sampleFormulas[sample],
+                SampleIndex = sample,
                 MaxDivisionCount = 12,
                 X0 = -1,
                 Y0 = -1,

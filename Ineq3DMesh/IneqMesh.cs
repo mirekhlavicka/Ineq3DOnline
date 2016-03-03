@@ -598,7 +598,7 @@ namespace MeshData
                 return false;
         }
 
-        protected bool ProjectToEdge(Point P, int ineqNumber1, int ineqNumber2, bool safe)
+        public bool ProjectToEdge(Point P, int ineqNumber1, int ineqNumber2, bool safe)
         {
             double nx1, ny1, nz1, n1;
             double nx2, ny2, nz2, n2;

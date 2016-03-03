@@ -23,6 +23,13 @@
                             <div class="tab-pane active" id="tab1">
                                 @Html.TextAreaFor(m => Model.Formula, new { @class = "form-control", style = "height:206px; margin-top: 10px", spellcheck = "false" })
                                 @Html.ValidationMessageFor(model => model.Formula, "", new { @class = "text-danger" })
+
+                                <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:5px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary btn-xs" id="btnNextSampleFormula">Next formula</button>
+                                        <button type="button" class="btn btn-primary btn-xs" id="btnClearFormula">Clear</button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="tab-pane" id="tab2">
                                 <div class="panel panel-default" style="margin-top:10px; min-height:200px">

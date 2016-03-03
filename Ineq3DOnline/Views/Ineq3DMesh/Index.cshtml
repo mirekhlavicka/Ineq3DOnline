@@ -6,7 +6,10 @@
     Layout = "_LayoutThree.cshtml";
 }
 
-@{ Html.RenderPartial("_CreateMeshDialog", Ineq3DOnline.Models.IneqMeshViewModel.DefaultModel()); }
+@{ 
+    var defaultModel = Ineq3DOnline.Models.IneqMeshViewModel.DefaultModel();
+    Html.RenderPartial("_CreateMeshDialog", defaultModel);
+}
 
 @section Samples
 {
@@ -33,6 +36,7 @@
     </script>
 
     <script>
+        var sampleIndex = @defaultModel.SampleIndex;
         var camera, scene, renderer, controls, geometry, material, mesh, bbox;
         var rotation_x = 0;
         var rotation_y = 0;
@@ -109,13 +113,13 @@
 
             switch(mat) {
                 case 0:
-                    material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, specular: 0x111111, shininess: 70, side: THREE.DoubleSide, shading: $('#chckSmooth').prop('checked') || renderStyle == 1 ? THREE.SmoothShading : THREE.FlatShading, wireframe: renderStyle == 1 });
+                    material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, specular: 0x111111, shininess: 70, side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, shading: $('#chckSmooth').prop('checked') || renderStyle == 1 ? THREE.SmoothShading : THREE.FlatShading, wireframe: renderStyle == 1 });
                     break;
                 case 1:
-                    material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors, side: THREE.DoubleSide, wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
+                    material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors, side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
                     break;
                 case 2:
-                    material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide, wireframe: renderStyle == 1 });
+                    material = new THREE.MeshNormalMaterial({ side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, wireframe: renderStyle == 1 });
                     break;
             }
 
@@ -219,6 +223,20 @@
                 //return false;
             })
 
+            $('#btnClearFormula').click(function (e) {
+                $('#Formula').val('');
+            });
+
+            $('#btnNextSampleFormula').click(function (e) {
+                sampleIndex++;
+                $.post('@Url.Action("GetSampleFormula", "Ineq3DMesh")',
+                    {sampleIndex: sampleIndex}, 
+                    function( data ) {
+                        $('#Formula').val(data.formula);
+                });
+            });
+
+
             $('#lnkImproveMeshQuality').click(function (e) {
                 loadMesh('@Url.Action("GetCustomMeshImproveQuality", "Ineq3DMesh", null)' + '?ts=' + $.now());
             });
@@ -238,7 +256,7 @@
             return false;
         });
 
-        $('input[name=radioRenderStyle],input[name=radioMaterial],#chckSmooth,#chckBoundingBox').on('change', function () {
+        $('input[name=radioRenderStyle],input[name=radioMaterial],#chckSmooth,#chckDoubleSide,#chckBoundingBox').on('change', function () {
             //loadMesh(currentMeshUrl);
             refreshGeometry();
         });

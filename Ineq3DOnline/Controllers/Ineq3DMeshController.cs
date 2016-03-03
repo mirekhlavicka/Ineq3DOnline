@@ -151,6 +151,7 @@ namespace Ineq3DOnline.Controllers
             ineqMeshViewModel.PLY = ply;
             return Content(ply);
         }
+
         public ActionResult GetCustomMeshJiggle()
         {
             IneqMeshViewModel ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
@@ -171,6 +172,16 @@ namespace Ineq3DOnline.Controllers
 
             ineqMeshViewModel.PLY = ply;
             return Content(ply);
+        }
+
+        public ActionResult GetSampleFormula(int sampleIndex)
+        {
+            var tmp = IneqMeshViewModel.DefaultModel(sampleIndex);
+
+            return Json(new
+            {
+                formula = tmp.Formula
+            });
         }
 
 
@@ -202,11 +213,48 @@ namespace Ineq3DOnline.Controllers
 
             ineqMesh.DeleteLonelyPoints();
 
+            //ineqMesh.Jiggle(3);
+
             return;
         }
 
         private void CheckCurvatureQuality(IneqMesh ineqMesh)
         {
+            var edges = ineqMesh.Edges
+                .Where(e => e.P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && e.P2.Boundary[bi.i]).Count() == 2)
+                .Select(e =>
+                {
+                    var cf = e.P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && e.P2.Boundary[bi.i]).ToArray();
+
+                    return new
+                    {
+                        bf1 = cf[0].i,
+                        bf2 = cf[1].i,
+                        p = e.Average(),
+                        e = e,
+                        length = e.P1.Distance(e.P2)
+                    };
+                }).ToArray();
+
+            foreach (var ee in edges)
+            {
+                if (!ee.e.Valid)
+                {
+                    continue;
+                }
+                Point origp = new Point(ee.p.X, ee.p.Y, ee.p.Z);
+
+                ineqMesh.ProjectToEdge(ee.p, ee.bf1, ee.bf2, false);
+
+                double dist = origp.Distance(ee.p);
+
+                if (dist >= ee.length / 25.0d)
+                {
+                    var newp = ineqMesh.DivideEdge(ee.e, -1, (ee.e.P1 + ee.e.P2) / 2);
+                    ineqMesh.ProjectToEdge(newp, ee.bf1, ee.bf2, true);
+                }
+            }
+
             var centerPoints = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles()
                             .Where(tr => tr.BoundaryCount == 1 && tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
                             .Select(tr => new
