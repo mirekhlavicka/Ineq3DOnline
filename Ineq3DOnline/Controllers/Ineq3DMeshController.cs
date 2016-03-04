@@ -213,13 +213,41 @@ namespace Ineq3DOnline.Controllers
 
             ineqMesh.DeleteLonelyPoints();
 
-            //ineqMesh.Jiggle(3);
+            ineqMesh.Jiggle(3);
 
             return;
         }
 
         private void CheckCurvatureQuality(IneqMesh ineqMesh)
         {
+            var centerPoints = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles()
+                            .Where(tr => tr.BoundaryCount == 1 && tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
+                            .Select(tr => new
+                            {
+                                bf = tr.CommonBoundaryFlag.Value,
+                                p = tr.Average(),
+                                tr = tr,
+                                maxLength = Math.Max(Math.Max(tr.P1.Distance(tr.P2), tr.P1.Distance(tr.P3)), tr.P2.Distance(tr.P3))
+                            });
+
+            List<Triangle> refList = new List<Triangle>();
+
+            foreach (var cp in centerPoints)
+            {
+                Point origp = new Point(cp.p.X, cp.p.Y, cp.p.Z);
+
+                ineqMesh.ProjectToSurface(cp.p, 100, cp.bf, false);
+
+                double dist = origp.Distance(cp.p);
+
+                if (dist >= cp.maxLength / 25.0d)
+                {
+                    refList.Add(cp.tr);
+                }
+            }
+
+            ineqMesh.RefineBoundaryTriangles(refList);
+
             var edges = ineqMesh.Edges
                 .Where(e => e.P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && e.P2.Boundary[bi.i]).Count() == 2)
                 .Select(e =>
@@ -248,40 +276,13 @@ namespace Ineq3DOnline.Controllers
 
                 double dist = origp.Distance(ee.p);
 
-                if (dist >= ee.length / 25.0d)
+                if (dist >= ee.length / 15.0d)
                 {
                     var newp = ineqMesh.DivideEdge(ee.e, -1, (ee.e.P1 + ee.e.P2) / 2);
                     ineqMesh.ProjectToEdge(newp, ee.bf1, ee.bf2, true);
                 }
             }
 
-            var centerPoints = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles()
-                            .Where(tr => tr.BoundaryCount == 1 && tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
-                            .Select(tr => new
-                            {
-                                bf = tr.CommonBoundaryFlag.Value,
-                                p = tr.Average(),
-                                tr = tr,
-                                maxLength = Math.Max(Math.Max(tr.P1.Distance(tr.P2), tr.P1.Distance(tr.P3)), tr.P2.Distance(tr.P3))
-                            });
-
-            List<Triangle> refList = new List<Triangle>();
-
-            foreach (var cp in centerPoints)
-            {
-                Point origp = new Point(cp.p.X, cp.p.Y, cp.p.Z);
-
-                ineqMesh.ProjectToSurface(cp.p, 100, cp.bf, false);
-
-                double dist = origp.Distance(cp.p);
-
-                if (dist >= cp.maxLength / 25.0d)
-                {
-                    refList.Add(cp.tr);
-                }
-            }
-
-            ineqMesh.RefineBoundaryTriangles(refList);
             ineqMesh.Jiggle(3);
 
         }

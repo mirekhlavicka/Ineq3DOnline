@@ -979,7 +979,16 @@ namespace MeshData
 
             foreach (Edge ee in refineEdges)
             {
-                DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
+                var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
+
+                if (p.BoundaryCount == 1)
+                {
+                    ProjectToSurface(p, 100, p.BoundaryFirstIndex, true);
+                }
+                else if (p.BoundaryCount == 2)
+                {
+                    ProjectToEdge(p, p.BoundaryFirstIndex, p.BoundarySecondIndex, true);
+                }
             }
         }
 
