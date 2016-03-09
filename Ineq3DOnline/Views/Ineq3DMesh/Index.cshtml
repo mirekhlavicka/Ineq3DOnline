@@ -123,9 +123,6 @@
                     break;
             }
 
-            //material.needsUpdate = true;
-            //geometry.needsUpdate = true;
-
             mesh = new THREE.Mesh(geometry, material);
             scene.add(mesh);
 
@@ -141,15 +138,11 @@
                 bbox.scale.x = 1.02 * bbox.scale.x;
                 bbox.scale.y = 1.02 * bbox.scale.y;
                 bbox.scale.z = 1.02 * bbox.scale.z;
-                scene.add(bbox);
+                mesh.add(bbox);
             }
 
             mesh.rotation.x = rotation_x;
             mesh.rotation.y = rotation_y;
-
-            if (bbox) {
-                bbox.rotation.copy(mesh.rotation);
-            }
 
             hideSpinner();
         }
@@ -179,10 +172,6 @@
             if (mesh && $('#chckAutoRotate').prop('checked')) {
                 mesh.rotation.x += 0.005;
                 mesh.rotation.y += 0.01;
-
-                if (bbox) {
-                    bbox.rotation.copy(mesh.rotation);
-                }
             }
 
             renderer.render(scene, camera);
