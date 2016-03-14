@@ -30,6 +30,8 @@ namespace Ineq3DOnline
             bundles.Add(new ScriptBundle("~/bundles/three").Include(
                         "~/Scripts/three/three.js",
                         "~/Scripts/three/TrackballControls.js",
+                        "~/Scripts/three/CanvasRenderer.js",
+                        "~/Scripts/three/Projector.js",
                         "~/Scripts/Spin.js",
                         "~/Scripts/three/PLYLoader.js"));
 
