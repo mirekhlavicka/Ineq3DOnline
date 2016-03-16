@@ -58,7 +58,7 @@
             camera.add(dirLight);
             camera.add(dirLight.target);
 
-            
+
             if(webglAvailable()){
                 renderer = new THREE.WebGLRenderer({ antialias: true });
                 renderer.setPixelRatio(window.devicePixelRatio);
@@ -67,8 +67,8 @@
                 $('#chckAutoRotate').prop('checked', false)
                 //renderer.setPixelRatio(window.devicePixelRatio); //not working with CanvasRenderer
             }
-            
-            
+
+
             renderer.setSize(width, height);
             $('body').append(renderer.domElement);
 
@@ -228,7 +228,7 @@
             $('#btnNextSampleFormula').click(function (e) {
                 sampleIndex++;
                 $.post('@Url.Action("GetSampleFormula", "Ineq3DMesh")',
-                    {sampleIndex: sampleIndex}, 
+                    {sampleIndex: sampleIndex},
                     function( data ) {
                         $('#Formula').val(data.formula);
                 });
@@ -236,8 +236,13 @@
 
 
             $('#lnkImproveMeshQuality').click(function (e) {
-                loadMesh('@Url.Action("GetCustomMeshImproveQuality", "Ineq3DMesh", null)' + '?ts=' + $.now());
+                loadMesh('@Url.Action("GetCustomMeshImproveQuality", "Ineq3DMesh", new { boundary = false })' + '&ts=' + $.now());
             });
+
+            $('#lnkImproveBoundaryMeshQuality').click(function (e) {
+                loadMesh('@Url.Action("GetCustomMeshImproveQuality", "Ineq3DMesh", new {boundary = true })' + '&ts=' + $.now());
+            });
+
 
             $('#lnkImproveMeshCurvatureQuality').click(function (e) {
                 loadMesh('@Url.Action("GetCustomMeshImproveCurvatureQuality", "Ineq3DMesh", null)' + '?ts=' + $.now());
@@ -297,12 +302,12 @@
             try {
                 var canvas = document.createElement("canvas");
                 return !!
-                    window.WebGLRenderingContext && 
-                    (canvas.getContext("webgl") || 
+                    window.WebGLRenderingContext &&
+                    (canvas.getContext("webgl") ||
                         canvas.getContext("experimental-webgl"));
-            } catch(e) { 
+            } catch(e) {
                 return false;
-            } 
+            }
         }
 
         $.fn.getTab = function () {

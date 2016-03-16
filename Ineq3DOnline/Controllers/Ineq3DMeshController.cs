@@ -106,7 +106,7 @@ namespace Ineq3DOnline.Controllers
             return Content(ply);
         }
 
-        public ActionResult GetCustomMeshImproveQuality()
+        public ActionResult GetCustomMeshImproveQuality(bool boundary)
         {
             IneqMeshViewModel ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
             IneqMesh ineqMesh = null;
@@ -118,7 +118,14 @@ namespace Ineq3DOnline.Controllers
 
             ineqMesh = ineqMeshViewModel.IneqMesh;
 
-            CheckQuality(ineqMesh);
+            if (boundary)
+            {
+                CheckBoundaryQuality(ineqMesh);
+            }
+            else
+            {
+                CheckQuality(ineqMesh);
+            }
 
             string ply = GetPLY(ineqMesh);
 
@@ -207,6 +214,38 @@ namespace Ineq3DOnline.Controllers
             {
                 c = ineqMesh.CheckQuality(minQuality, true);
             }
+
+            ineqMesh.DeleteLonelyPoints();
+
+            ineqMesh.Jiggle(3);
+
+            return;
+        }
+
+        double bminQuality = 0.25d;
+        private void CheckBoundaryQuality(IneqMesh ineqMesh)
+        {
+            if (ineqMesh == null)
+                return;
+
+            int c = 0;
+            Dictionary<int, int> counts = new Dictionary<int, int>();
+            do
+            {
+                c = ineqMesh.CheckBoundaryQuality(minQuality, false);
+
+                if (!counts.Keys.Contains(c))
+                    counts[c] = 1;
+                else
+                    counts[c]++;
+
+            }
+            while (c != 0 && counts[c] < 3);
+
+            //if (c != 0)
+            //{
+            //    c = ineqMesh.CheckBoundaryQuality(minQuality, true);
+            //}
 
             ineqMesh.DeleteLonelyPoints();
 
@@ -329,7 +368,9 @@ end_header
             StringBuilder sbTriangles = new StringBuilder();
             int pointsCount = 0;
 
-            var boundaryTriangles = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => /*tr.BoundaryCount == 1 &&*/ tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1)).ToArray();
+            var boundaryTriangles = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => /*tr.BoundaryCount == 1 &&*/ tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
+                //.Where(t => t.Quality > 0.25d)
+                .ToArray();
 
             for (int ineqNumber = 0; ineqNumber < ineqMesh.IneqTree.ExpressionList.Count + 3; ineqNumber++)
             {

@@ -1151,6 +1151,197 @@ namespace MeshData
             }
         }
 
+
+        public int CheckBoundaryQuality(double minQuality, bool allowDivide)
+        {
+            var badTriangles = Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
+                                .Where(t => t.Quality < minQuality)
+                                .ToArray();
+
+
+            foreach (var t in badTriangles)
+            {
+                if (!t.Valid || t.Quality >= minQuality)
+                    continue;
+
+                var divideAndCollapse = t.Edges().Select(e =>
+                        {
+                            Point toPoint = null;
+                            double minPQuality = 0;
+
+                            TryDivideAndCollapseBoundary(e, ref toPoint, ref minPQuality, allowDivide);
+
+                            return new { Edge = e, MinQuality = minPQuality, ToPoint = toPoint };
+                        }
+                    )
+                    .OrderByDescending(ee => ee.MinQuality)
+                    .First();
+
+                if (divideAndCollapse.MinQuality > 0)
+                {
+                    Point midPoint = DivideEdge(divideAndCollapse.Edge, -1, (divideAndCollapse.Edge.P1 + divideAndCollapse.Edge.P2) / 2);
+                    if (divideAndCollapse.ToPoint != null)
+                    {
+                        CollapseEdge(new Edge(midPoint, divideAndCollapse.ToPoint), divideAndCollapse.ToPoint, false); 
+                    }
+                }
+                //else
+                //{
+                //    Edge shortEdge = t.Edges().Where(e => e.P1.HasAllBoundary(e.P2) || e.P2.HasAllBoundary(e.P1)).OrderBy(ee => ee.SqrLength).FirstOrDefault();
+
+                //    if (shortEdge.P1 != null && Math.Sqrt(shortEdge.SqrLength) < D / 2.0)
+                //    {
+                //        CollapseEdge(shortEdge, null, false); //partial Jiggle is problematic
+                //    }
+                //}
+            }
+
+            return badTriangles.Length;
+        }
+
+
+        private void TryDivideAndCollapseBoundary(Edge e, ref Point toPoint, ref double minQuality, bool allowDivide)
+        {
+            var points = e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons)
+                .SelectMany(t => t.Points.Where(pp => pp != e.P1 && pp != e.P2))
+                .GroupBy(p => p)
+                .Where(g => g.Count() == 1)
+                .Select(g => g.Key)
+                .ToArray();
+
+
+            if (points.Length != 2)
+            {
+                minQuality = 0;
+                toPoint = null;
+                return;
+            }
+
+            Point midPoint = (e.P1 + e.P2) / 2;
+            for (int i = 0; i < midPoint.Boundary.Length; i++)
+            {
+                midPoint.Boundary[i] = e.P1.Boundary[i] && e.P2.Boundary[i];
+            }
+
+            Triangle t1 = new Triangle(e.P1, e.P2, points[0]);
+            Triangle t2 = new Triangle(e.P1, e.P2, points[1]);
+
+            Triangle nt1 = new Triangle(e.P1, points[0], points[1]);
+            Triangle nt2 = new Triangle(e.P2, points[0], points[1]);
+
+
+            double origMinQuality = Math.Min(t1.Quality, t2.Quality);
+            minQuality = Math.Min(nt1.Quality, nt2.Quality);
+
+
+            if (minQuality > origMinQuality)
+            {
+                if (midPoint.HasAllBoundary(points[0]))
+                {
+                    toPoint = points[0];
+                }
+                else if (midPoint.HasAllBoundary(points[1]))
+                {
+                    toPoint = points[1];
+                }
+                else
+                {
+                    minQuality = 0;
+                    toPoint = null;
+                    return;
+                }
+
+                HashSet<Tetrahedron> fanTetrahedrons = new HashSet<Tetrahedron>();
+                foreach (Tetrahedron t in e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons))
+                {
+                    Point[] p = t.Points.Where(pp => pp != e.P1 && pp != e.P2).ToArray();
+
+                    Tetrahedron tt = new Tetrahedron(p[0], p[1], e.P1, midPoint, true);
+                    fanTetrahedrons.Add(tt);
+                    tt = new Tetrahedron(p[0], p[1], e.P2, midPoint, true);
+                    fanTetrahedrons.Add(tt);
+                }
+
+                midPoint.MoveTo(toPoint, false);
+                var tp = toPoint;
+                foreach (var t in fanTetrahedrons.Where(t => !t.Points.Contains(tp)))
+                {
+                    if (!t.CheckVolume(0.01d))
+                    {
+                        minQuality = 0;
+                        toPoint = null;
+                    }
+                }
+            }
+            else
+            {
+                minQuality = 0;
+                toPoint = null;
+            }
+
+/*
+            toPoint = null;
+            minQuality = 0;
+
+            foreach (Point p in fanPoints)
+            {
+                if (!midPoint.HasAllBoundary(p))
+                    continue;
+
+                pMinQuality = 1000;
+
+                midPoint.MoveTo(p, false);
+                foreach (var t in fanTetrahedrons.Where(t => !t.Points.Contains(p)))
+                {
+                    if (!t.CheckVolume(0.15d))
+                    {
+                        pMinQuality = -1;
+                    }
+                    else if (t.Quality < pMinQuality)
+                    {
+                        pMinQuality = t.Quality;
+                    }
+                }
+
+                if (pMinQuality > minQuality)
+                {
+                    minQuality = pMinQuality;
+                    toPoint = p;
+                }
+            }
+
+            if (allowDivide && minQuality <= origMinQuality)
+            {
+                Point average = fanPoints.Union(e).Average();
+                midPoint.MoveTo(average, false);
+                pMinQuality = 1000;
+                foreach (var t in fanTetrahedrons)
+                {
+                    if (!t.CheckVolume(0.05d))
+                    {
+                        pMinQuality = -1;
+                    }
+                    else if (t.Quality < pMinQuality)
+                    {
+                        pMinQuality = t.Quality;
+                    }
+                }
+
+                if (pMinQuality > minQuality)
+                {
+                    minQuality = pMinQuality;
+                    toPoint = null;
+                }
+            }
+
+            if (minQuality < origMinQuality)
+            {
+                minQuality = 0;
+                toPoint = null;
+            }
+            */
+        }
+
         /*private void PrecalsCorners()
         {
             List<Point> corners = new List<Point>(20);

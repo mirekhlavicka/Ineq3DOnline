@@ -323,6 +323,26 @@ namespace MeshData
                 return new double[] {0, 0, 0};
             }
         }
+
+        public double Quality
+        {
+            get
+            {
+                double l = Math.Sqrt(Edges().Max(e => e.SqrLength));
+                double vMax = Math.Sqrt(3) * l * l / 4;
+
+                Point u = p2 - p1;
+                Point v = p3 - p1;
+
+                double n1 = u.Y * v.Z - u.Z * v.Y;
+                double n2 = -(u.X * v.Z - u.Z * v.X);
+                double n3 = u.X * v.Y - u.Y * v.X;
+                double a = Math.Sqrt(n1 * n1 + n2 * n2 + n3 * n3) / 2;
+
+                return a / vMax;
+            }
+        }
+
     }
 
 
