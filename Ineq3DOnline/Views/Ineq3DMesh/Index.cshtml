@@ -122,13 +122,33 @@
 
             switch(mat) {
                 case 0:
-                    material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, specular: 0x111111, shininess: 70, side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, shading: $('#chckSmooth').prop('checked') || renderStyle == 1 ? THREE.SmoothShading : THREE.FlatShading, wireframe: renderStyle == 1 });
+                    material = new THREE.MeshPhongMaterial({ 
+                        polygonOffset: true,
+                        polygonOffsetFactor: 1, // positive value pushes polygon further away
+                        polygonOffsetUnits: 1, 
+                        vertexColors: THREE.VertexColors, 
+                        specular: 0x111111, 
+                        shininess: 70, 
+                        side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, 
+                        shading: $('#chckSmooth').prop('checked') || renderStyle == 1 ? THREE.SmoothShading : THREE.FlatShading, 
+                        wireframe: renderStyle == 1 });
                     break;
                 case 1:
-                    material = new THREE.MeshLambertMaterial({ vertexColors: THREE.VertexColors, side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
+                    material = new THREE.MeshLambertMaterial({
+                        polygonOffset: true,
+                        polygonOffsetFactor: 1, // positive value pushes polygon further away
+                        polygonOffsetUnits: 1,                         
+                        vertexColors: THREE.VertexColors, 
+                        side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, 
+                        wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
                     break;
                 case 2:
-                    material = new THREE.MeshNormalMaterial({ side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, wireframe: renderStyle == 1 });
+                    material = new THREE.MeshNormalMaterial({
+                        polygonOffset: true,
+                        polygonOffsetFactor: 1, // positive value pushes polygon further away
+                        polygonOffsetUnits: 1,                         
+                        side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide, 
+                        wireframe: renderStyle == 1 });
                     break;
             }
 
