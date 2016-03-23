@@ -1,0 +1,45 @@
+﻿@model Ineq3DOnline.Models.IneqMeshViewModel
+
+<!-- Modal -->
+<div class="modal fade" id="modalSetUFunc" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Flow simulation</h4>
+            </div>
+            <div class="modal-body">
+                <form role="form" class="form-horizontal" id="formSetUFunc">
+                    <div class="form-group">
+                        @Html.LabelFor(m => Model.UFunc, htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.EditorFor(m => Model.UFunc, new { htmlAttributes = new { @class = "form-control", style="max-width: 400px" } })
+                            @Html.ValidationMessageFor(model => model.UFunc, "", new { @class = "text-danger" })
+                            <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:5px">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-primary btn-xs" id="btnNextSampleUFunc">Next sample</button>
+                                    <button type="button" class="btn btn-primary btn-xs" id="btnClearUFunc">Clear</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("tbdt", "dt =", htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.TextBox("tbdt", "0.02", new { @class = "form-control", style = "max-width: 400px" } )
+                        </div>
+                    </div>
+
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" @*data-dismiss="modal"*@ id="btnSetUFunc">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>

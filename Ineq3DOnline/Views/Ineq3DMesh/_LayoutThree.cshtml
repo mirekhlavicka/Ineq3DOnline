@@ -83,6 +83,14 @@
                     </li>
 
                     <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Animate<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#modalSetUFunc" id="lnkSetUFunc" data-toggle="modal" data-target="#modalSetUFunc" data-keyboard="true">Flow simulation</a></li>
+                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckAutoRotate" checked="checked">&nbsp;Rotate</label></a></li>
+                        </ul>
+                    </li>
+
+                    <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-cog"></span>&nbsp;<span class="caret"></span></a>
                         <ul class="dropdown-menu dropdown-menu-form">
                             <li><a href="#" id="lnkResetCamera">Reset camera</a></li>
@@ -98,7 +106,6 @@
                             <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle1" name="radioRenderStyle" value="1">&nbsp;Wireframe</label></a></li>
                             <li><a href="#" class="radio"><label><input type="radio" id="radioRenderStyle2" name="radioRenderStyle" value="2" checked="checked">&nbsp;Fill and wireframe</label></a></li>
                             <li class="divider"></li>
-                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckAutoRotate" checked="checked">&nbsp;Rotate</label></a></li>
                             <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckBoundingBox">&nbsp;Bounding box</label></a></li>
                         </ul>
                     </li>
@@ -111,6 +118,7 @@
 
     @Scripts.Render("~/bundles/bootstrap")
     @Scripts.Render("~/bundles/three")
+    @Scripts.Render("~/bundles/parser")
     @RenderSection("scripts", required: false)
 
     <script type="text/javascript">

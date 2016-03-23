@@ -141,6 +141,7 @@
     <Content Include="Content\img\color-ineqbody-36.png" />
     <Content Include="Content\img\color-star-2-152-217609.png" />
     <Content Include="Content\img\favicon.ico" />
+    <Content Include="Content\img\Scale1024.png" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
@@ -187,6 +188,7 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.6.2.js" />
+    <Content Include="Scripts\parser.js" />
     <Content Include="Scripts\respond.js" />
     <Content Include="Scripts\respond.min.js" />
     <Content Include="Scripts\spin.js" />
@@ -213,6 +215,7 @@
     <Content Include="Views\Ineq3DMesh\Index.cshtml" />
     <Content Include="Views\Ineq3DMesh\_LayoutThree.cshtml" />
     <Content Include="Views\Ineq3DMesh\_CreateMeshDialog.cshtml" />
+    <Content Include="Views\Ineq3DMesh\_SetUFuncDialog.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

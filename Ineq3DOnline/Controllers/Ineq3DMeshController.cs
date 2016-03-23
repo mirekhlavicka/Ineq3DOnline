@@ -188,6 +188,17 @@ namespace Ineq3DOnline.Controllers
             });
         }
 
+        public ActionResult GetSampleUFunc(int sampleUFuncIndex)
+        {
+            var tmp = IneqMeshViewModel.DefaultModel(-1, sampleUFuncIndex);
+
+            return Json(new
+            {
+                ufunc = tmp.UFunc
+            });
+        }
+
+
 
         double minQuality = 0.25d;
         private void CheckQuality(IneqMesh ineqMesh)

@@ -56,10 +56,17 @@ x^2+8*y^2+8*z^2<1"
 
         };
 
+        private static string[] sampleUFuncs = {
+            "sin(6 * x - t) + sin(6 * y - t) + sin(6 * z - t)",
+            "x * y * (z - sin(t)^2)",
+            "sin(6 * x - 0.1*t^2) + sin(6 * y - t) + sin(6 * z - t)"
+        } ;
+
 
         public int SampleIndex { get; set; }
+        public int SampleUFuncIndex { get; set; }
 
-        public static IneqMeshViewModel DefaultModel(int sample = -1)
+        public static IneqMeshViewModel DefaultModel(int sample = -1, int sampleU = -1)
         {
             if (sample == -1)
             {
@@ -70,17 +77,28 @@ x^2+8*y^2+8*z^2<1"
                 sample = sample % sampleFormulas.Length;
             }
 
+            if (sampleU == -1)
+            {
+                sampleU = new Random().Next(sampleUFuncs.Length);
+            }
+            else
+            {
+                sampleU = sampleU % sampleUFuncs.Length;
+            }
+
             return new IneqMeshViewModel
             {
                 Formula = sampleFormulas[sample],
                 SampleIndex = sample,
+                SampleUFuncIndex = sampleU,
                 MaxDivisionCount = 12,
                 X0 = -1,
                 Y0 = -1,
                 Z0 = -1,
                 X1 = 1,
                 Y1 = 1,
-                Z1 = 1
+                Z1 = 1,
+                UFunc = sampleUFuncs[sampleU]
             };
         }
 
@@ -104,7 +122,12 @@ x^2+8*y^2+8*z^2<1"
 
         [Display(Name = "Improve approximation by curvature")]
         public bool CurvatureQuality { get; set; }
-        
+
+
+        //[Required(ErrorMessage = "The Function is required.")]
+        [Display(Name = "u(x,y,z,t) = ")]
+        public string UFunc { get; set; }
+
         public IneqMesh IneqMesh { get; set; }
 
         public void SetIneqMesh()
