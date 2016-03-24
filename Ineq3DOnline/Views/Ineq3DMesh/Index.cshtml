@@ -74,7 +74,6 @@
 
             renderer.sortObjects = false;
 
-
             renderer.setSize(width, height);
             $('body').append(renderer.domElement);
 
@@ -283,14 +282,15 @@
         }
 
         var count = 0;
+        var dangle = 0.004;
         var render = function () {
             count++;
             requestAnimationFrame(render);
             controls.update();
 
             if (mesh && $('#chckAutoRotate').prop('checked')) {
-                mesh.rotation.x += 0.005;
-                mesh.rotation.y += 0.01;
+                mesh.rotation.x += dangle;
+                mesh.rotation.y += 2*dangle;
             }
 
             if (mesh && expr && (count % 2 === 0)){
@@ -362,8 +362,6 @@
             });
 
 
-
-
             $('#lnkImproveMeshQuality').click(function (e) {
                 loadMesh('@Url.Action("GetCustomMeshImproveQuality", "Ineq3DMesh", new { boundary = false })' + '&ts=' + $.now());
             });
@@ -382,33 +380,48 @@
             });
 
             $('#btnSetUFunc').click(function (e) {
-                var ufunc = $('#UFunc').val();
 
-                dt =  parseFloat($('#tbdt').val());
-                t = 0.0;
+                try {
+                    var ufunc = $('#UFunc').val();
 
-                if(ufunc.trim() == ''){
-                    expr = null;
-                } else {
-                    expr = Parser.parse(ufunc);
+                    dt =  parseFloat($('#tbdt').val());
+                    t = 0.0;
+
+                    if(ufunc.trim() == ''){
+                        expr = null;
+                    } else {
+                        expr = Parser.parse(ufunc);
+                        var tmp = expr.evaluate({ x: 0, y: 0, z: 0, t: 0 });
+                    }
+
+                    refreshGeometry();
+                    $("[data-valmsg-for='UFunc']").text('')
+                }
+                catch(err) {
+                    //alert(err.message);
+                    $("[data-valmsg-for='UFunc']").text(err.message)
                 }
 
-                //assignUVs();
+            });
+
+            $(document).on('click', 'a[data-mesh]', function (e) {
+                loadMesh(this.href);
+                return false;
+            });
+
+            $('input[name=radioRenderStyle],input[name=radioMaterial],#chckSmooth,#chckDoubleSide,#chckBoundingBox').on('change', function () {
                 refreshGeometry();
             });
 
+            $('#lnkRotateFaster').click(function (e) {
+                dangle += 0.0005;
+                return false;
+            });
 
-        });
-
-
-        $(document).on('click', 'a[data-mesh]', function (e) {
-            loadMesh(this.href);
-            return false;
-        });
-
-        $('input[name=radioRenderStyle],input[name=radioMaterial],#chckSmooth,#chckDoubleSide,#chckBoundingBox').on('change', function () {
-            //loadMesh(currentMeshUrl);
-            refreshGeometry();
+            $('#lnkRotateSlower').click(function (e) {
+                dangle -= 0.0005;
+                return false;
+            });
         });
 
         function showSpinner() {

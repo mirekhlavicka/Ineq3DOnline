@@ -59,7 +59,11 @@ x^2+8*y^2+8*z^2<1"
         private static string[] sampleUFuncs = {
             "sin(6 * x - t) + sin(6 * y - t) + sin(6 * z - t)",
             "x * y * (z - sin(t)^2)",
-            "sin(6 * x - 0.1*t^2) + sin(6 * y - t) + sin(6 * z - t)"
+            "sin(6 * x - 0.1*t^2) + sin(6 * y - t) + sin(6 * z - t)",
+            "(x-sin(t))^2+y^2+z^2",
+            "(x-sin(t))^2+cos(t)*y^2+z^2",
+            "x * y ^2 * (z - sin(t)) +0.4*y*(x-cos(2*t))^3+z",
+            "sin(5*((x-sin(t))^2+cos(t)*y^2+z^2))"
         } ;
 
 

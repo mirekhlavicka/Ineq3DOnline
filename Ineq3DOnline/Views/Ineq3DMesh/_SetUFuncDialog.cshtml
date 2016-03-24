@@ -15,7 +15,7 @@
                     <div class="form-group">
                         @Html.LabelFor(m => Model.UFunc, htmlAttributes: new { @class = "control-label col-md-3" })
                         <div class="col-md-9">
-                            @Html.EditorFor(m => Model.UFunc, new { htmlAttributes = new { @class = "form-control", style="max-width: 400px" } })
+                            @Html.EditorFor(m => Model.UFunc, new { htmlAttributes = new { @class = "form-control", style="max-width: 400px", spellcheck = "false" } })
                             @Html.ValidationMessageFor(model => model.UFunc, "", new { @class = "text-danger" })
                             <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:5px">
                                 <div class="btn-group">
