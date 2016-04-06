@@ -30,6 +30,59 @@
 {
     @Scripts.Render("~/bundles/jqueryval")
 
+<script type="x-shader/x-vertex" id="vertexShader">
+
+    //attribute float val;
+    //varying float vVal;
+    varying vec2 vUv;
+
+    void main() {
+
+    //vVal = val;
+
+    vUv = uv;
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+    gl_Position.z -=0.0001;
+
+    }
+
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentShader">
+
+    uniform float levels[15];
+    varying vec2 vUv;
+
+    vec2 levelFactor() {
+        float d = fwidth( vUv.y );
+
+        vec2 result = vec2(1.0, -1.0);
+        for (int i = 0; i < 15; ++i) {
+            float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
+            if(v < result[0]){
+                result[0] = v;
+            }
+
+            if(levels[i] > vUv.y && result[1] < 0.0){
+                result[1] = float(i) / 10.0;
+            }
+        }
+        return result;
+    }
+
+    void main() {
+
+        vec2 lev = levelFactor();
+        //gl_FragColor.rgb = mix( vec3( 0.0 ), mix(vec3(1.0,0.0,0.0), vec3(0.0,0.0,1.0), lev[1]), lev[0] );
+        gl_FragColor.rgb = vec3( 0.0 );
+        gl_FragColor.a = mix(0.5, 0.0, lev[0] );
+    }
+
+</script>
+
+
     <script type="text/javascript">
         $.validator.setDefaults({
             ignore: ""
@@ -196,6 +249,7 @@
             clearScene();
 
             var renderStyle = parseInt($('input[name=radioRenderStyle]:checked').val());
+            var levelStyle = parseInt($('input[name=radioLevels]:checked').val());
             var mat = parseInt($('input[name=radioMaterial]:checked').val());
 
             switch(mat) {
@@ -204,9 +258,9 @@
                         polygonOffset: true,
                         polygonOffsetFactor: 1, // positive value pushes polygon further away
                         polygonOffsetUnits: 1,
-                        vertexColors: expr ? THREE.NoColors : THREE.VertexColors,
+                        vertexColors: expr && levelStyle != 1 ? THREE.NoColors : THREE.VertexColors,
                         color: 0xffffff,
-                        map: expr ?  texture : null,
+                        map: expr && levelStyle != 1  ?  texture : null,
                         specular: 0x111111,
                         shininess: 70,
                         side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide,
@@ -245,6 +299,19 @@
                 //edges.matrixAutoUpdate  = true;
                 mesh.add(edges);
                 //scene.add(edges);
+            }
+
+            if(expr && levelStyle != 2){
+                var materiall = new THREE.ShaderMaterial( {
+                    uniforms : { "levels": { type: "fv1", value: [1.0 / 16.0, 2.0 / 16.0, 3.0 / 16.0, 4.0 / 16.0, 5.0 / 16.0, 6.0 / 16.0, 7.0 / 16.0, 8.0 / 16.0, 9.0 / 16.0, 10.0 / 16.0, 11.0 / 16.0, 12.0 / 16.0, 13.0 / 16.0, 14.0 / 16.0, 15.0 / 16.0  ] } },
+                    vertexShader: document.getElementById( 'vertexShader' ).textContent,
+                    fragmentShader: document.getElementById('fragmentShader').textContent,
+                    transparent: true,
+                    //opacity: 1.0,
+                    derivatives: true
+                } );
+
+                mesh.add(new THREE.Mesh(geometry, materiall));
             }
 
             if ($('#chckBoundingBox').prop('checked')) {
@@ -409,7 +476,7 @@
                 return false;
             });
 
-            $('input[name=radioRenderStyle],input[name=radioMaterial],#chckSmooth,#chckDoubleSide,#chckBoundingBox').on('change', function () {
+            $('input[name=radioRenderStyle],input[name=radioMaterial],input[name=radioLevels],#chckSmooth,#chckDoubleSide,#chckBoundingBox').on('change', function () {
                 refreshGeometry();
             });
 
