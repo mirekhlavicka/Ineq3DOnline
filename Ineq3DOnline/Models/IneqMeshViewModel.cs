@@ -64,7 +64,9 @@ x^2+8*y^2+8*z^2<1"
             "(x-sin(t))^2+cos(t)*y^2+z^2",
             "x * y ^2 * (z - sin(t)) +0.4*y*(x-cos(2*t))^3+z",
             "sin(5*((x-sin(t))^2+cos(t)*y^2+z^2))",
-            "sin(4*x-4*sin(t))+sin(4*y)+sin(4*z)"
+            "sin(4*x-4*sin(t))+sin(4*y)+sin(4*z)",
+            "sin(t)*(x^2+y^2+z^2)+(1-sin(t))*(x*y*z)",
+            "sin(t)*(z-x^2+y^2)+(1-sin(t))*(x-y^2-z^2)"
         } ;
 
 

@@ -30,7 +30,7 @@
 {
     @Scripts.Render("~/bundles/jqueryval")
 
-<script type="x-shader/x-vertex" id="vertexShader">
+<script type="x-shader/x-vertex" id="vertexShaderLevels">
 
     //attribute float val;
     //varying float vVal;
@@ -38,50 +38,71 @@
 
     void main() {
 
-    //vVal = val;
+        //vVal = val;
+        vUv = uv;
 
-    vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        gl_Position.z -=0.001;
+    }
+</script>
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+<script type="x-shader/x-fragment" id="fragmentShaderLevels">
 
-    gl_Position.z -=0.0001;
+    uniform float levels[15];
+    varying vec2 vUv;
 
+    float levelFactor() {
+        float d = fwidth( vUv.y );
+        float result = 1.0;
+
+        for (int i = 0; i < 15; ++i) {
+            float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
+            if(v < result){
+                result = v;
+            }
+        }
+
+        return result;
+    }
+
+    void main() {
+        gl_FragColor.rgb = vec3(0.0);
+        gl_FragColor.a = mix(0.5, 0.0, levelFactor());
     }
 
 </script>
 
-<script type="x-shader/x-fragment" id="fragmentShader">
+<script type="x-shader/x-fragment" id="fragmentShaderLevelsWithColor">
 
     uniform float levels[15];
     varying vec2 vUv;
 
     vec2 levelFactor() {
-        float d = fwidth( vUv.y );
+    float d = fwidth( vUv.y );
 
-        vec2 result = vec2(1.0, -1.0);
-        for (int i = 0; i < 15; ++i) {
-            float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
-            if(v < result[0]){
-                result[0] = v;
-            }
+    vec2 result = vec2(1.0, -1.0);
+    for (int i = 0; i < 15; ++i) {
+    float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
+    if(v < result[0]){
+    result[0] = v;
+    }
 
-            if(levels[i] > vUv.y && result[1] < 0.0){
-                result[1] = float(i) / 10.0;
-            }
-        }
-        return result;
+    if(levels[i] > vUv.y && result[1] < 0.0){
+    result[1] = float(i) / 10.0;
+    }
+    }
+    return result;
     }
 
     void main() {
 
-        vec2 lev = levelFactor();
-        //gl_FragColor.rgb = mix( vec3( 0.0 ), mix(vec3(1.0,0.0,0.0), vec3(0.0,0.0,1.0), lev[1]), lev[0] );
-        gl_FragColor.rgb = vec3( 0.0 );
-        gl_FragColor.a = mix(0.5, 0.0, lev[0] );
+    vec2 lev = levelFactor();
+    //gl_FragColor.rgb = mix( vec3( 0.0 ), mix(vec3(1.0,0.0,0.0), vec3(0.0,0.0,1.0), lev[1]), lev[0] );
+    gl_FragColor.rgb = vec3( 0.0 );
+    gl_FragColor.a = mix(0.5, 0.0, lev[0] );
     }
 
 </script>
-
 
     <script type="text/javascript">
         $.validator.setDefaults({
@@ -104,7 +125,7 @@
             var width = window.innerWidth;
             var height = window.innerHeight;
 
-            camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 1e10);
+            camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1e4);
             camera.position.z = 2.2;
 
             scene = new THREE.Scene();
@@ -304,8 +325,8 @@
             if(expr && levelStyle != 2){
                 var materiall = new THREE.ShaderMaterial( {
                     uniforms : { "levels": { type: "fv1", value: [1.0 / 16.0, 2.0 / 16.0, 3.0 / 16.0, 4.0 / 16.0, 5.0 / 16.0, 6.0 / 16.0, 7.0 / 16.0, 8.0 / 16.0, 9.0 / 16.0, 10.0 / 16.0, 11.0 / 16.0, 12.0 / 16.0, 13.0 / 16.0, 14.0 / 16.0, 15.0 / 16.0  ] } },
-                    vertexShader: document.getElementById( 'vertexShader' ).textContent,
-                    fragmentShader: document.getElementById('fragmentShader').textContent,
+                    vertexShader: document.getElementById( 'vertexShaderLevels' ).textContent,
+                    fragmentShader: document.getElementById('fragmentShaderLevels').textContent,
                     transparent: true,
                     //opacity: 1.0,
                     derivatives: true
@@ -453,6 +474,10 @@
 
                     dt =  parseFloat($('#tbdt').val());
                     t = 0.0;
+
+                    if(!expr){
+                        $("#radioRenderStyle0").prop("checked", true)
+                    }
 
                     if(ufunc.trim() == ''){
                         expr = null;
