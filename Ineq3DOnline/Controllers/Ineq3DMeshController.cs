@@ -2,10 +2,13 @@
 using MeshData;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using WebGrease.Activities;
 
 namespace Ineq3DOnline.Controllers
 {
@@ -25,7 +28,7 @@ namespace Ineq3DOnline.Controllers
             return View(samples);
         }
 
-        public ActionResult GetMesh(string Mesh = "")
+        public ActionResult GetMesh(string Mesh = "", bool stl = false)
         {
             IneqMesh ineqMesh = null;
             string path = null;
@@ -36,7 +39,14 @@ namespace Ineq3DOnline.Controllers
             path = System.IO.Path.Combine(Server.MapPath("~/Samples"), FileName);
             if (System.IO.File.Exists(path))
             {
-                return File(path, "application/octet-stream");
+                if (stl)
+                {
+                    return File(ConvertPLYToSTL(System.IO.File.ReadAllText(path)), "application/octet-stream", "mesh.stl");
+                }
+                else
+                {
+                    return File(path, "application/octet-stream", "mesh.ply");
+                }
             }
 
             ineqMesh = samples[Mesh];
@@ -47,7 +57,7 @@ namespace Ineq3DOnline.Controllers
             string ply = GetPLY(ineqMesh);
 
             System.IO.File.WriteAllText(path, ply);
-            return File(path, "application/octet-stream");
+            return File(path, "application/octet-stream", "mesh.ply");
         }
 
 
@@ -72,7 +82,7 @@ namespace Ineq3DOnline.Controllers
             return Json(new { success = false, message = "Invalid data" });
         }
 
-        public ActionResult GetCustomMesh()
+        public ActionResult GetCustomMesh(bool stl = false)
         {
             IneqMeshViewModel ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
             IneqMesh ineqMesh = null;
@@ -84,7 +94,15 @@ namespace Ineq3DOnline.Controllers
 
             if (!String.IsNullOrEmpty(ineqMeshViewModel.PLY))
             {
-                return Content(ineqMeshViewModel.PLY);
+                //return Content(ineqMeshViewModel.PLY);
+                if (stl)
+                {
+                    return File(ConvertPLYToSTL(ineqMeshViewModel.PLY), "application/octet-stream", "mesh.stl");
+                }
+                else
+                {
+                    return File(System.Text.Encoding.UTF8.GetBytes(ineqMeshViewModel.PLY), "application/octet-stream", "mesh.ply");
+                }
             }
 
             ineqMesh = ineqMeshViewModel.IneqMesh;
@@ -103,10 +121,18 @@ namespace Ineq3DOnline.Controllers
             string ply = GetPLY(ineqMesh);
 
             ineqMeshViewModel.PLY = ply;
-            return Content(ply);
+            //return Content(ply);
+            if (stl)
+            {
+                return File(ConvertPLYToSTL(ineqMeshViewModel.PLY), "application/octet-stream", "mesh.stl");
+            }
+            else
+            {
+                return File(System.Text.Encoding.UTF8.GetBytes(ply), "application/octet-stream", "mesh.ply");
+            }
         }
 
-        public ActionResult GetCustomMeshImproveQuality(bool boundary)
+        public ActionResult GetCustomMeshImproveQuality(bool boundary, bool stl = false)
         {
             IneqMeshViewModel ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
             IneqMesh ineqMesh = null;
@@ -130,10 +156,18 @@ namespace Ineq3DOnline.Controllers
             string ply = GetPLY(ineqMesh);
 
             ineqMeshViewModel.PLY = ply;
-            return Content(ply);
+            //return Content(ply);
+            if (stl)
+            {
+                return File(ConvertPLYToSTL(ineqMeshViewModel.PLY), "application/octet-stream", "mesh.stl");
+            }
+            else
+            {
+                return File(System.Text.Encoding.UTF8.GetBytes(ply), "application/octet-stream", "mesh.ply");
+            }
         }
 
-        public ActionResult GetCustomMeshImproveCurvatureQuality()
+        public ActionResult GetCustomMeshImproveCurvatureQuality(bool stl = false)
         {
             IneqMeshViewModel ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
             IneqMesh ineqMesh = null;
@@ -153,10 +187,18 @@ namespace Ineq3DOnline.Controllers
             string ply = GetPLY(ineqMesh);
 
             ineqMeshViewModel.PLY = ply;
-            return Content(ply);
+            //return Content(ply);
+            if (stl)
+            {
+                return File(ConvertPLYToSTL(ineqMeshViewModel.PLY), "application/octet-stream", "mesh.stl");
+            }
+            else
+            {
+                return File(System.Text.Encoding.UTF8.GetBytes(ply), "application/octet-stream", "mesh.ply");
+            }
         }
 
-        public ActionResult GetCustomMeshJiggle()
+        public ActionResult GetCustomMeshJiggle(bool stl = false)
         {
             IneqMeshViewModel ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
             IneqMesh ineqMesh = null;
@@ -175,7 +217,15 @@ namespace Ineq3DOnline.Controllers
             string ply = GetPLY(ineqMesh);
 
             ineqMeshViewModel.PLY = ply;
-            return Content(ply);
+            //return Content(ply);
+            if (stl)
+            {
+                return File(ConvertPLYToSTL(ineqMeshViewModel.PLY), "application/octet-stream", "mesh.stl");
+            }
+            else
+            {
+                return File(System.Text.Encoding.UTF8.GetBytes(ply), "application/octet-stream", "mesh.ply");
+            }
         }
 
         public ActionResult GetSampleFormula(int sampleIndex)
@@ -402,6 +452,114 @@ end_header
             }
 
             return String.Format(plyFormat, pointsCount, boundaryTriangles.Length, sbPoints, sbTriangles);
+        }
+
+
+        private static byte[] ConvertPLYToSTL(string plyContent)
+        {
+            List<double[]> vertices = new List<double[]>();
+            List<int[]> faces = new List<int[]>();
+            bool isHeader = true;
+            bool hasVertex = false;
+            bool hasFace = false;
+            int vertexCount = 0;
+            int faceCount = 0;
+
+            using (StringReader sr = new StringReader(plyContent))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    if (String.IsNullOrEmpty(line))
+                    {
+                        continue;
+                    }
+
+                    if (isHeader)
+                    {
+                        if (line.StartsWith("element vertex"))
+                        {
+                            vertexCount = int.Parse(line.Split(' ')[2]);
+                            hasVertex = true;
+                        }
+                        else if (line.StartsWith("element face"))
+                        {
+                            faceCount = int.Parse(line.Split(' ')[2]);
+                            hasFace = true;
+                        }
+                        else if (line.StartsWith("end_header"))
+                        {
+                            isHeader = false;
+                        }
+                    }
+                    else
+                    {
+                        if (hasVertex && vertices.Count < vertexCount)
+                        {
+                            var vertex = Array.ConvertAll(line.Split(' ').Take(3).ToArray(), s => double.Parse(s, CultureInfo.InvariantCulture));
+                            vertices.Add(vertex);
+                        }
+                        else if (hasFace && faces.Count < faceCount)
+                        {
+                            var face = Array.ConvertAll(line.Split(' ').Skip(1).Take(3).ToArray(), int.Parse);
+                            faces.Add(face);
+                        }
+                    }
+                }
+            }
+
+            return GetBinarySTL(vertices, faces);
+        }
+
+
+
+        private static byte[] GetBinarySTL(List<double[]> vertices, List<int[]> faces)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter bw = new BinaryWriter(ms))
+            {
+                // 80-byte header
+                bw.Write(new byte[80]);
+
+                // Number of triangles
+                bw.Write(faces.Count);
+
+                foreach (var face in faces)
+                {
+                    var v1 = vertices[face[0]];
+                    var v2 = vertices[face[1]];
+                    var v3 = vertices[face[2]];
+
+                    var normal = CalculateNormal(v1, v2, v3);
+                    bw.Write((float)normal[0]);
+                    bw.Write((float)normal[1]);
+                    bw.Write((float)normal[2]);
+
+                    foreach (var vertex in new[] { v1, v2, v3 })
+                    {
+                        bw.Write((float)vertex[0]);
+                        bw.Write((float)vertex[1]);
+                        bw.Write((float)vertex[2]);
+                    }
+
+                    bw.Write((ushort)0); // Attribute byte count
+                }
+
+                return ms.ToArray();
+            }
+        }
+
+        private static double[] CalculateNormal(double[] v1, double[] v2, double[] v3)
+        {
+            double[] u = { v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2] };
+            double[] v = { v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2] };
+
+            double nx = u[1] * v[2] - u[2] * v[1];
+            double ny = u[2] * v[0] - u[0] * v[2];
+            double nz = u[0] * v[1] - u[1] * v[0];
+
+            double length = Math.Sqrt(nx * nx + ny * ny + nz * nz);
+            return new double[] { nx / length, ny / length, nz / length };
         }
     }
 }

@@ -117,6 +117,10 @@
         var rotation_x = 0;
         var rotation_y = 0;
         var currentMeshUrl = '@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = ViewBag.CurrentMesh })';
+
+        $("#lnkDownloadMesh").attr("href", currentMeshUrl);
+        $("#lnkDownloadMeshSTL").attr("href", currentMeshUrl + "&stl=true");
+
         var spinner;
         var texture;
         var expr = null;
@@ -354,6 +358,8 @@
         var loadMesh = function (url) {
             showSpinner();
             currentMeshUrl = url;
+            $("#lnkDownloadMesh").attr("href", currentMeshUrl);
+            $("#lnkDownloadMeshSTL").attr("href", currentMeshUrl + "&stl=true");
             var loader = new THREE.PLYLoader();
             loader.load(url, refreshGeometry);
         }
