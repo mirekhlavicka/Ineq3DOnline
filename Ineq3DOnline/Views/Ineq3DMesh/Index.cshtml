@@ -20,7 +20,7 @@
 
             @foreach (var m in Model.Samples)
             {
-                <li>@Html.ActionLink(m, "GetMesh", "Ineq3DMesh", new { Mesh = m }, htmlAttributes: new { data_mesh = "" })</li>
+                <li><a href="#" data-mesh="@m">@m</a></li>
             }
         </ul>
     </li>
@@ -113,13 +113,11 @@
     <script>
         var sampleIndex = @defaultModel.SampleIndex;
         var sampleUFuncIndex = @defaultModel.SampleUFuncIndex;
+        var currentMeshName = '@ViewBag.CurrentMesh';
+
         var camera, scene, renderer, controls, geometry, material, mesh, bbox;
         var rotation_x = 0;
         var rotation_y = 0;
-        var currentMeshUrl = '@Url.Action("GetMesh", "Ineq3DMesh", new { Mesh = ViewBag.CurrentMesh })';
-
-        $("#lnkDownloadMesh").attr("href", currentMeshUrl);
-        $("#lnkDownloadMeshSTL").attr("href", currentMeshUrl + "&stl=true");
 
         var spinner;
         var texture;
@@ -355,13 +353,10 @@
             hideSpinner();
         }
 
-        var loadMesh = function (url) {
+        var loadMesh = function () {
             showSpinner();
-            currentMeshUrl = url;
-            $("#lnkDownloadMesh").attr("href", currentMeshUrl);
-            $("#lnkDownloadMeshSTL").attr("href", currentMeshUrl + "&stl=true");
             var loader = new THREE.PLYLoader();
-            loader.load(url, refreshGeometry);
+            loader.load('@Url.Action("GetMesh", "Ineq3DMesh")' + '?ts=' + $.now(), refreshGeometry);
         }
 
         var clearScene = function () {
@@ -403,7 +398,11 @@
         $(function () {
             init();
             render();
-            loadMesh(currentMeshUrl);
+
+            $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + currentMeshName, function () {
+                loadMesh();
+            });
+
             $(window).resize(onWindowResize);
             $("textarea").getTab();
 
@@ -419,14 +418,12 @@
                         function (data) {
                             if (data.success) {
                                 $('#modalCreateMesh').modal('hide');
-                                loadMesh('@Url.Action("GetCustomMesh", "Ineq3DMesh", /*new { Mesh = "[custom]" }*/null)' + '?ts=' + $.now());
+                                loadMesh();
                             } else {
                                 $("[data-valmsg-for='Formula']").text(data.message)
                             }
                         });
                 }
-                //e.preventDefault();
-                //return false;
             })
 
             $('#btnClearFormula').click(function (e) {
@@ -457,21 +454,40 @@
 
 
             $('#lnkImproveMeshQuality').click(function (e) {
-                loadMesh('@Url.Action("GetCustomMeshImproveQuality", "Ineq3DMesh", new { boundary = false })' + '&ts=' + $.now());
+                showSpinner();
+                $.get('@Url.Action("ImproveQuality", "Ineq3DMesh", new { boundary = false })' + '&ts=' + $.now(), function () {
+                    loadMesh();
+                });
             });
 
             $('#lnkImproveBoundaryMeshQuality').click(function (e) {
-                loadMesh('@Url.Action("GetCustomMeshImproveQuality", "Ineq3DMesh", new {boundary = true })' + '&ts=' + $.now());
+                showSpinner();
+                $.get('@Url.Action("ImproveQuality", "Ineq3DMesh", new { boundary = true })' + '&ts=' + $.now(), function () {
+                    loadMesh();
+                });
             });
 
 
             $('#lnkImproveMeshCurvatureQuality').click(function (e) {
-                loadMesh('@Url.Action("GetCustomMeshImproveCurvatureQuality", "Ineq3DMesh", null)' + '?ts=' + $.now());
+                showSpinner();
+                $.get('@Url.Action("ImproveCurvatureQuality")' + '?ts=' + $.now(), function () {
+                    loadMesh();
+                });
             });
 
             $('#lnkImproveMeshJiggle').click(function (e) {
-                loadMesh('@Url.Action("GetCustomMeshJiggle", "Ineq3DMesh", null)' + '?ts=' + $.now());
+                showSpinner();
+                $.get('@Url.Action("Jiggle")' + '?ts=' + $.now(), function () {
+                    loadMesh();
+                });
             });
+
+            $('#lnkImproveMeshRefine').click(function (e) {
+                showSpinner();
+                $.get('@Url.Action("Refine")' + '?ts=' + $.now(), function () {
+                    loadMesh();
+                });
+            });            
 
             $('#btnSetUFunc').click(function (e) {
 
@@ -503,7 +519,13 @@
             });
 
             $(document).on('click', 'a[data-mesh]', function (e) {
-                loadMesh(this.href);
+
+                currentMeshName = $(this).data('mesh');
+
+                $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + currentMeshName, function () {
+                    loadMesh('@Url.Action("GetMesh")');
+                });
+
                 return false;
             });
 
@@ -520,6 +542,10 @@
                 dangle -= 0.0005;
                 return false;
             });
+
+            $("#lnkDownloadMesh").attr("href", '@Url.Action("GetMesh", "Ineq3DMesh")');
+            $("#lnkDownloadMeshSTL").attr("href", '@Url.Action("GetMesh", "Ineq3DMesh")' + "?stl=true");
+
         });
 
         function showSpinner() {

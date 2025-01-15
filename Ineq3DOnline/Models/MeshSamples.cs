@@ -1065,7 +1065,7 @@ namespace Ineq3DOnline
         //                            y -= 25;
         //                            x -= 15;
         //                            z += 15;
-                                    
+
         //                            double n = Math.Sqrt(2.0d) / 2.0d;
         //                            double p =  n * x + n * z;
 
@@ -1107,5 +1107,32 @@ namespace Ineq3DOnline
         //                ((x, y, z) => -(x + 5) * (x + 5) - (y + 25) * (y + 25) + 25)
         //    };
         //}
+
+        //if (Mesh == "Cone 1")
+        //{
+        //    Point p = new Point(0.12, -0.171, 0.037);
+        //    Point np = null;
+        //    double d = Double.MaxValue;
+        //    foreach (var mp in ineqMesh.Points.Where(pp => pp.BoundaryCount == 1))
+        //    {
+        //        if (mp.Distance(p) < d)
+        //        {
+        //            d = mp.Distance(p);
+        //            np = mp;
+        //        }
+        //    }
+
+        //    np.MoveTo(p, false);
+        //    np.Boundary[np.Boundary.Length - 1] = true;
+        //    ineqMesh.Jiggle(3);
+
+        //    ineqMesh.RefineBoundaryTriangles(np.Tetrahedrons.SelectMany(t => t.Triangles()).Where(t => t.All(pp => pp.BoundaryCount > 0)));
+        //    ineqMesh.Jiggle(3);
+        //    ineqMesh.RefineBoundaryTriangles(ineqMesh.Triangles.Where(tt => tt.All(pp => pp.Boundary[0])));
+        //    ineqMesh.Jiggle(3);
+        //}
+
+        //ineqMesh.RefineBoundaryTriangles(ineqMesh.Triangles.Where(tt => tt.All(p => p.Boundary[5])));
+        //ineqMesh.Jiggle(3);
     }
 }
