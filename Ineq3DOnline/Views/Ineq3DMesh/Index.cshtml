@@ -353,10 +353,10 @@
             hideSpinner();
         }
 
-        var loadMesh = function () {
+        var loadMesh = function (postRefresh) {
             showSpinner();
             var loader = new THREE.PLYLoader();
-            loader.load('@Url.Action("GetMesh", "Ineq3DMesh")' + '?ts=' + $.now(), refreshGeometry);
+            loader.load('@Url.Action("GetMesh", "Ineq3DMesh")' + '?ts=' + $.now(), function (newGeometry) { refreshGeometry(newGeometry); if (postRefresh) { postRefresh(); } });
         }
 
         var clearScene = function () {
@@ -372,6 +372,7 @@
 
         var count = 0;
         var dangle = 0.004;
+        var start_dangle = 0;
         var render = function () {
             count++;
             requestAnimationFrame(render);
@@ -379,7 +380,11 @@
 
             if (mesh && $('#chckAutoRotate').prop('checked')) {
                 mesh.rotation.x += dangle;
-                mesh.rotation.y += 2*dangle;
+                mesh.rotation.y += 2 * dangle;
+            } else if (mesh && start_dangle > 0) {
+                mesh.rotation.x += start_dangle;
+                mesh.rotation.y += 2 * start_dangle;
+                start_dangle -= 0.0001;
             }
 
             if (mesh && expr && (count % 2 === 0)){
@@ -399,8 +404,9 @@
             init();
             render();
 
+            showSpinner();
             $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + currentMeshName, function () {
-                loadMesh();
+                loadMesh(() => start_dangle = 0.006);
             });
 
             $(window).resize(onWindowResize);
@@ -418,7 +424,7 @@
                         function (data) {
                             if (data.success) {
                                 $('#modalCreateMesh').modal('hide');
-                                loadMesh();
+                                loadMesh(() => start_dangle = 0.006);
                             } else {
                                 $("[data-valmsg-for='Formula']").text(data.message)
                             }
@@ -487,7 +493,7 @@
                 $.get('@Url.Action("Refine")' + '?ts=' + $.now(), function () {
                     loadMesh();
                 });
-            });            
+            });
 
             $('#btnSetUFunc').click(function (e) {
 
@@ -519,11 +525,10 @@
             });
 
             $(document).on('click', 'a[data-mesh]', function (e) {
-
                 currentMeshName = $(this).data('mesh');
-
+                showSpinner();
                 $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + currentMeshName, function () {
-                    loadMesh('@Url.Action("GetMesh")');
+                    loadMesh(() => start_dangle = 0.006);
                 });
 
                 return false;

@@ -536,13 +536,27 @@ namespace Ineq3DOnline
                         IneqTreeCylinder(0.75, 1.5 * Math.Sin(2 * Math.PI / 3), 0, 2.25 / 3, 1.5 * Math.Sin(2 * Math.PI / 3) / 3, Math.Sqrt(2.25 - Math.Pow(2 * 1.5 * Math.Sin(2 * Math.PI / 3) / 3, 2)), 0.2, 1.5)
             };
 
+            samples["Helix"] = new IneqMesh
+            {
+                X0 = -2.0,
+                Y0 = -2.0,
+                Z0 = 0.0,
+                X1 = 2.0,
+                Y1 = 2.0,
+                Z1 = 8.0,
+                D = 0.1d,
+                Boxed = true,
+                IneqTree =
+                        ((IneqTree)((x, y, z) => HelixDistance.Squared(x,y,z, 1, 0.38) - 0.35d))
+            };
+
             //samples["* Bear"] = new Func<IneqMesh>(() => Bear());
             //samples["* Muse"] = new Func<IneqMesh>(() => Muse());
-            
+
             //samples["* Bunny"] = new Func<IneqMesh>(() => Bunny());
             //samples["* BunnyHead"] = new Func<IneqMesh>(() => BunnyHead());
             //samples["* BunnyMuse"] = new Func<IneqMesh>(() => BunnyMuse());
-            
+
             //samples["* Head"] = new Func<IneqMesh>(() => Head());
             //samples["* Head1"] = new Func<IneqMesh>(() => Head1());
 
