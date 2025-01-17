@@ -33,8 +33,8 @@ namespace Ineq3DOnline.Controllers
             IneqMeshViewModel ineqMeshViewModel = new IneqMeshViewModel 
             {
                 IneqMesh = new MeshSamples()[Mesh],
-                CurvatureQuality =true,
-                Quality = false                
+                Quality = true,
+                CurvatureQuality = true
             };
             Session["IneqMeshViewModel"] = ineqMeshViewModel;
 
@@ -90,7 +90,7 @@ namespace Ineq3DOnline.Controllers
 
             if (stl)
             {
-                return File(ineqMeshViewModel.ConvertPLYToSTL(), "application/octet-stream", "mesh.stl");
+                return File(PLYTools.ConvertPLYToSTL(ineqMeshViewModel.PLY), "application/octet-stream", "mesh.stl");
             }
             else
             {
@@ -116,17 +116,14 @@ namespace Ineq3DOnline.Controllers
 
             if (boundary)
             {
-                ineqMeshViewModel.CheckBoundaryQuality(ineqMesh);
+                IneqMeshTools.CheckBoundaryQuality(ineqMesh);
             }
             else
             {
-                ineqMeshViewModel.CheckQuality(ineqMesh);
+                IneqMeshTools.CheckQuality(ineqMesh);
             }
 
-
-            ineqMesh.DeleteLonelyPoints();
-
-            ineqMeshViewModel.PLY = ineqMeshViewModel.GetPLY(ineqMesh);
+            ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
             return Content(null);
         }
@@ -147,12 +144,10 @@ namespace Ineq3DOnline.Controllers
                 ineqMeshViewModel.CreateMesh(false);
             }
 
-            ineqMeshViewModel.CheckCurvatureQuality(ineqMesh);
-            ineqMeshViewModel.CheckCurvatureQuality(ineqMesh);
+            IneqMeshTools.CheckCurvatureQuality(ineqMesh);
+            IneqMeshTools.CheckCurvatureQuality(ineqMesh);            
 
-            ineqMesh.DeleteLonelyPoints();
-
-            ineqMeshViewModel.PLY = ineqMeshViewModel.GetPLY(ineqMesh);
+            ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
             return Content(null);
         }
@@ -176,9 +171,7 @@ namespace Ineq3DOnline.Controllers
 
             ineqMesh.Jiggle(3); 
 
-            ineqMesh.DeleteLonelyPoints();
-
-            ineqMeshViewModel.PLY = ineqMeshViewModel.GetPLY(ineqMesh);
+            ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
             return Content(null);
         }
@@ -200,10 +193,10 @@ namespace Ineq3DOnline.Controllers
             }
 
             ineqMesh.RefineBoundaryTriangles(ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1)));
-
             ineqMesh.DeleteLonelyPoints();
+            ineqMesh.Jiggle(3);
 
-            ineqMeshViewModel.PLY = ineqMeshViewModel.GetPLY(ineqMesh);
+            ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
             return Content(null);
         }

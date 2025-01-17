@@ -125,15 +125,16 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
-    <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\Ineq3DMeshController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Models\HelixDistance.cs" />
+    <Compile Include="Models\Tools\IneqMeshTools.cs" />
     <Compile Include="Models\IneqMeshViewModel.cs" />
-    <Compile Include="Models\IneqTreeParser.cs" />
+    <Compile Include="Models\Tools\IneqTreeParser.cs" />
     <Compile Include="Models\MeshSamples.cs" />
+    <Compile Include="Models\Tools\PLYTools.cs" />
+    <Compile Include="Models\Tools\HelixDistance.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +182,7 @@
     <Content Include="Samples\SnowWoman.ply" />
     <Content Include="Samples\Tetra cylinder.ply" />
     <Content Include="Samples\Viviani.ply" />
+    <Content Include="Samples\Helix.ply" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />
@@ -211,9 +213,9 @@
     </Content>
     <Content Include="Views\Web.config" />
     <Content Include="Views\_ViewStart.cshtml" />
-    <Content Include="Views\Shared\Error.cshtml" />
-    <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="Views\Home\__Index.cshtml" />
+    <Content Include="Views\NotUsed\Shared\Error.cshtml" />
+    <Content Include="Views\NotUsed\Shared\_Layout.cshtml" />
+    <Content Include="Views\NotUsed\Home\__Index.cshtml" />
     <Content Include="Views\Ineq3DMesh\Index.cshtml" />
     <Content Include="Views\Ineq3DMesh\_LayoutThree.cshtml" />
     <Content Include="Views\Ineq3DMesh\_CreateMeshDialog.cshtml" />

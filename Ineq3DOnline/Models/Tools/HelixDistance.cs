@@ -7,29 +7,36 @@ namespace Ineq3DOnline
 {
     public static class HelixDistance
     {
-        public static double Squared(
-             double x, double y, double z, double r = 1, double c = 1, double tolerance = 1e-6, int maxIterations = 100)
+        public static double Squared(double x, double y, double z, double r = 1, double c = 1, double tolerance = 1e-6, int maxIterations = 100)
         {
-            double t = z / c; // Initial guess
+            double t = z / c;
+            double t0 = z / c -  1 * Math.PI; 
+
+            while (t0 < z / c + 1 * Math.PI)
+            {
+                if(SquaredDistance(x, y, z, r, c, t0) < SquaredDistance(x, y, z, r, c, t)) 
+                { 
+                    t = t0;
+                }
+                t0 += 0.1;
+            }
+
             int iteration = 0;
+
 
             while (iteration < maxIterations)
             {
-                // Compute first and second derivatives of the squared distance function
-                double fPrime = ComputeFirstDerivative(x, y, z, r, c, t);
-                double fDoublePrime = ComputeSecondDerivative(x, y, z, r, c, t);
+                double fd = FirstDerivative(x, y, z, r, c, t);
+                double sd = SecondDerivative(x, y, z, r, c, t);
 
-                // Avoid division by zero
-                if (Math.Abs(fDoublePrime) < 1e-8)
+                if (Math.Abs(sd) < 1e-8)
                 {
                     break;
                     //throw new Exception("Second derivative too small, Newton's method failed.");
                 }
 
-                // Newton's method update
-                double tNext = t - fPrime / fDoublePrime;
+                double tNext = t - fd / sd;
 
-                // Check for convergence
                 if (Math.Abs(tNext - t) < tolerance)
                 {
                     t = tNext;
@@ -45,12 +52,10 @@ namespace Ineq3DOnline
                 throw new Exception("Newton's method did not converge within the maximum number of iterations.");
             }*/
 
-            // Compute the minimum squared distance
-            //var res = ComputeSquaredDistance(x, y, z, r, c, t); 
-            return ComputeSquaredDistance(x, y, z, r, c, t);
+            return SquaredDistance(x, y, z, r, c, t);
         }
 
-        private static double ComputeSquaredDistance(double x, double y, double z, double r, double c, double t)
+        private static double SquaredDistance(double x, double y, double z, double r, double c, double t)
         {
             double helixX = r * Math.Cos(t);
             double helixY = r * Math.Sin(t);
@@ -63,12 +68,12 @@ namespace Ineq3DOnline
             return dx * dx + dy * dy + dz * dz;
         }
 
-        private static double ComputeFirstDerivative(double x, double y, double z, double r, double c, double t)
+        private static double FirstDerivative(double x, double y, double z, double r, double c, double t)
         {
             return r * x * Math.Sin(t) - r * y * Math.Cos(t) - z + c * t;
         }
 
-        private static double ComputeSecondDerivative(double x, double y, double z, double r, double c, double t)
+        private static double SecondDerivative(double x, double y, double z, double r, double c, double t)
         {
             return r * x * Math.Cos(t) + r * y * Math.Sin(t) + c;
         }

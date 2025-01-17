@@ -544,10 +544,10 @@ namespace Ineq3DOnline
                 X1 = 2.0,
                 Y1 = 2.0,
                 Z1 = 8.0,
-                D = 0.1d,
+                D = 0.15d,
                 Boxed = true,
                 IneqTree =
-                        ((IneqTree)((x, y, z) => HelixDistance.Squared(x,y,z, 1, 0.38) - 0.35d))
+                        ((IneqTree)((x, y, z) => HelixDistance.Squared(x,y,z, 1, 0.2) - 0.35d))
             };
 
             //samples["* Bear"] = new Func<IneqMesh>(() => Bear());
