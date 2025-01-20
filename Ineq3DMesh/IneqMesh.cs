@@ -573,9 +573,15 @@ namespace MeshData
             B = new Point(P.X + tet * n1, P.Y + tet * n2, P.Z + tet * n3);
 
             double stopdist = D / precision;
-            double errordist = 2 * D;
+            double errordist = 2 * D / 3.0d;
             int p = 0;
             int maxItCount = 20;
+
+            if (tet > errordist)
+            {
+                p = maxItCount;
+            }
+
             while (Math.Abs(tet) > stopdist && p < maxItCount)
             {
                 p++;
@@ -590,7 +596,7 @@ namespace MeshData
                 w = w1;
                 B.MoveTo(B.X + tet * n1, B.Y + tet * n2, B.Z + tet * n3, false);
             }
-            if (p < maxItCount && Math.Abs(P.X - B.X) + Math.Abs(P.Y - B.Y) + Math.Abs(P.Z - B.Z) < errordist)
+            if (p < maxItCount && Math.Sqrt((P.X - B.X) * (P.X - B.X) + (P.Y - B.Y) * (P.Y - B.Y) + (P.Z - B.Z) * (P.Z - B.Z)) < errordist)
             {
                 return P.MoveTo(B, safe);
             }
@@ -718,19 +724,21 @@ namespace MeshData
         public void Jiggle(int count)
         {
             for (int i = 0; i < count; i++)
-                Points.AsParallel().ForAll(point =>
+                //Points.AsParallel().AsEnumerable().ForAll(point =>
+                foreach(var point in Points)
                 {
                     CenterPoint(point, i == count - 1 ? 1000 : 100, true);
-                });
+                }//);
         }
 
         public void Jiggle(int count, IEnumerable<Point> points)
         {
             for (int i = 0; i < count; i++)
-                points.AsParallel().ForAll(point =>
+                //points.AsParallel().ForAll(point =>
+                foreach (var point in Points)
                 {
                     CenterPoint(point, i == count - 1 ? 1000 : 100, true);
-                });
+                }//);
         }
 
 

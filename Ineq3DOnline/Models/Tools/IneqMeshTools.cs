@@ -104,7 +104,7 @@ namespace Ineq3DOnline.Models
 
                 double dist = origp.Distance(ee.p);
 
-                if (dist >= ee.length / 25.0d)
+                if (dist >= ee.length / 50.0d)
                 {
                     var e = ee.e;
 
@@ -139,7 +139,7 @@ namespace Ineq3DOnline.Models
 
                 double dist = origp.Distance(cp.p);
 
-                if (dist >= cp.maxLength / 25.0d)
+                if (dist >= cp.maxLength / 50.0d)
                 {
                     refList.Add(cp.tr);
                 }
