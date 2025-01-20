@@ -343,6 +343,29 @@ namespace MeshData
             }
         }
 
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Triangle other))
+                return false;
+
+            Point[] points = new Point[3];
+            Point[] points1 = new Point[3];
+
+            points[0] = p1;
+            points[1] = p2;
+            points[2] = p3;
+
+            points1[0] = ((Triangle)obj).P1;
+            points1[1] = ((Triangle)obj).P2;
+            points1[2] = ((Triangle)obj).P3;
+
+            Array.Sort(points);
+            Array.Sort(points1);
+
+            return points[0].Equals(points1[0]) && points[1].Equals(points1[1]) & points[2].Equals(points1[2]);
+        }
+
     }
 
 

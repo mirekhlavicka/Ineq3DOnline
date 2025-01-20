@@ -964,10 +964,11 @@ namespace MeshData
                 Triangle[] trians = e
                     .P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons)
                     .SelectMany(tt => tt.Triangles())
+                    .Where(tr => tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1)
                     .Where(tr => tr.Contains(e.P1) && tr.Contains(e.P2) && !tr.Equals(t.Value))
-                    .GroupBy(tr => tr)
+                    /*.GroupBy(tr => tr)
                     .Where(gr => gr.Count() == 1)
-                    .Select(gr => gr.Single())
+                    .Select(gr => gr.Single())*/
                     .ToArray();
 
                 if (trians.Length == 1)
