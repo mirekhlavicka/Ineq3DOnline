@@ -47,7 +47,7 @@ end_header
             StringBuilder sbTriangles = new StringBuilder();
             int pointsCount = 0;
 
-            var boundaryTriangles = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => /*tr.BoundaryCount == 1 &&*/ tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
+            var boundaryTriangles = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => /*tr.BoundaryCount == 1 &&*/ tr.Boundary))
                 //.Where(t => t.Quality > 0.25d)
                 .ToArray();
 

@@ -475,10 +475,23 @@
 
 
             $('#lnkImproveMeshCurvatureQuality').click(function (e) {
+                keepSpinner = true;
                 showSpinner();
-                $.get('@Url.Action("ImproveCurvatureQuality")' + '?ts=' + $.now(), function () {
-                    loadMesh();
-                });
+                let step = 0;
+                var improveAndLoad = function () {                    
+                    $.get('@Url.Action("ImproveCurvatureQuality")' + '?ts=' + $.now(), function () {
+                        loadMesh(() => {
+                            step++;
+                            if (step < 3) {
+                                improveAndLoad();
+                            } else {
+                                keepSpinner = false;
+                                hideSpinner();
+                            }
+                        });
+                    });
+                }
+                improveAndLoad();
             });
 
             $('#lnkImproveMeshJiggle').click(function (e) {
@@ -553,6 +566,8 @@
 
         });
 
+        var keepSpinner = false;
+
         function showSpinner() {
 
             if(!spinner){
@@ -582,7 +597,7 @@
         }
 
         function hideSpinner() {
-            if (spinner) {
+            if (spinner && !keepSpinner) {
                 spinner.stop();
             }
         }

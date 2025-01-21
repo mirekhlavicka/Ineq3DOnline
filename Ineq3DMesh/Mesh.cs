@@ -206,7 +206,7 @@ namespace MeshData
         Point p3;
 
 
-        public Triangle(Point p1, Point p2, Point p3, bool sort = true)
+        public Triangle(Point p1, Point p2, Point p3/*, bool sort = true*/)
         {
             Point[] points = new Point[3];
 
@@ -214,10 +214,10 @@ namespace MeshData
             points[1] = p2;
             points[2] = p3;
 
-            if (sort)
+            /*if (sort)
             {
                 Array.Sort(points);
-            }
+            }*/
 
             this.p1 = points[0];
             this.p2 = points[1];
@@ -270,6 +270,14 @@ namespace MeshData
                 (
                     P3.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i)
                 ).FirstOrDefault();
+            }
+        }
+
+        public bool Boundary
+        {
+            get
+            {
+                return P1.Tetrahedrons.Intersect(P2.Tetrahedrons).Intersect(P3.Tetrahedrons).Count() == 1;
             }
         }
 
@@ -366,6 +374,35 @@ namespace MeshData
             return points[0].Equals(points1[0]) && points[1].Equals(points1[1]) & points[2].Equals(points1[2]);
         }
 
+        public static bool operator ==(Triangle left, Triangle right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Triangle left, Triangle right)
+        {
+            return !(left == right);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                Point[] points = new Point[3];
+
+                points[0] = p1;
+                points[1] = p2;
+                points[2] = p3;
+
+                Array.Sort(points);
+
+                int hash = 17; 
+                hash = hash * 23 + points[0].GetHashCode(); 
+                hash = hash * 23 + points[1].GetHashCode(); 
+                hash = hash * 23 + points[2].GetHashCode();
+                return hash;
+            }
+        }
     }
 
 

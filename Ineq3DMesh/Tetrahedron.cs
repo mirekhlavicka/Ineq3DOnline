@@ -139,10 +139,10 @@ namespace MeshData
 
         public IEnumerable<Triangle> Triangles()
         {
-            yield return new Triangle(P0, P1, P2, false); //3
-            yield return new Triangle(P1, P0, P3, false); //2
-            yield return new Triangle(P0, P2, P3, false); //1
-            yield return new Triangle(P2, P1, P3, false); //0
+            yield return new Triangle(P0, P1, P2/*, false*/); //3
+            yield return new Triangle(P1, P0, P3/*, false*/); //2
+            yield return new Triangle(P0, P2, P3/*, false*/); //1
+            yield return new Triangle(P2, P1, P3/*, false*/); //0
         }
 
 

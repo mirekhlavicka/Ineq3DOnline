@@ -111,7 +111,7 @@ namespace Ineq3DOnline.Models
                     var trians = e
                         .P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons)
                         .SelectMany(tt => tt.Triangles())
-                        .Where(tr => tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1)
+                        .Where(tr => tr.Boundary)
                         .Where(tr => tr.Contains(e.P1) && tr.Contains(e.P2));
                         /*.GroupBy(tr => tr)
                         .Where(gr => gr.Count() == 1)
@@ -123,7 +123,7 @@ namespace Ineq3DOnline.Models
             }
 
             var centerPoints = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles()
-                            .Where(tr => tr.BoundaryCount == 1 && tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1))
+                            .Where(tr => tr.BoundaryCount == 1 && tr.Boundary))
                             .Select(tr => new
                             {
                                 bf = tr.CommonBoundaryFlag.Value,

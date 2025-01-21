@@ -145,7 +145,7 @@ namespace Ineq3DOnline.Controllers
             }
 
             IneqMeshTools.CheckCurvatureQuality(ineqMesh);
-            IneqMeshTools.CheckCurvatureQuality(ineqMesh);            
+            //IneqMeshTools.CheckCurvatureQuality(ineqMesh);            
 
             ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
@@ -192,7 +192,7 @@ namespace Ineq3DOnline.Controllers
                 ineqMeshViewModel.CreateMesh(false);
             }
 
-            ineqMesh.RefineBoundaryTriangles(ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Count() == 1)));
+            ineqMesh.RefineBoundaryTriangles(ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => tr.Boundary)));
             ineqMesh.DeleteLonelyPoints();
             ineqMesh.Jiggle(3);
 
