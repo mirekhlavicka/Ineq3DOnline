@@ -44,6 +44,7 @@ namespace MeshData
 
         public void Create()
         {
+            Point.EnableUnsafeMove = false;
             Clear();
             
             if (Boxed)
@@ -70,7 +71,9 @@ namespace MeshData
                 DeleteTetrahedron(t);            
             DeleteLonelyPoints();
 
+            CheckQuality(0.25d, false);
             Jiggle(3);
+            Point.EnableUnsafeMove = true;
         }
         
         private void ResolveMesh(IneqTree.IneqNode node, int domaiNumber)
@@ -350,7 +353,7 @@ namespace MeshData
 
                 newPoint.MoveTo(t.Points.Where(pp => !pp.Boundary[ineqNumber]).Single(), false);
 
-                Tetrahedron tt = AddTetrahedron(newPoint, p, fp[0], fp[1]);
+                Tetrahedron tt = AddTetrahedron(newPoint, p, fp[0], fp[1], Math.Sign(t.Volume));
                 tt.IsIn.Or(t.IsIn);
                 tt.Boundary.Or(t.Boundary);
                 tt.IsOnBoundary.Or(t.IsOnBoundary);               
@@ -429,13 +432,15 @@ namespace MeshData
             {
                 Point[] p = t.Points.Where(pp => pp != e.P1 && pp != e.P2).ToArray();
 
-                Tetrahedron tt = AddTetrahedron(p[0], p[1], e.P1, newPoint);
+                int volumeSign = Math.Sign(t.Volume);
+
+                Tetrahedron tt = AddTetrahedron(p[0], p[1], e.P1, newPoint, volumeSign);
                 tt.IsIn.Or(t.IsIn);
                 tt.Boundary.Or(t.Boundary);
                 tt.IsOnBoundary.Or(t.IsOnBoundary);
 
 
-                tt = AddTetrahedron(p[0], p[1], e.P2, newPoint);
+                tt = AddTetrahedron(p[0], p[1], e.P2, newPoint, volumeSign);
                 tt.IsIn.Or(t.IsIn);
                 tt.Boundary.Or(t.Boundary);
                 tt.IsOnBoundary.Or(t.IsOnBoundary);

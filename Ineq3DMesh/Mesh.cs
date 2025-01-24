@@ -50,9 +50,9 @@ namespace MeshData
             points.Remove(p);
         }
 
-        public Tetrahedron AddTetrahedron(Point p0, Point p1, Point p2, Point p3)
+        public Tetrahedron AddTetrahedron(Point p0, Point p1, Point p2, Point p3, int volumeSign = -1)
         {
-            Tetrahedron t = new Tetrahedron(p0, p1, p2, p3);
+            Tetrahedron t = new Tetrahedron(p0, p1, p2, p3, false, volumeSign);
             tetrahedrons.Add(t);
             return t;
         }

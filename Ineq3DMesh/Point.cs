@@ -8,6 +8,8 @@ namespace MeshData
 {
     public class Point : IComparable
     {
+        public static bool EnableUnsafeMove = false;
+
         private double x = 0;
         private double y = 0;
         private double z = 0;
@@ -169,7 +171,7 @@ namespace MeshData
         
         public bool MoveTo(double x, double y, double z, bool safe)
         {
-            if (!safe)
+            if (EnableUnsafeMove || !safe)
             {
                 this.x = x; this.y = y; this.z = z;
 

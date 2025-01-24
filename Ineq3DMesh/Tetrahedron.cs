@@ -17,7 +17,7 @@ namespace MeshData
 
         private Tetrahedron() { }
 
-        internal Tetrahedron(Point p0, Point p1, Point p2, Point p3, bool standAlone = false)
+        internal Tetrahedron(Point p0, Point p1, Point p2, Point p3, bool standAlone = false, int volumeSign = -1)
         {
             points[0] = p0;
             points[1] = p1;
@@ -40,7 +40,7 @@ namespace MeshData
 
             OrigVolume = Volume;
 
-            if (OrigVolume > 0)
+            if (Math.Sign(OrigVolume) != volumeSign)
             {
                 var tmp = points[0];
                 points[0] = points[1];
