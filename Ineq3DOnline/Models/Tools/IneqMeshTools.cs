@@ -34,7 +34,8 @@ namespace Ineq3DOnline.Models
                 c = ineqMesh.CheckQuality(minQuality, true);
             }
 
-            ineqMesh.DeleteLonelyPoints();
+            ineqMesh.CheckTopology();
+            //ineqMesh.DeleteLonelyPoints();
 
             ineqMesh.Jiggle(3);
 
@@ -65,7 +66,8 @@ namespace Ineq3DOnline.Models
             //    c = ineqMesh.CheckBoundaryQuality(minQuality, true);
             //}
 
-            ineqMesh.DeleteLonelyPoints();
+            ineqMesh.CheckTopology();
+            //ineqMesh.DeleteLonelyPoints();
 
             ineqMesh.Jiggle(3);
 

@@ -72,6 +72,8 @@ namespace MeshData
             DeleteLonelyPoints();
 
             CheckQuality(0.25d, false);
+            CheckTopology();
+
             Jiggle(3);
             Point.EnableUnsafeMove = true;
         }
@@ -1386,5 +1388,18 @@ namespace MeshData
                 } 
             }               
         }*/
+
+        public void CheckTopology()
+        {
+
+            foreach (var tetra in Tetrahedrons.Where(t => t.P0.BoundaryCount > 0 && t.CommonBoundaryCount > 0).ToList())
+            {
+                DeleteTetrahedron(tetra);
+            }
+
+            DeleteLonelyPoints();
+
+            return;
+        }
     }
 }

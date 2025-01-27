@@ -200,5 +200,27 @@ namespace MeshData
             double volume = Volume;
             return OrigVolume * volume > 0 && Math.Abs(volume) > tolerance * Math.Abs(OrigVolume); 
         }
+
+        public int CommonBoundaryCount
+        {
+            get
+            {
+                return
+                    P0.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i)
+                .Intersect
+                (
+                    P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i)
+                )
+                .Intersect
+                (
+                    P2.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i)
+                )
+                .Intersect
+                (
+                    P3.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i)
+                )                
+                .Count();
+            }
+        }
     }
 }
