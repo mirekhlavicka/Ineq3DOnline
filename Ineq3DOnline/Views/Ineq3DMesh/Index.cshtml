@@ -419,6 +419,7 @@
             $('#btnCreateMesh').click(function (e) {
                 $('#formCreateMesh').validate();
                 if ($('#formCreateMesh').valid()) {
+                    showSpinner();
                     $.post('@Url.Action("SetIneqMesh")',
                         $('#formCreateMesh').serialize(),
                         function (data) {
@@ -427,6 +428,7 @@
                                 loadMesh(() => start_dangle = 0.006);
                             } else {
                                 $("[data-valmsg-for='Formula']").text(data.message)
+                                hideSpinner();
                             }
                         });
                 }

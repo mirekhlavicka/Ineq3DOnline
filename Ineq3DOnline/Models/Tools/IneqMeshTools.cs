@@ -69,7 +69,7 @@ namespace Ineq3DOnline.Models
             ineqMesh.CheckTopology();
             //ineqMesh.DeleteLonelyPoints();
 
-            ineqMesh.Jiggle(3);
+            ineqMesh.Jiggle(3, false);
 
             return;
         }
@@ -152,7 +152,7 @@ namespace Ineq3DOnline.Models
 
             ineqMesh.DeleteLonelyPoints();
 
-            ineqMesh.Jiggle(3);
+            ineqMesh.Jiggle(3, false);
         }
     }
 }

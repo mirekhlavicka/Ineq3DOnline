@@ -72,6 +72,7 @@ namespace MeshData
             DeleteLonelyPoints();
 
             CheckQuality(0.25d, false);
+            CheckQuality(0.25d, false);
             CheckTopology();
 
             Jiggle(3);
@@ -728,28 +729,28 @@ namespace MeshData
             this.tetrahedrons= new HashSet<Tetrahedron>(tetrahedrons);
         }
 
-        public void Jiggle(int count)
+        public void Jiggle(int count, bool edges = true)
         {
             for (int i = 0; i < count; i++)
                 //Points.AsParallel().AsEnumerable().ForAll(point =>
                 foreach(var point in Points)
                 {
-                    CenterPoint(point, i == count - 1 ? 1000 : 100, true);
+                    CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
                 }//);
         }
 
-        public void Jiggle(int count, IEnumerable<Point> points)
+        public void Jiggle(int count, IEnumerable<Point> points, bool edges = true)
         {
             for (int i = 0; i < count; i++)
                 //points.AsParallel().ForAll(point =>
                 foreach (var point in Points)
                 {
-                    CenterPoint(point, i == count - 1 ? 1000 : 100, true);
+                    CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
                 }//);
         }
 
 
-        private void CenterPoint(Point point, double precision, bool safe)
+        private void CenterPoint(Point point, double precision, bool safe, bool edges = true)
         {
             int boundaryCount = point.BoundaryCount;
             if (boundaryCount == 0)
@@ -768,7 +769,7 @@ namespace MeshData
                     ProjectToSurface(point, precision, ineqNumber, safe);
                 }
             }
-            else if (boundaryCount == 2)
+            else if (edges && boundaryCount == 2)
             {
                 int ineqNumber1 = point.BoundaryFirstIndex;
                 int ineqNumber2 = point.BoundarySecondIndex;
@@ -779,7 +780,7 @@ namespace MeshData
                     ProjectToEdge(point, ineqNumber1, ineqNumber2, safe);
                 }
             }
-            else if (boundaryCount == 3)
+            else if (edges && boundaryCount == 3)
             {
                 int ineqNumber1 = point.BoundaryFirstIndex;
                 int ineqNumber2 = point.BoundarySecondIndex;

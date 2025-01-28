@@ -194,7 +194,7 @@ namespace Ineq3DOnline.Controllers
 
             ineqMesh.RefineBoundaryTriangles(ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => tr.Boundary)));
             ineqMesh.DeleteLonelyPoints();
-            ineqMesh.Jiggle(3);
+            ineqMesh.Jiggle(3, false);
 
             ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
