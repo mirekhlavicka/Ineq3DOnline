@@ -5,16 +5,31 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Web.SessionState;
 
 namespace Ineq3DOnline
 {
     public class DynamicCodeExecutor
     {
+        private static string codeTemplate = @"
+            using System;
+            using System.Collections.Generic;
+            using MeshData;
+            using Ineq3DOnline;
+
+            namespace DynamicNamespace
+            {
+                public class DynamicClass
+                {
+                    {0}
+                }
+            }";
+
         public static IneqMesh Execute(string code)
         {
             // Create a syntax tree
-            Random rnd = new Random();
-            var syntaxTree = CSharpSyntaxTree.ParseText(code/*.Replace("{0}", (1.0d + rnd.Next(0, 30) / 10.0d).ToString(System.Globalization.CultureInfo.InvariantCulture)).Replace("{1}", rnd.Next(2, 10).ToString())*/);
+            var syntaxTree = CSharpSyntaxTree.ParseText(codeTemplate.Replace("{0}", code));
 
             // Reference necessary assemblies
             var references = AppDomain.CurrentDomain.GetAssemblies()
@@ -34,9 +49,9 @@ namespace Ineq3DOnline
                 if (!result.Success)
                 {
                     // Handle compilation errors
-                    var errors = string.Join(Environment.NewLine, result.Diagnostics
+                    var errors = string.Join(/*Environment.NewLine*/"<br/>", result.Diagnostics
                         .Where(diag => diag.Severity == DiagnosticSeverity.Error)
-                        .Select(diag => diag.ToString()));
+                        .Select(diag => AdjustLineNumbers(diag.ToString())));
                     throw new Exception($"Compilation failed: {errors}");
                 }
 
@@ -53,6 +68,16 @@ namespace Ineq3DOnline
                 var resultMessage = method.Invoke(instance, new object[] { });
                 return (IneqMesh)resultMessage;
             }
+        }
+
+        static string AdjustLineNumbers(string input)
+        {
+            return Regex.Replace(input, @"\((-?\d+),\s*(-?\d+)\)", match =>
+            {
+                int n1 = int.Parse(match.Groups[1].Value) - 10;
+                int n2 = int.Parse(match.Groups[2].Value);
+                return $"({n1}, {n2})";
+            });
         }
     }
 }

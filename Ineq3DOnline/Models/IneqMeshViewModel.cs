@@ -56,64 +56,90 @@ x^2+8*y^2+8*z^2<1",
 90*x^6+y^2+90*z^6<1 ||
 x^2+8*y^2+8*z^2<1",
 //------------------------------------------------------------
-@"(x-0.25*cos(4*z))^2+(y-0.25*sin(4*z))^2<0.85 &&
-(x-0.25*cos(4*z))^2+(y-0.25*sin(4*z))^2>0.3",
-//------------------------------------------------------------
-@"(
-    (2*x^2+y^2+z^2-1)^3<(0.1*x^2+y^2)*z^3 &&
-    x<0.25
-) ||
-(x^2+y^2+(z-0.2)^2<0.25)",
+@"[advanced]
+public IneqMesh GetIneqMesh()
+{
+    return new IneqMesh
+    {
+        X0 = -1.5,
+        Y0 = -1.5,
+        Z0 = -1,
+        X1 = 1.5,
+        Y1 = 1.5,
+        Z1 = 5,
+        D = 0.15d,
+        Boxed = true,
+        IneqTree = IneqTreeParser.FromFormula(@""
+        (x-0.25*cos(4*z))^2+(y-0.25*sin(4*z))^2<0.85 &&
+        (x-0.25*cos(4*z))^2+(y-0.25*sin(4*z))^2>0.3
+        "")
+    };
+}
+",
 //------------------------------------------------------------
 @"[advanced]
-using System;
-using System.Collections.Generic;
-using MeshData;
-
-namespace DynamicNamespace
+public IneqMesh GetIneqMesh()
 {
-    public class DynamicClass
+    return new IneqMesh
     {
-        private IneqTree IneqTreeBalls(int count, double R, double r)
-        {
-            IneqTree res = new IneqTree((x, y, z) => 1);
+        X0 = -1.0,
+        Y0 = -1.2,
+        Z0 = -1.3,
+        X1 = 1.0,
+        Y1 = 1.2,
+        Z1 = 1.3,
+        D = 0.1d,
+        Boxed = false,
+        IneqTree = IneqTreeParser.FromFormula(@""
+        (
+            (2*x^2+y^2+z^2-1)^3<(0.1*x^2+y^2)*z^3 &&
+            x<0.25
+        ) ||
+        (x^2+y^2+(z-0.2)^2<0.25)
+        "")
+    };
+}
+",
+//------------------------------------------------------------
+@"[advanced]
+private IneqTree IneqTreeBalls(int count, double R, double r)
+{
+    IneqTree res = new IneqTree((x, y, z) => 1);
 
-            for (int i = 0; i < count; i++)
-            {
-                double x0 = R * Math.Cos(i * 2 * Math.PI / count);
-                double y0 = R * Math.Sin(i * 2 * Math.PI / count);
+    for (int i = 0; i < count; i++)
+    {
+        double x0 = R * Math.Cos(i * 2 * Math.PI / count);
+        double y0 = R * Math.Sin(i * 2 * Math.PI / count);
 
-                res = res | ((x, y, z) =>  
-                        Math.Pow(Math.Abs(x - x0),4) + 
-						Math.Pow(Math.Abs(y - y0),4) +
-						Math.Pow(Math.Abs(z),4) - 
-                        Math.Pow(r,4) );
-            }
-
-            return res;
-        }
-
-        public IneqMesh GetIneqMesh()
-        {
-            return new IneqMesh
-            {
-                X0 = -1.1,
-                Y0 = -1.1,
-                Z0 = -1.1,
-                X1 = 1.1,
-                Y1 = 1.1,
-                Z1 = 1.1,
-                D = 0.1d,
-                Boxed = false,
-                IneqTree =
-                        (
-                            (IneqTree)((x, y, z) => Math.Pow(Math.Abs(x),4) + Math.Pow(Math.Abs(y),4)  + Math.Pow(Math.Abs(z),4) - 0.25) &
-                            ((x, y, z) => -x*x - y*y + 0.05d)
-                        ) |
-                        (IneqTreeBalls(8, 0.8d, 0.2d))
-            };
-        }
+        res = res | ((x, y, z) =>  
+                Math.Pow(Math.Abs(x - x0),4) + 
+				Math.Pow(Math.Abs(y - y0),4) +
+				Math.Pow(Math.Abs(z),4) - 
+                Math.Pow(r,4) );
     }
+
+    return res;
+}
+
+public IneqMesh GetIneqMesh()
+{
+    return new IneqMesh
+    {
+        X0 = -1.1,
+        Y0 = -1.1,
+        Z0 = -1.1,
+        X1 = 1.1,
+        Y1 = 1.1,
+        Z1 = 1.1,
+        D = 0.1d,
+        Boxed = false,
+        IneqTree =
+                (
+                    (IneqTree)((x, y, z) => Math.Pow(Math.Abs(x),4) + Math.Pow(Math.Abs(y),4)  + Math.Pow(Math.Abs(z),4) - 0.25) &
+                    ((x, y, z) => -x*x - y*y + 0.05d)
+                ) |
+                (IneqTreeBalls(8, 0.8d, 0.2d))
+    };
 }
 "
         };
@@ -138,7 +164,7 @@ namespace DynamicNamespace
         {
             if (sample == -1)
             {
-                sample = new Random().Next(sampleFormulas.Length);
+                sample = sampleFormulas.Length - 3; //new Random().Next(sampleFormulas.Length);
             }
             else
             {

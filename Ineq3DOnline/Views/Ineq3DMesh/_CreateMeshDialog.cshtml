@@ -2,7 +2,7 @@
 
 <!-- Modal -->
 <div class="modal fade" id="modalCreateMesh" role="dialog">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width: 1200px; width: calc(100vw - 100px)">
 
         <!-- Modal content-->
         <div class="modal-content">
@@ -21,12 +21,12 @@
                         </ul>
                         <div class="tab-content">
                             <div class="tab-pane active" id="tab1">
-                                @Html.TextAreaFor(m => Model.Formula, new { @class = "form-control", style = "height:206px; margin-top: 10px", spellcheck = "false" })
+                                @Html.TextAreaFor(m => Model.Formula, new { @class = "form-control", style = "display: none; height:700px; margin-top: 10px", spellcheck = "false" })
                                 @Html.ValidationMessageFor(model => model.Formula, "", new { @class = "text-danger" })
 
-                                <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:5px">
+                                <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:15px">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-primary btn-xs" id="btnNextSampleFormula">Next sample</button>
+                                        <button type="button" class="btn btn-primary btn-xs" id="btnNextSampleFormula" style="margin-right:5px">Next sample</button>
                                         <button type="button" class="btn btn-primary btn-xs" id="btnClearFormula">Clear</button>
                                     </div>
                                 </div>
@@ -117,3 +117,22 @@
     </div>
 </div>
 
+<script>
+    var cmFormula = null;
+
+    $('#modalCreateMesh').on('shown.bs.modal', function () {
+        if (!cmFormula) {
+            cmFormula = CodeMirror.fromTextArea($('#Formula')[0], {
+                mode: 'text/x-csharp',
+                lineNumbers: true,
+                lineWrapping: false,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                foldGutter: true,
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+            });
+            cmFormula.setSize("100%", "calc(100vh - 350px)");
+        }
+    })
+
+</script>

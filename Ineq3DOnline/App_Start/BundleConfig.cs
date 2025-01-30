@@ -29,6 +29,8 @@ namespace Ineq3DOnline
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",
+                      "~/Scripts/codemirror/lib/codemirror.css",
+                      "~/Scripts/codemirror/addon/fold/foldgutter.css",
                       "~/Content/site.css"));
 
             bundles.Add(new ScriptBundle("~/bundles/three").Include(
@@ -38,6 +40,18 @@ namespace Ineq3DOnline
                         "~/Scripts/three/Projector.js",
                         "~/Scripts/Spin.js",
                         "~/Scripts/three/PLYLoader.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/codemirror")
+                .Include("~/Scripts/codemirror/lib/codemirror.js")
+                .Include("~/Scripts/codemirror/mode/clike/clike.js")
+                .Include("~/Scripts/codemirror/addon/edit/matchbrackets.js")
+                .Include("~/Scripts/codemirror/addon/edit/closebrackets.js")
+                .Include("~/Scripts/codemirror/addon/fold/foldcode.js")
+                .Include("~/Scripts/codemirror/addon/fold/foldgutter.js")
+                .Include("~/Scripts/codemirror/addon/fold/brace-fold.js")
+                .Include("~/Scripts/codemirror/addon/fold/indent-fold.js")
+                .Include("~/Scripts/codemirror/addon/fold/comment-fold.js")
+                );
 
         }
     }

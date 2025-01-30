@@ -417,6 +417,7 @@
             });
 
             $('#btnCreateMesh').click(function (e) {
+                $('#Formula').val(cmFormula.getValue());
                 $('#formCreateMesh').validate();
                 if ($('#formCreateMesh').valid()) {
                     showSpinner();
@@ -427,7 +428,7 @@
                                 $('#modalCreateMesh').modal('hide');
                                 loadMesh(() => start_dangle = 0.006);
                             } else {
-                                $("[data-valmsg-for='Formula']").text(data.message)
+                                $("[data-valmsg-for='Formula']").html(data.message)
                                 hideSpinner();
                             }
                         });
@@ -436,6 +437,7 @@
 
             $('#btnClearFormula').click(function (e) {
                 $('#Formula').val('');
+                cmFormula.setValue('');
             });
 
             $('#btnNextSampleFormula').click(function (e) {
@@ -444,6 +446,7 @@
                     {sampleIndex: sampleIndex},
                     function( data ) {
                         $('#Formula').val(data.formula);
+                        cmFormula.setValue($('#Formula').val());
                     });
             });
 
@@ -581,7 +584,7 @@
                     corners: 1, // Corner roundness (0..1)
                     rotate: 0, // The rotation offset
                     direction: 1, // 1: clockwise, -1: counterclockwise
-                    color: '#ffffff', // #rgb or #rrggbb or array of colors
+                    color: '#ff0', // #rgb or #rrggbb or array of colors
                     speed: 1, // Rounds per second
                     trail: 60, // Afterglow percentage
                     shadow: false, // Whether to render a shadow
