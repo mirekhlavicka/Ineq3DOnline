@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using MeshData;
 using Jace;
+using System.Web;
+using System.Xml.Linq;
+using System.Web.Helpers;
 
 namespace Ineq3DOnline
 {
@@ -14,6 +17,15 @@ namespace Ineq3DOnline
         public IEnumerable<string> Samples
         {
             get { return samples.Keys; }
+        }
+
+        public IEnumerable<string> DataSamples
+        {
+            get 
+            {
+                string path = HttpContext.Current.Server.MapPath("~/Samples");
+                return System.IO.Directory.GetFiles(path, "*.json").Select(fn => System.IO.Path.GetFileNameWithoutExtension(fn));
+            }
         }
 
         public MeshSamples()

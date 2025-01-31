@@ -1,5 +1,7 @@
 ﻿using Ineq3DOnline.Models;
 using MeshData;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -72,6 +74,20 @@ namespace Ineq3DOnline.Controllers
             }
 
             return Json(new { success = false, message = "Invalid data" });
+        }
+
+        public ActionResult GetMeshData(string name)
+        {
+            string path = System.IO.Path.Combine(Server.MapPath("~/Samples"), name + ".json");
+
+            var json = System.IO.File.ReadAllText(path);
+
+            return new ContentResult
+            {
+                Content = json,
+                ContentType = "application/json",
+                ContentEncoding = Encoding.UTF8
+            };
         }
 
         public ActionResult GetMesh(bool stl = false)
@@ -201,15 +217,15 @@ namespace Ineq3DOnline.Controllers
             return Content(null);
         }
 
-        public ActionResult GetSampleFormula(int sampleIndex)
-        {
-            var tmp = IneqMeshViewModel.DefaultModel(sampleIndex);
+        //public ActionResult GetSampleFormula(int sampleIndex)
+        //{
+        //    var tmp = IneqMeshViewModel.DefaultModel(sampleIndex);
 
-            return Json(new
-            {
-                formula = tmp.Formula
-            });
-        }
+        //    return Json(new
+        //    {
+        //        formula = tmp.Formula
+        //    });
+        //}
 
         public ActionResult GetSampleUFunc(int sampleUFuncIndex)
         {

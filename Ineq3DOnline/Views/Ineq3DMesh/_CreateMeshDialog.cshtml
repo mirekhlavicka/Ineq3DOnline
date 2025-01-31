@@ -4,14 +4,15 @@
 <div class="modal fade" id="modalCreateMesh" role="dialog">
     <div class="modal-dialog" style="max-width: 1200px; width: calc(100vw - 100px)">
 
-        <!-- Modal content-->
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">Create mesh</h4>
-            </div>
-            <div class="modal-body" style="min-height:285px">
-                <form role="form" id="formCreateMesh">
+        <form role="form" id="formCreateMesh">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Create mesh</h4>
+                </div>
+                <div class="modal-body" style="min-height:285px">
+
                     <div class="tabbable">
                         <!-- Only required for left/right tabs -->
                         <ul class="nav nav-tabs">
@@ -26,7 +27,7 @@
 
                                 <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:15px">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-primary btn-xs" id="btnNextSampleFormula" style="margin-right:5px">Next sample</button>
+                                        @*<button type="button" class="btn btn-primary btn-xs" id="btnNextSampleFormula" style="margin-right:5px">Next sample</button>*@
                                         <button type="button" class="btn btn-primary btn-xs" id="btnClearFormula">Clear</button>
                                     </div>
                                 </div>
@@ -107,13 +108,17 @@
                             </div>
                         </div>
                     </div>
-                </form>
+
+                </div>
+                <div class="modal-footer">
+                    <div style="display:inline-block;margin-right:100px">
+                        @Html.EditorFor(m => Model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "Enter name to save" } })
+                    </div>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" @*data-dismiss="modal"*@ id="btnCreateMesh">Create</button>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" @*data-dismiss="modal"*@ id="btnCreateMesh">Create</button>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -132,6 +137,8 @@
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
             });
             cmFormula.setSize("100%", "calc(100vh - 350px)");
+        } else {
+            cmFormula.setValue($('#Formula').val());
         }
     })
 

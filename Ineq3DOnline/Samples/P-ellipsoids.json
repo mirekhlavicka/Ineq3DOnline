@@ -1,0 +1,1 @@
+{"name":"P-ellipsoids","x0":-1.0,"y0":-1.0,"z0":-1.0,"x1":1.0,"y1":1.0,"z1":1.0,"maxDivisionCount":12,"quality":false,"curvatureQuality":true,"formula":"16*x^2+16*y^2+z^2<1 ||\r\n90*x^6+y^2+90*z^6<1 ||\r\nx^2+8*y^2+8*z^2<1"}

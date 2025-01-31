@@ -15,7 +15,7 @@
 @section Samples
 {
     <li class="dropdown">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Samples<span class="caret"></span></a>
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Computed samples<span class="caret"></span></a>
         <ul class="dropdown-menu">
 
             @foreach (var m in Model.Samples)
@@ -26,83 +26,97 @@
     </li>
 }
 
+@section SampleData
+{
+    <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Samples<span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            @foreach (var m in Model.DataSamples)
+            {
+                <li><a href="#" data-mesh="@m" data-type="json">@m</a></li>
+            }
+        </ul>
+    </li>
+}
+
+
 @section Scripts
 {
     @Scripts.Render("~/bundles/jqueryval")
 
-<script type="x-shader/x-vertex" id="vertexShaderLevels">
+    <script type="x-shader/x-vertex" id="vertexShaderLevels">
 
-    //attribute float val;
-    //varying float vVal;
-    varying vec2 vUv;
+        //attribute float val;
+        //varying float vVal;
+        varying vec2 vUv;
 
-    void main() {
+        void main() {
 
-        //vVal = val;
-        vUv = uv;
+            //vVal = val;
+            vUv = uv;
 
-        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-        gl_Position.z -=0.001;
-    }
-</script>
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+            gl_Position.z -=0.001;
+        }
+    </script>
 
-<script type="x-shader/x-fragment" id="fragmentShaderLevels">
+    <script type="x-shader/x-fragment" id="fragmentShaderLevels">
 
-    uniform float levels[15];
-    varying vec2 vUv;
+        uniform float levels[15];
+        varying vec2 vUv;
 
-    float levelFactor() {
-        float d = fwidth( vUv.y );
-        float result = 1.0;
+        float levelFactor() {
+            float d = fwidth( vUv.y );
+            float result = 1.0;
 
-        for (int i = 0; i < 15; ++i) {
-            float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
-            if(v < result){
-                result = v;
+            for (int i = 0; i < 15; ++i) {
+                float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
+                if(v < result){
+                    result = v;
+                }
             }
+
+            return result;
         }
 
+        void main() {
+            gl_FragColor.rgb = vec3(0.0);
+            gl_FragColor.a = mix(0.5, 0.0, levelFactor());
+        }
+
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentShaderLevelsWithColor">
+
+        uniform float levels[15];
+        varying vec2 vUv;
+
+        vec2 levelFactor() {
+        float d = fwidth( vUv.y );
+
+        vec2 result = vec2(1.0, -1.0);
+        for (int i = 0; i < 15; ++i) {
+        float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
+        if(v < result[0]){
+        result[0] = v;
+        }
+
+        if(levels[i] > vUv.y && result[1] < 0.0){
+        result[1] = float(i) / 10.0;
+        }
+        }
         return result;
-    }
+        }
 
-    void main() {
-        gl_FragColor.rgb = vec3(0.0);
-        gl_FragColor.a = mix(0.5, 0.0, levelFactor());
-    }
+        void main() {
 
-</script>
+        vec2 lev = levelFactor();
+        //gl_FragColor.rgb = mix( vec3( 0.0 ), mix(vec3(1.0,0.0,0.0), vec3(0.0,0.0,1.0), lev[1]), lev[0] );
+        gl_FragColor.rgb = vec3( 0.0 );
+        gl_FragColor.a = mix(0.5, 0.0, lev[0] );
+        }
 
-<script type="x-shader/x-fragment" id="fragmentShaderLevelsWithColor">
-
-    uniform float levels[15];
-    varying vec2 vUv;
-
-    vec2 levelFactor() {
-    float d = fwidth( vUv.y );
-
-    vec2 result = vec2(1.0, -1.0);
-    for (int i = 0; i < 15; ++i) {
-    float v = smoothstep( 0.0 ,  d * 1.2, abs(vUv.y - levels[i]) );
-    if(v < result[0]){
-    result[0] = v;
-    }
-
-    if(levels[i] > vUv.y && result[1] < 0.0){
-    result[1] = float(i) / 10.0;
-    }
-    }
-    return result;
-    }
-
-    void main() {
-
-    vec2 lev = levelFactor();
-    //gl_FragColor.rgb = mix( vec3( 0.0 ), mix(vec3(1.0,0.0,0.0), vec3(0.0,0.0,1.0), lev[1]), lev[0] );
-    gl_FragColor.rgb = vec3( 0.0 );
-    gl_FragColor.a = mix(0.5, 0.0, lev[0] );
-    }
-
-</script>
+    </script>
 
     <script type="text/javascript">
         $.validator.setDefaults({
@@ -111,7 +125,7 @@
     </script>
 
     <script>
-        var sampleIndex = @defaultModel.SampleIndex;
+        @*var sampleIndex = @defaultModel.SampleIndex;*@
         var sampleUFuncIndex = @defaultModel.SampleUFuncIndex;
         var currentMeshName = '@ViewBag.CurrentMesh';
 
@@ -440,15 +454,16 @@
                 cmFormula.setValue('');
             });
 
-            $('#btnNextSampleFormula').click(function (e) {
+            @*$('#btnNextSampleFormula').click(function (e) {
                 sampleIndex++;
                 $.post('@Url.Action("GetSampleFormula", "Ineq3DMesh")',
                     {sampleIndex: sampleIndex},
                     function( data ) {
                         $('#Formula').val(data.formula);
+                        $('#Name').val('');
                         cmFormula.setValue($('#Formula').val());
                     });
-            });
+            });*@
 
             $('#btnClearUFunc').click(function (e) {
                 $('#UFunc').val('');
@@ -483,7 +498,7 @@
                 keepSpinner = true;
                 showSpinner();
                 let step = 0;
-                var improveAndLoad = function () {                    
+                var improveAndLoad = function () {
                     $.get('@Url.Action("ImproveCurvatureQuality")' + '?ts=' + $.now(), function () {
                         loadMesh(() => {
                             step++;
@@ -544,6 +559,32 @@
 
             $(document).on('click', 'a[data-mesh]', function (e) {
                 currentMeshName = $(this).data('mesh');
+
+                if ($(this).data('type') === 'json') {
+                    $.get('@Url.Action("GetMeshData")' + '?name=' + currentMeshName, function (data) {
+
+                        //$('#Name').val(data.name);
+
+                        $('#Formula').val(data.formula);
+
+                        $('#X0').val(data.x0);
+                        $('#X1').val(data.x1);
+                        $('#Y0').val(data.y0);
+                        $('#Y1').val(data.y1);
+                        $('#Z0').val(data.z0);
+                        $('#Z1').val(data.z1);
+
+                        $('#MaxDivisionCount').val(data.maxDivisionCount);
+
+                        $('#Quality').prop('checked', data.quality);
+                        $('#CurvatureQuality').prop('checked', data.maxDivisionCount);
+
+
+                        $("#modalCreateMesh").modal()
+                    });
+                    return;
+                }
+
                 showSpinner();
                 $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + currentMeshName, function () {
                     loadMesh(() => start_dangle = 0.006);
