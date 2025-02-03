@@ -1,1 +1,1 @@
-{"name":"Artwork","x0":-1.0,"y0":-1.0,"z0":-1.0,"x1":1.0,"y1":1.0,"z1":1.0,"maxDivisionCount":12,"quality":false,"curvatureQuality":true,"formula":"(\r\n\tx^2+y^2+z^2<1 &&\r\n\tz<0+(cos(5*x)+cos(5*y))/3\r\n) ||\r\nx^2+y^2+(z-.8)^2<0.25"}
+{"name":"Artwork","x0":-1.0,"y0":-1.0,"z0":-1.0,"x1":1.0,"y1":1.0,"z1":1.0,"maxDivisionCount":12,"quality":false,"curvatureQuality":false,"formula":"(\r\n\tx^2+y^2+z^2<1 &&\r\n\tz<0+(cos(5*x)+cos(5*y))/3\r\n) ||\r\nx^2+y^2+(z-.8)^2<0.25"}

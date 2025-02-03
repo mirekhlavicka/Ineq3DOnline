@@ -1,1 +1,1 @@
-{"name":"Logo","x0":-1.0,"y0":-1.0,"z0":-1.0,"x1":1.0,"y1":1.0,"z1":1.0,"maxDivisionCount":12,"quality":false,"curvatureQuality":true,"formula":"(\r\n    x^2 + y^2 + z^2 < 1.25 ^ 2\r\n) &&\r\nx^2+y^2 > 0.5^2 &&\r\nx^2+z^2 > 0.5^2 &&\r\nz^2+y^2 > 0.5^2"}
+{"name":"Logo","x0":-1.0,"y0":-1.0,"z0":-1.0,"x1":1.0,"y1":1.0,"z1":1.0,"maxDivisionCount":12,"quality":false,"curvatureQuality":false,"formula":"(\r\n    x^2 + y^2 + z^2 < 1.25 ^ 2\r\n) &&\r\nx^2+y^2 > 0.5^2 &&\r\nx^2+z^2 > 0.5^2 &&\r\nz^2+y^2 > 0.5^2"}

@@ -74,9 +74,9 @@ namespace MeshData
             CheckQuality(0.25d, false);
             CheckQuality(0.25d, false);
             CheckTopology();
-
-            Jiggle(3);
+            
             Point.EnableUnsafeMove = true;
+            Jiggle(3);
         }
         
         private void ResolveMesh(IneqTree.IneqNode node, int domaiNumber)
@@ -1396,6 +1396,22 @@ namespace MeshData
             foreach (var tetra in Tetrahedrons.Where(t => t.P0.BoundaryCount > 0 && t.CommonBoundaryCount > 0).ToList())
             {
                 DeleteTetrahedron(tetra);
+            }
+
+            foreach (var p in Points.Where(pp => pp.BoundaryCount == 2))
+            {
+                var b1 = p.BoundaryFirstIndex;
+                var b2 = p.BoundarySecondIndex;
+
+                if (p.Points.Where(pp => pp.BoundaryCount > 0).All(pp => pp.Boundary[b1]))
+                {
+                    p.Boundary[b2] = false;
+                }
+
+                if (p.Points.Where(pp => pp.BoundaryCount > 0).All(pp => pp.Boundary[b2]))
+                {
+                    p.Boundary[b1] = false;
+                }
             }
 
             DeleteLonelyPoints();
