@@ -2,7 +2,7 @@
 
 <!-- Modal -->
 <div class="modal fade" id="modalCreateMesh" role="dialog">
-    <div class="modal-dialog" style="max-width: 1200px; width: calc(100vw - 100px)">
+    <div class="modal-dialog cm-dialog">
 
         <form role="form" id="formCreateMesh">
             <!-- Modal content-->
@@ -139,7 +139,25 @@
             cmFormula.setSize("100%", "calc(100vh - 350px)");
         } else {
             cmFormula.setValue($('#Formula').val());
+            cmFormula.refresh();
+        }
+        cmFormula.focus();
+    })
+
+    $('#modalCreateMesh a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        if (cmFormula) {
+            cmFormula.refresh();
+            cmFormula.focus();
         }
     })
 
 </script>
+
+<style>
+    @@media (min-width: 768px){
+    .cm-dialog {
+        max-width: 1200px;
+        width: calc(100vw - 100px);
+    }
+               }
+</style>

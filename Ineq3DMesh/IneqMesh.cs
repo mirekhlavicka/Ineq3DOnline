@@ -71,12 +71,14 @@ namespace MeshData
                 DeleteTetrahedron(t);            
             DeleteLonelyPoints();
 
+            Jiggle(2);
+
             CheckQuality(0.25d, false);
             CheckQuality(0.25d, false);
             CheckTopology();
             
             Point.EnableUnsafeMove = true;
-            Jiggle(3);
+            Jiggle(2);
         }
         
         private void ResolveMesh(IneqTree.IneqNode node, int domaiNumber)

@@ -14,141 +14,6 @@ namespace Ineq3DOnline.Models
 {
     public class IneqMeshViewModel
     {
-
-//        private static string[] sampleFormulas =
-//        {
-//@"z < (sin(6*x)+sin(6*y))/4",
-////------------------------------------------------------------
-//@"(
-//	x^2 + y^2 + z^2 < 0.75^2
-//) ||
-//(
-//	x^2 + y^2 + (z-0.75)^2 < 0.25^2
-//)",
-////------------------------------------------------------------
-//@"(
-//    x^2 + y^2 + z^2 < 1.25 ^ 2
-//) &&
-//x^2+y^2 > 0.5^2 &&
-//x^2+z^2 > 0.5^2 &&
-//z^2+y^2 > 0.5^2",
-////------------------------------------------------------------
-//@"(
-//    x^2 + y^2 + z^2 < 1 &&
-//    x + y < z^2
-//) ||
-//(
-//    x^2 + z^2 < 0.25
-//)",
-////------------------------------------------------------------
-//@"(
-//	x^2+y^2+z^2<1 &&
-//	z<0+(cos(5*x)+cos(5*y))/3
-//) ||
-//x^2+y^2+(z-.8)^2<0.25",
-////------------------------------------------------------------
-//@"abs(x)<0.25 ||
-//0.5*x^2+y^2+z^2<0.5",
-////------------------------------------------------------------
-//@"8*x^2+8*y^2+z^2<1 ||
-//8*x^2+y^2+8*z^2<1 ||
-//x^2+8*y^2+8*z^2<1",
-////------------------------------------------------------------
-//@"16*x^2+16*y^2+z^2<1 ||
-//90*x^6+y^2+90*z^6<1 ||
-//x^2+8*y^2+8*z^2<1",
-////------------------------------------------------------------
-//@"[advanced]
-//public IneqMesh GetIneqMesh()
-//{
-//    return new IneqMesh
-//    {
-//        X0 = -1.5,
-//        Y0 = -1.5,
-//        Z0 = -1,
-//        X1 = 1.5,
-//        Y1 = 1.5,
-//        Z1 = 5,
-//        D = 0.15d,
-//        Boxed = true,
-//        IneqTree = IneqTreeParser.FromFormula(@""
-//        (x-0.25*cos(4*z))^2+(y-0.25*sin(4*z))^2<0.85 &&
-//        (x-0.25*cos(4*z))^2+(y-0.25*sin(4*z))^2>0.3
-//        "")
-//    };
-//}
-//",
-////------------------------------------------------------------
-//@"[advanced]
-//public IneqMesh GetIneqMesh()
-//{
-//    return new IneqMesh
-//    {
-//        X0 = -1.0,
-//        Y0 = -1.2,
-//        Z0 = -1.3,
-//        X1 = 1.0,
-//        Y1 = 1.2,
-//        Z1 = 1.3,
-//        D = 0.1d,
-//        Boxed = false,
-//        IneqTree = IneqTreeParser.FromFormula(@""
-//        (
-//            (2*x^2+y^2+z^2-1)^3<(0.1*x^2+y^2)*z^3 &&
-//            x<0.25
-//        ) ||
-//        (x^2+y^2+(z-0.2)^2<0.25)
-//        "")
-//    };
-//}
-//",
-////------------------------------------------------------------
-//@"[advanced]
-//private IneqTree Balls(int count, double R, double r, double p)
-//{
-//    var res = new IneqTree((x, y, z) => 1);
-
-//    for (int i = 0; i < count; i++)
-//    {
-//        double x0 = R * Math.Cos(i * 2 * Math.PI / count);
-//        double y0 = R * Math.Sin(i * 2 * Math.PI / count);
-
-//        res = res | ((x, y, z) =>  
-//                Math.Pow(Math.Abs(x - x0),p) + 
-//				Math.Pow(Math.Abs(y - y0),p) +
-//				Math.Pow(Math.Abs(z),p) - 
-//                Math.Pow(r,p));
-//    }
-
-//    return res;
-//}
-
-//public IneqMesh GetIneqMesh()
-//{
-//	var p = 5d;
-//  	var ball = new IneqTree((x, y, z) => Math.Pow(Math.Abs(x),p) + Math.Pow(Math.Abs(y),p)  + Math.Pow(Math.Abs(z),p) - Math.Pow(0.7d,p));
-  
-//    return new IneqMesh
-//    {
-//        X0 = -1.0,
-//        Y0 = -1.0,
-//        Z0 = -1.0,
-//        X1 = 1.0,
-//        Y1 = 1.0,
-//        Z1 = 1.0,
-//        D = 0.1d,
-//        Boxed = false,
-//        IneqTree =
-//                (
-//                    ball &
-//                   ((x, y, z) => -x*x - y*y + 0.05d)
-//                ) |
-//                Balls(8, 0.8d, 0.2d, p)
-//    };
-//}
-//"
-//        };
-
         private static string[] sampleUFuncs = {
             "sin(6 * x - t) + sin(6 * y - t) + sin(6 * z - t)",
             "x * y * (z - sin(t)^2)",
@@ -162,20 +27,10 @@ namespace Ineq3DOnline.Models
             "sin(t)*(z-x^2+y^2)+(1-sin(t))*(x-y^2-z^2)"
         } ;
 
-        //public int SampleIndex { get; set; }
         public int SampleUFuncIndex { get; set; }
 
         public static IneqMeshViewModel DefaultModel(int sample = -1, int sampleU = -1)
         {
-            /*if (sample == -1)
-            {
-                sample = new Random().Next(sampleFormulas.Length);
-            }
-            else
-            {
-                sample = sample % sampleFormulas.Length;
-            }*/
-
             if (sampleU == -1)
             {
                 sampleU = new Random().Next(sampleUFuncs.Length);
@@ -187,8 +42,7 @@ namespace Ineq3DOnline.Models
 
             return new IneqMeshViewModel
             {
-                Formula = "x^2 + y^2 + z^2 < 1",//sampleFormulas[sample],
-                //SampleIndex = sample,
+                Formula = "x^2 + y^2 + z^2 < 1",
                 SampleUFuncIndex = sampleU,
                 MaxDivisionCount = 12,
                 X0 = -1,
@@ -297,7 +151,7 @@ namespace Ineq3DOnline.Models
                     MaxDivisionCount,
                     Quality,
                     CurvatureQuality,
-                    Formula
+                    Formula = Formula.Replace("[advancedX]", "[advanced]") 
                 }, Formatting.None, new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver(),

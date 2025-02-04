@@ -227,6 +227,7 @@
     <Content Include="Samples\Pillar.json" />
     <Content Include="Samples\Small ball on big ball.json" />
     <Content Include="Samples\Helix.json" />
+    <Content Include="Samples\Anuloids on anuloid.json" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\codemirror\addon\edit\closebrackets.js" />
     <Content Include="Scripts\codemirror\addon\edit\matchbrackets.js" />

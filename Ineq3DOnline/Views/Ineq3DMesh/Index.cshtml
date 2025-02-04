@@ -15,7 +15,7 @@
 @section Samples
 {
     <li class="dropdown">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Computed samples<span class="caret"></span></a>
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Computed<span class="caret"></span></a>
         <ul class="dropdown-menu">
 
             @foreach (var m in Model.Samples)
@@ -563,7 +563,7 @@
                 if ($(this).data('type') === 'json') {
                     $.get('@Url.Action("GetMeshData")' + '?name=' + currentMeshName, function (data) {
 
-                        //$('#Name').val(data.name);
+                        $('#Name').val(data.name);
 
                         $('#Formula').val(data.formula);
 
