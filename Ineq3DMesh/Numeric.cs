@@ -7,7 +7,7 @@ namespace MeshData
 {
     public class Numeric
     {
-        public static bool Newton2d(ref double x0, ref double y0, Func<double, double, double> func1, Func<double, double, double> func2, double D)
+        public static bool Newton2d(ref double x0, ref double y0, Func<double, double, double> func1, Func<double, double, double> func2, double D, int maxIterations = 100)
         {
             double x, y, f1, f2, f1x, f1y, f2x, f2y, h1 = D, h2 = D;
             double dx, dy;
@@ -16,7 +16,8 @@ namespace MeshData
             dy = D / 10000000d;
 
             x = x0; y = y0;
-            for (int i = 0; i < 10; i++)
+            int iteration = 0;
+            while (iteration < maxIterations)
             {
                 f1 = func1(x, y);
                 f2 = func2(x, y);
@@ -33,8 +34,15 @@ namespace MeshData
                 h1 = (-f1 * f2y + f1y * f2) / det;
                 h2 = (-f1x * f2 + f1 * f2x) / det;
                 x += h1; y += h2;
+
+                if (Math.Abs(h1) + Math.Abs(h2) < D / 200d)
+                {
+                    break;
+                }
+
+                iteration++;
             }
-            if (/*Math.Abs(x0 - x) + Math.Abs(y0 - y) < D && */Math.Abs(h1) + Math.Abs(h2) < D / 100d)
+            if (Math.Abs(h1) + Math.Abs(h2) < D / 200d)
             {
                 x0 = x;
                 y0 = y;
@@ -46,7 +54,7 @@ namespace MeshData
             }
         }
 
-        public static bool Newton3d(ref double x0, ref double y0, ref double z0, Func<double, double, double, double> func1, Func<double, double, double, double> func2, Func<double, double, double, double> func3, double D)
+        public static bool Newton3d(ref double x0, ref double y0, ref double z0, Func<double, double, double, double> func1, Func<double, double, double, double> func2, Func<double, double, double, double> func3, double D, int maxIterations = 100)
         {
             double x, y, z, f1, f2, f3, f1x, f1y, f1z, f2x, f2y, f2z, f3x, f3y, f3z, h1 = D, h2 = D, h3 = D;
             double dx, dy, dz;
@@ -56,7 +64,8 @@ namespace MeshData
             dz = D / 10000000d;
 
             x = x0; y = y0; z = z0;
-            for (int i = 0; i < 10; i++)
+            int iteration = 0;
+            while (iteration < maxIterations)
             {
                 f1 = func1(x, y, z);
                 f2 = func2(x, y, z);
@@ -84,8 +93,15 @@ namespace MeshData
                 h3 = Determinant(f1x, f1y, f1, f2x, f2y, f2, f3x, f3y, f3) / det;
 
                 x -= h1; y -= h2; z -= h3;
+                if(Math.Abs(h1) + Math.Abs(h2) + Math.Abs(h3) < D / 200d)
+                {
+                    break;
+                }
+
+                iteration++;
+
             }
-            if (/*Math.Abs(x0 - x) + Math.Abs(y0 - y) < D && */Math.Abs(h1) + Math.Abs(h2) + Math.Abs(h3) < D / 100d)
+            if (Math.Abs(h1) + Math.Abs(h2) + Math.Abs(h3) < D / 200d)
             {
                 x0 = x;
                 y0 = y;

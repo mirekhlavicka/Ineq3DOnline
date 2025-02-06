@@ -135,31 +135,35 @@ namespace Ineq3DOnline.Models
             {
                 PLY = PLYTools.GetPLY(IneqMesh);
             }
+        }
 
-            if (!String.IsNullOrEmpty(Name))
+        public void Save(string name)
+        {
+            string path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".json");
+            System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(new
             {
-                string path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), Name + ".json");
-                System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(new
-                {
-                    Name,
-                    X0,
-                    Y0,
-                    Z0,
-                    X1,
-                    Y1,
-                    Z1,
-                    MaxDivisionCount,
-                    Quality,
-                    CurvatureQuality,
-                    Formula = Formula.Replace("[advancedX]", "[advanced]") 
-                }, Formatting.None, new JsonSerializerSettings
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                    NullValueHandling = NullValueHandling.Ignore
-                }));
+                Name,
+                X0,
+                Y0,
+                Z0,
+                X1,
+                Y1,
+                Z1,
+                MaxDivisionCount,
+                Quality,
+                CurvatureQuality,
+                Formula = Formula.Replace("[advancedX]", "[advanced]")
+            }, Formatting.None, new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                NullValueHandling = NullValueHandling.Ignore
+            }));
+            if (!String.IsNullOrEmpty(PLY))
+            {
+                path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".ply");
+                System.IO.File.WriteAllText(path, PLY);
             }
-            //System.IO.File.WriteAllText(path, ineqMeshViewModel.PLY);
         }
     }
 }

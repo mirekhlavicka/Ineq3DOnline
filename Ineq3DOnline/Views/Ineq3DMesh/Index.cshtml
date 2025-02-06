@@ -430,17 +430,27 @@
                 controls.reset();
             });
 
-            $('#btnCreateMesh').click(function (e) {
+            $('#btnCreateMesh, #btnSaveMesh').click(function (e) {
+                if (this.id == 'btnSaveMesh' && !$('#Name').val()) {
+                    alert("Enter name to save");
+                    return;
+                }
+
                 $('#Formula').val(cmFormula.getValue());
                 $('#formCreateMesh').validate();
                 if ($('#formCreateMesh').valid()) {
                     showSpinner();
-                    $.post('@Url.Action("SetIneqMesh")',
+                    let save = (this.id == 'btnSaveMesh');
+                    $.post('@Url.Action("SetIneqMesh")' + (save ? '?save=true' : ''),
                         $('#formCreateMesh').serialize(),
                         function (data) {
                             if (data.success) {
-                                $('#modalCreateMesh').modal('hide');
-                                loadMesh(() => start_dangle = 0.006);
+                                if (!save) {
+                                    $('#modalCreateMesh').modal('hide');
+                                    loadMesh(() => { start_dangle = 0.006; $('#ddImprove').removeClass('disabled'); });
+                                } else {
+                                    hideSpinner();
+                                }
                             } else {
                                 $("[data-valmsg-for='Formula']").html(data.message)
                                 hideSpinner();
@@ -561,6 +571,7 @@
                 currentMeshName = $(this).data('mesh');
 
                 if ($(this).data('type') === 'json') {
+                    $('#ddImprove').addClass('disabled');
                     $.get('@Url.Action("GetMeshData")' + '?name=' + currentMeshName, function (data) {
 
                         $('#Name').val(data.name);
@@ -577,10 +588,16 @@
                         $('#MaxDivisionCount').val(data.maxDivisionCount);
 
                         $('#Quality').prop('checked', data.quality);
-                        $('#CurvatureQuality').prop('checked', data.curvatureQuality);
+                        $('#CurvatureQuality').prop('checked', data.curvatureQuality);                        
 
-
-                        $("#modalCreateMesh").modal()
+                        $.get('@Url.Action("SetSampleMesh1")' + '?mesh=' + currentMeshName, function (data) {
+                            if (data.success) {
+                                showSpinner();
+                                loadMesh(() => start_dangle = 0.006);
+                            } else {
+                                $("#modalCreateMesh").modal()
+                            }                            
+                        });
                     });
                     return;
                 }
@@ -609,6 +626,13 @@
 
             $("#lnkDownloadMesh").attr("href", '@Url.Action("GetMesh", "Ineq3DMesh")');
             $("#lnkDownloadMeshSTL").attr("href", '@Url.Action("GetMesh", "Ineq3DMesh")' + "?stl=true");
+
+            $(".dropdown").on("click", function (event) {
+                if ($(this).hasClass("disabled")) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
 
         });
 

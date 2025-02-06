@@ -585,7 +585,7 @@ namespace MeshData
             double stopdist = D / precision;
             double errordist = 2 * D / 3.0d;
             int p = 0;
-            int maxItCount = 20;
+            int maxItCount = 100;
 
             if (tet > errordist)
             {

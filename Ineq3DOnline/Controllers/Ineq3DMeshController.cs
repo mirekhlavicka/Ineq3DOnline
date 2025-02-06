@@ -55,15 +55,46 @@ namespace Ineq3DOnline.Controllers
             return Json(new { success = true }, JsonRequestBehavior.AllowGet);
         }
 
+        public ActionResult SetSampleMesh1(string Mesh = "")
+        {
+            IneqMeshViewModel ineqMeshViewModel = new IneqMeshViewModel
+            {
+                //IneqMesh = new MeshSamples()[Mesh],
+                //Quality = true,
+                //CurvatureQuality = true
+            };
+            Session["IneqMeshViewModel"] = ineqMeshViewModel;
+
+            string path = System.IO.Path.Combine(Server.MapPath("~/Samples"), Mesh + ".ply");
+
+            if (System.IO.File.Exists(path))
+            {
+                ineqMeshViewModel.PLY = System.IO.File.ReadAllText(path);
+                return Json(new { success = true }, JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                ineqMeshViewModel.PLY = "";
+                return Json(new { success = false }, JsonRequestBehavior.AllowGet);
+            }            
+        }
+
         [HttpPost, ValidateInput(false)]
-        public ActionResult SetIneqMesh(IneqMeshViewModel ineqMeshViewModel)
+        public ActionResult SetIneqMesh(IneqMeshViewModel ineqMeshViewModel, bool save = false)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    ineqMeshViewModel.SetIneqMesh();
-                    Session["IneqMeshViewModel"] = ineqMeshViewModel;
+                    if (save)
+                    {
+                        ((IneqMeshViewModel)Session["IneqMeshViewModel"]).Save(ineqMeshViewModel.Name);
+                    }
+                    else 
+                    {
+                        ineqMeshViewModel.SetIneqMesh();
+                        Session["IneqMeshViewModel"] = ineqMeshViewModel;
+                    }
                 }
                 catch (Exception exc)
                 {
