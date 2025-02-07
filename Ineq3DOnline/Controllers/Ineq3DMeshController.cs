@@ -18,51 +18,12 @@ namespace Ineq3DOnline.Controllers
     {
         public ActionResult Index(string Mesh = "")
         {
-            MeshSamples samples = new MeshSamples();
-
-            if (String.IsNullOrEmpty(Mesh))
-            {
-                Mesh = samples.Samples.Skip(new Random().Next(samples.Samples.Count())).First();
-                //Mesh = "Ball";
-            }
-
-            ViewBag.CurrentMesh = Mesh;
-            return View(samples);
+            return View(Ineq3DOnline.Models.IneqMeshViewModel.DefaultModel());
         }
 
         public ActionResult SetSampleMesh(string Mesh = "")
         {
-            IneqMeshViewModel ineqMeshViewModel = new IneqMeshViewModel 
-            {
-                IneqMesh = new MeshSamples()[Mesh],
-                Quality = true,
-                CurvatureQuality = true
-            };
-            Session["IneqMeshViewModel"] = ineqMeshViewModel;
-
-            string path = System.IO.Path.Combine(Server.MapPath("~/Samples"), Mesh + ".ply");
-
-            if (System.IO.File.Exists(path))
-            {
-                ineqMeshViewModel.PLY = System.IO.File.ReadAllText(path);
-            }
-            else
-            {
-                ineqMeshViewModel.CreateMesh();
-                System.IO.File.WriteAllText(path, ineqMeshViewModel.PLY);
-            }
-
-            return Json(new { success = true }, JsonRequestBehavior.AllowGet);
-        }
-
-        public ActionResult SetSampleMesh1(string Mesh = "")
-        {
-            IneqMeshViewModel ineqMeshViewModel = new IneqMeshViewModel
-            {
-                //IneqMesh = new MeshSamples()[Mesh],
-                //Quality = true,
-                //CurvatureQuality = true
-            };
+            IneqMeshViewModel ineqMeshViewModel = new IneqMeshViewModel();
             Session["IneqMeshViewModel"] = ineqMeshViewModel;
 
             string path = System.IO.Path.Combine(Server.MapPath("~/Samples"), Mesh + ".ply");
@@ -156,11 +117,6 @@ namespace Ineq3DOnline.Controllers
 
             var ineqMesh = ineqMeshViewModel.IneqMesh;
 
-            if (ineqMesh.Tetrahedrons.Count == 0) //bad check of mesh created
-            {
-                ineqMeshViewModel.CreateMesh(false);
-            }
-
             if (boundary)
             {
                 IneqMeshTools.CheckBoundaryQuality(ineqMesh);
@@ -186,13 +142,7 @@ namespace Ineq3DOnline.Controllers
 
             var ineqMesh = ineqMeshViewModel.IneqMesh;
 
-            if (ineqMesh.Tetrahedrons.Count == 0) //bad check of mesh created
-            {
-                ineqMeshViewModel.CreateMesh(false);
-            }
-
             IneqMeshTools.CheckCurvatureQuality(ineqMesh);
-            //IneqMeshTools.CheckCurvatureQuality(ineqMesh);            
 
             ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
@@ -210,11 +160,6 @@ namespace Ineq3DOnline.Controllers
             }
 
             var ineqMesh = ineqMeshViewModel.IneqMesh;
-
-            if (ineqMesh.Tetrahedrons.Count == 0) //bad check of mesh created
-            {
-                ineqMeshViewModel.CreateMesh(false);
-            }
 
             ineqMesh.Jiggle(3); 
 
@@ -234,11 +179,6 @@ namespace Ineq3DOnline.Controllers
 
             var ineqMesh = ineqMeshViewModel.IneqMesh;
 
-            if (ineqMesh.Tetrahedrons.Count == 0) //bad check of mesh created
-            {
-                ineqMeshViewModel.CreateMesh(false);
-            }
-
             ineqMesh.RefineBoundaryTriangles(ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => tr.Boundary)));
             ineqMesh.DeleteLonelyPoints();
             ineqMesh.Jiggle(3, false);
@@ -248,19 +188,9 @@ namespace Ineq3DOnline.Controllers
             return Content(null);
         }
 
-        //public ActionResult GetSampleFormula(int sampleIndex)
-        //{
-        //    var tmp = IneqMeshViewModel.DefaultModel(sampleIndex);
-
-        //    return Json(new
-        //    {
-        //        formula = tmp.Formula
-        //    });
-        //}
-
         public ActionResult GetSampleUFunc(int sampleUFuncIndex)
         {
-            var tmp = IneqMeshViewModel.DefaultModel(-1, sampleUFuncIndex);
+            var tmp = IneqMeshViewModel.DefaultModel(sampleUFuncIndex);
 
             return Json(new
             {

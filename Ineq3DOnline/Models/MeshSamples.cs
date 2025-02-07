@@ -19,18 +19,10 @@ namespace Ineq3DOnline
             get { return samples.Keys; }
         }
 
-        public IEnumerable<string> DataSamples
-        {
-            get 
-            {
-                string path = HttpContext.Current.Server.MapPath("~/Samples");
-                return System.IO.Directory.GetFiles(path, "*.json").Select(fn => System.IO.Path.GetFileNameWithoutExtension(fn));
-            }
-        }
-
         public MeshSamples()
         {
-            samples["Half ball and balls"] = new IneqMesh
+            samples["Half ball and balls"] = 
+            new IneqMesh
             {
                 X0 = -1.0,
                 Y0 = -1.0,
@@ -724,8 +716,6 @@ namespace Ineq3DOnline
             return res;
         }
 
-
-
         private IneqTree IneqTreeCylinders(int count, double R, double r)
         {
             IneqTree res = new IneqTree((x, y, z) => 1);
@@ -740,7 +730,6 @@ namespace Ineq3DOnline
 
             return res;
         }
-
 
         private IneqTree IneqTreeCylinders1(int count, double R, double r)
         {

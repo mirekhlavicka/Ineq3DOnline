@@ -1,29 +1,13 @@
-﻿@model Ineq3DOnline.MeshSamples
+﻿@model Ineq3DOnline.Models.IneqMeshViewModel
 
 @{
 
     ViewBag.Title = "Ineq3D Online";
-    //Layout = "_LayoutThree.cshtml";
 }
 
 @{
-    var defaultModel = Ineq3DOnline.Models.IneqMeshViewModel.DefaultModel();
-    Html.RenderPartial("_CreateMeshDialog", defaultModel);
-    Html.RenderPartial("_SetUFuncDialog", defaultModel);
-}
-
-@section Samples
-{
-    <li class="dropdown">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Computed<span class="caret"></span></a>
-        <ul class="dropdown-menu">
-
-            @foreach (var m in Model.Samples)
-            {
-                <li><a href="#" data-mesh="@m">@m</a></li>
-            }
-        </ul>
-    </li>
+    Html.RenderPartial("_CreateMeshDialog", Model);
+    Html.RenderPartial("_SetUFuncDialog", Model);
 }
 
 @section SampleData
@@ -33,12 +17,11 @@
         <ul class="dropdown-menu">
             @foreach (var m in Model.DataSamples)
             {
-                <li><a href="#" data-mesh="@m" data-type="json">@m</a></li>
+                <li><a href="#" data-mesh="@m">@m</a></li>
             }
         </ul>
     </li>
 }
-
 
 @section Scripts
 {
@@ -125,9 +108,7 @@
     </script>
 
     <script>
-        @*var sampleIndex = @defaultModel.SampleIndex;*@
-        var sampleUFuncIndex = @defaultModel.SampleUFuncIndex;
-        var currentMeshName = '@ViewBag.CurrentMesh';
+        var sampleUFuncIndex = @Model.SampleUFuncIndex;
 
         var camera, scene, renderer, controls, geometry, material, mesh, bbox;
         var rotation_x = 0;
@@ -418,11 +399,6 @@
             init();
             render();
 
-            showSpinner();
-            $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + currentMeshName, function () {
-                loadMesh(() => start_dangle = 0.006);
-            });
-
             $(window).resize(onWindowResize);
             $("textarea").getTab();
 
@@ -464,17 +440,6 @@
                 cmFormula.setValue('');
             });
 
-            @*$('#btnNextSampleFormula').click(function (e) {
-                sampleIndex++;
-                $.post('@Url.Action("GetSampleFormula", "Ineq3DMesh")',
-                    {sampleIndex: sampleIndex},
-                    function( data ) {
-                        $('#Formula').val(data.formula);
-                        $('#Name').val('');
-                        cmFormula.setValue($('#Formula').val());
-                    });
-            });*@
-
             $('#btnClearUFunc').click(function (e) {
                 $('#UFunc').val('');
             });
@@ -487,7 +452,6 @@
                         $('#UFunc').val(data.ufunc);
                     });
             });
-
 
             $('#lnkImproveMeshQuality').click(function (e) {
                 showSpinner();
@@ -568,45 +532,36 @@
             });
 
             $(document).on('click', 'a[data-mesh]', function (e) {
-                currentMeshName = $(this).data('mesh');
+                var meshName = $(this).data('mesh');
 
-                if ($(this).data('type') === 'json') {
-                    $('#ddImprove').addClass('disabled');
-                    $.get('@Url.Action("GetMeshData")' + '?name=' + currentMeshName, function (data) {
+                $('#ddImprove').addClass('disabled');
+                $.get('@Url.Action("GetMeshData")' + '?name=' + meshName, function (data) {
 
-                        $('#Name').val(data.name);
+                    $('#Name').val(data.name);
 
-                        $('#Formula').val(data.formula);
+                    $('#Formula').val(data.formula);
 
-                        $('#X0').val(data.x0);
-                        $('#X1').val(data.x1);
-                        $('#Y0').val(data.y0);
-                        $('#Y1').val(data.y1);
-                        $('#Z0').val(data.z0);
-                        $('#Z1').val(data.z1);
+                    $('#X0').val(data.x0);
+                    $('#X1').val(data.x1);
+                    $('#Y0').val(data.y0);
+                    $('#Y1').val(data.y1);
+                    $('#Z0').val(data.z0);
+                    $('#Z1').val(data.z1);
 
-                        $('#MaxDivisionCount').val(data.maxDivisionCount);
+                    $('#MaxDivisionCount').val(data.maxDivisionCount);
 
-                        $('#Quality').prop('checked', data.quality);
-                        $('#CurvatureQuality').prop('checked', data.curvatureQuality);                        
+                    $('#Quality').prop('checked', data.quality);
+                    $('#CurvatureQuality').prop('checked', data.curvatureQuality);                        
 
-                        $.get('@Url.Action("SetSampleMesh1")' + '?mesh=' + currentMeshName, function (data) {
-                            if (data.success) {
-                                showSpinner();
-                                loadMesh(() => start_dangle = 0.006);
-                            } else {
-                                $("#modalCreateMesh").modal()
-                            }                            
-                        });
+                    $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + meshName, function (data) {
+                        if (data.success) {
+                            showSpinner();
+                            loadMesh(() => start_dangle = 0.006);
+                        } else {
+                            $("#modalCreateMesh").modal()
+                        }                            
                     });
-                    return;
-                }
-
-                showSpinner();
-                $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + currentMeshName, function () {
-                    loadMesh(() => start_dangle = 0.006);
                 });
-
                 return false;
             });
 
@@ -633,6 +588,8 @@
                     event.stopPropagation();
                 }
             });
+
+            $("a[data-mesh]").eq(Math.floor(Math.random() * $("a[data-mesh]").length)).click()
 
         });
 

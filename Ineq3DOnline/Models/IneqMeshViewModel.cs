@@ -29,7 +29,7 @@ namespace Ineq3DOnline.Models
 
         public int SampleUFuncIndex { get; set; }
 
-        public static IneqMeshViewModel DefaultModel(int sample = -1, int sampleU = -1)
+        public static IneqMeshViewModel DefaultModel(int sampleU = -1)
         {
             if (sampleU == -1)
             {
@@ -42,6 +42,7 @@ namespace Ineq3DOnline.Models
 
             return new IneqMeshViewModel
             {
+                Name = "",
                 Formula = "x^2 + y^2 + z^2 < 1",
                 SampleUFuncIndex = sampleU,
                 MaxDivisionCount = 12,
@@ -139,6 +140,7 @@ namespace Ineq3DOnline.Models
 
         public void Save(string name)
         {
+            Name = name;
             string path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".json");
             System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(new
             {
@@ -163,6 +165,15 @@ namespace Ineq3DOnline.Models
             {
                 path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".ply");
                 System.IO.File.WriteAllText(path, PLY);
+            }
+        }
+
+        public IEnumerable<string> DataSamples
+        {
+            get
+            {
+                string path = HttpContext.Current.Server.MapPath("~/Samples");
+                return System.IO.Directory.GetFiles(path, "*.json").Select(fn => System.IO.Path.GetFileNameWithoutExtension(fn));
             }
         }
     }
