@@ -18,6 +18,7 @@ namespace Ineq3DOnline.Controllers
     {
         public ActionResult Index(string Mesh = "")
         {
+            ViewBag.Mesh = Mesh ?? "";
             return View(Ineq3DOnline.Models.IneqMeshViewModel.DefaultModel());
         }
 

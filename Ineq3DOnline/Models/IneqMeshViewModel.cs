@@ -89,9 +89,9 @@ namespace Ineq3DOnline.Models
 
         public void SetIneqMesh()
         {
-            if (Formula.StartsWith("[advancedX]"))
+            if (Formula.StartsWith("[advancedX]") || (HttpContext.Current.Request.IsLocal && Formula.StartsWith("[advanced]")))
             {
-                IneqMesh = DynamicCodeExecutor.Execute(Formula.Replace("[advancedX]", ""));
+                IneqMesh = DynamicCodeExecutor.Execute(Formula.Replace("[advancedX]", "").Replace("[advanced]", ""));
             }
             else
             {

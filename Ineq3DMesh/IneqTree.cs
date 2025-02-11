@@ -31,13 +31,28 @@ namespace MeshData
             get { return root; }
         }
 
+        public IneqTree()
+        { 
+        }
+
         public IneqTree(NodeType nodeType, IneqTree left, IneqTree right)
         {
-            root = new IneqNode();
-            root.Expression = null;
-            root.NodeType = nodeType;
-            root.Left = left.root;
-            root.Right = right.root;
+            if (left.root == null)
+            {
+                root = right.root;
+            }
+            else if (right.root == null)
+            {
+                root = left.root;
+            }
+            else
+            {
+                root = new IneqNode();
+                root.Expression = null;
+                root.NodeType = nodeType;
+                root.Left = left.root;
+                root.Right = right.root;
+            }
         }
 
         public IneqTree(FuncXYZ expression)

@@ -71,6 +71,10 @@ namespace MeshData
                 DeleteTetrahedron(t);            
             DeleteLonelyPoints();
 
+            //var c = Points.Count(p => p.BoundaryCount >= 3);
+            CheckTopology();
+            //c = Points.Count(p => p.BoundaryCount >= 3);
+
             Jiggle(2);
 
             CheckQuality(0.25d, false);
@@ -416,6 +420,16 @@ namespace MeshData
             }
             else
             {
+                if (Math.Abs(e.P1.U) < 1e-10)
+                {
+                    e.P1.U = 0;
+                    return;
+                }
+                if (Math.Abs(e.P2.U) < 1e-10)
+                {
+                    e.P2.U = 0;
+                    return;
+                }
                 DivideEdge(e, ineqNumber, midPoint); 
             }
         }
@@ -794,6 +808,10 @@ namespace MeshData
         private void Eval(Point p, int ineqNumber)
         {
             p.U = Eval(p.X, p.Y, p.Z, ineqNumber);
+            /*if (Math.Abs(p.U) < 1e-10)
+            {
+                p.U = 0;
+            }*/
         }
 
         private double Eval(double x, double y, double z, int ineqNumber)
@@ -1413,6 +1431,15 @@ namespace MeshData
                 if (p.Points.Where(pp => pp.BoundaryCount > 0).All(pp => pp.Boundary[b2]))
                 {
                     p.Boundary[b1] = false;
+                }
+            }
+
+            foreach (var p in Points.Where(pp => pp.BoundaryCount > 2))
+            {
+                foreach (int ineqNumber in p.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i).ToArray())
+                {
+                    if (!p.Points.Any(p1 => p1.Boundary[ineqNumber] && p1.BoundaryCount < p.BoundaryCount ))
+                        p.Boundary[ineqNumber] = false;
                 }
             }
 

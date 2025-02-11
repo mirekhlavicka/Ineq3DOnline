@@ -6,13 +6,24 @@ namespace Ineq3DOnline
 {
     public class IneqLib
     {
-        public static IneqTree Ball(double x0, double y0, double z0, double r, double p = 2)
+        public static IneqTree Ball(double x0, double y0, double z0, double r, double p = 2, bool outside = false)
         {
-            return new IneqTree((x, y, z) => 
-                Math.Pow(Math.Abs(x - x0), p) +
-                Math.Pow(Math.Abs(y - y0), p) +
-                Math.Pow(Math.Abs(z - z0), p) -
-                Math.Pow(r, p));
+            if (outside)
+            {
+                return new IneqTree((x, y, z) =>
+                    -Math.Pow(Math.Abs(x - x0), p) -
+                    Math.Pow(Math.Abs(y - y0), p) -
+                    Math.Pow(Math.Abs(z - z0), p) +
+                    Math.Pow(r, p));
+            }
+            else
+            {
+                return new IneqTree((x, y, z) =>
+                    Math.Pow(Math.Abs(x - x0), p) +
+                    Math.Pow(Math.Abs(y - y0), p) +
+                    Math.Pow(Math.Abs(z - z0), p) -
+                    Math.Pow(r, p));
+            }
         }
 
         public static IneqTree Torus(double x0, double y0, double z0, double r, double R, double nx, double ny, double nz, bool outside = false)
@@ -40,7 +51,7 @@ namespace Ineq3DOnline
             });
         }
 
-        public static IneqTree Cylinder(double x1, double y1, double z1, double x2, double y2, double z2, double r, double d)
+        public static IneqTree Cylinder(double x1, double y1, double z1, double x2, double y2, double z2, double r, double d, bool outside = false)
         {
             double nx, ny, nz, n;
 
@@ -53,25 +64,47 @@ namespace Ineq3DOnline
             ny /= n;
             nz /= n;
 
-            return new IneqTree((x, y, z) =>
+            if (outside)
             {
-                double vp = (x - x1) * nx + (y - y1) * ny + (z - z1) * nz;
-                return
-                    Math.Pow((x - x1) - vp * nx, 2) +
-                    Math.Pow((y - y1) - vp * ny, 2) +
-                    Math.Pow((z - z1) - vp * nz, 2) -
-                    r * r;
-            }) &
-                new IneqTree((x, y, z) =>
+                return new IneqTree((x, y, z) =>
                 {
-                    double vp = (x - (x1 + x2) / 2) * nx + (y - (y1 + y2) / 2) * ny + (z - (z1 + z2) / 2) * nz;
-                    return Math.Abs(vp) - d;
-                });
+                    double vp = (x - x1) * nx + (y - y1) * ny + (z - z1) * nz;
+                    return
+                        -Math.Pow((x - x1) - vp * nx, 2) -
+                        Math.Pow((y - y1) - vp * ny, 2) -
+                        Math.Pow((z - z1) - vp * nz, 2) +
+                        r * r;
+                }) |
+                    new IneqTree((x, y, z) =>
+                    {
+                        double vp = (x - (x1 + x2) / 2) * nx + (y - (y1 + y2) / 2) * ny + (z - (z1 + z2) / 2) * nz;
+                        return -Math.Abs(vp) + d;
+                    });
+
+            }
+            else
+            {
+                return new IneqTree((x, y, z) =>
+                {
+                    double vp = (x - x1) * nx + (y - y1) * ny + (z - z1) * nz;
+                    return
+                        Math.Pow((x - x1) - vp * nx, 2) +
+                        Math.Pow((y - y1) - vp * ny, 2) +
+                        Math.Pow((z - z1) - vp * nz, 2) -
+                        r * r;
+                }) &
+                    new IneqTree((x, y, z) =>
+                    {
+                        double vp = (x - (x1 + x2) / 2) * nx + (y - (y1 + y2) / 2) * ny + (z - (z1 + z2) / 2) * nz;
+                        return Math.Abs(vp) - d;
+                    });
+
+            }
         }
 
         public static IneqTree Balls(int count, double R, double r, double p = 2)
         {
-            IneqTree res = new IneqTree((x, y, z) => 1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
@@ -89,7 +122,7 @@ namespace Ineq3DOnline
 
         public static IneqTree Toruses(int count, double z0, double z1, double r0, double r1, double R0, double R1)
         {
-            IneqTree res = new IneqTree((x, y, z) => 1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
@@ -105,7 +138,7 @@ namespace Ineq3DOnline
 
         public static IneqTree Toruses1(int count, double RR, double R, double r)
         {
-            IneqTree res = new IneqTree((x, y, z) => 1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
@@ -124,7 +157,7 @@ namespace Ineq3DOnline
 
         public static IneqTree AntiToruses(int count, double RR, double R, double r)
         {
-            IneqTree res = new IneqTree((x, y, z) => -1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
@@ -143,7 +176,7 @@ namespace Ineq3DOnline
 
         public static IneqTree Cylinders(int count, double R, double r)
         {
-            IneqTree res = new IneqTree((x, y, z) => 1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
@@ -158,7 +191,7 @@ namespace Ineq3DOnline
 
         public static IneqTree Cylinders1(int count, double R, double r)
         {
-            IneqTree res = new IneqTree((x, y, z) => 1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
@@ -184,7 +217,7 @@ namespace Ineq3DOnline
 
         public static IneqTree Planes(int count)
         {
-            IneqTree res = new IneqTree((x, y, z) => -1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
@@ -200,7 +233,7 @@ namespace Ineq3DOnline
 
         public static IneqTree Planes1(int count)
         {
-            IneqTree res = new IneqTree((x, y, z) => -1);
+            IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {

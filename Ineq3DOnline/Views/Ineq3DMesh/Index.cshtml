@@ -17,7 +17,7 @@
         <ul class="dropdown-menu">
             @foreach (var m in Model.DataSamples)
             {
-                <li><a href="#" data-mesh="@m">@m</a></li>
+                <li><a href="?mesh=@m" data-mesh="@m">@m</a></li>
             }
         </ul>
     </li>
@@ -534,6 +534,8 @@
             $(document).on('click', 'a[data-mesh]', function (e) {
                 var meshName = $(this).data('mesh');
 
+                window.history.replaceState(null, "", $(this).attr('href'));
+
                 $('#ddImprove').addClass('disabled');
                 $.get('@Url.Action("GetMeshData")' + '?name=' + meshName, function (data) {
 
@@ -551,7 +553,7 @@
                     $('#MaxDivisionCount').val(data.maxDivisionCount);
 
                     $('#Quality').prop('checked', data.quality);
-                    $('#CurvatureQuality').prop('checked', data.curvatureQuality);                        
+                    $('#CurvatureQuality').prop('checked', data.curvatureQuality);
 
                     $.get('@Url.Action("SetSampleMesh")' + '?mesh=' + meshName, function (data) {
                         if (data.success) {
@@ -559,7 +561,7 @@
                             loadMesh(() => start_dangle = 0.006);
                         } else {
                             $("#modalCreateMesh").modal()
-                        }                            
+                        }
                     });
                 });
                 return false;
@@ -589,9 +591,16 @@
                 }
             });
 
-            $("a[data-mesh]").eq(Math.floor(Math.random() * $("a[data-mesh]").length)).click()
+            @if (String.IsNullOrEmpty(ViewBag.Mesh))
+            {
+                <text>$("a[data-mesh]").eq(Math.floor(Math.random() * $("a[data-mesh]").length)).click()</text>
+            }
+            else
+            {
+                <text>$("a[data-mesh='@ViewBag.Mesh']").click()</text>
+            }
 
-        });
+            });
 
         var keepSpinner = false;
 
