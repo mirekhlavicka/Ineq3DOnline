@@ -71,13 +71,58 @@ namespace MeshData
 
             if (node.NodeType == NodeType.NodeExpression)
             {
-                expressionList.Add(node.Expression);
-                node.ExpressionIndex = expressionList.Count - 1;
+
+                /*int i = 0;
+                while (i < expressionList.Count && !Equal(node.Expression, expressionList[i]))
+                {
+                    i++;
+                }
+
+                if (i == expressionList.Count)*/
+                {
+                    expressionList.Add(node.Expression);
+                    //node.Expression = null;
+                    node.ExpressionIndex = expressionList.Count - 1;
+                }
+                /*else
+                {
+                    node.ExpressionIndex = i;
+                    node.Expression = expressionList[i];
+                }*/
             }
 
             AddToexpressionList(node.Left);
             AddToexpressionList(node.Right);
+        }
 
+        /*private bool Equal(FuncXYZ f1, FuncXYZ f2)
+        {
+            Random rand = new Random();
+            int p = 0;
+            while (p < 100)
+            {
+                double x = rand.NextDouble() * 2 - 1;
+                double y = rand.NextDouble() * 2 - 1;
+                double z = rand.NextDouble() * 2 - 1;
+
+                if (Math.Abs(f1(x, y, z) - f2(x, y, z)) > 1e-10)
+                {
+                    return false;
+                }
+
+                p++;
+            }
+            return true;
+        }*/
+
+        public IneqTree Not()
+        {
+            if (root != null)
+            {
+                root.Not();
+            }
+
+            return this;
         }
 
         public static IneqTree operator &(IneqTree left, IneqTree right)
@@ -180,6 +225,37 @@ namespace MeshData
                     else
                         return left.SubNodeCount + right.SubNodeCount;
                 
+                }
+            }
+
+            public int DomainCount
+            {
+                get
+                {
+                    if (nodeType == IneqTree.NodeType.NodeExpression)
+                        return 1;
+                    else
+                        return left.DomainCount + right.DomainCount + 1;
+
+                }
+            }
+
+            internal void Not()
+            {
+                if (NodeType == NodeType.NodeExpression)
+                {
+                    var oldEx = Expression;
+                    Expression = ((x, y, z) => - oldEx(x, y, z));
+                }
+                else if (NodeType == NodeType.NodeAnd)
+                {
+                    NodeType = NodeType.NodeOr;
+                    left.Not();  right.Not();
+                }
+                else// NodeType == NodeType.NodeOr
+                {
+                    NodeType = NodeType.NodeAnd;
+                    left.Not(); right.Not();                    
                 }
             }
         }

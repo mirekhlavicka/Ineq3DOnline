@@ -17,7 +17,7 @@ namespace MeshData
 
         private Tetrahedron() { }
 
-        internal Tetrahedron(Point p0, Point p1, Point p2, Point p3, bool standAlone = false, int volumeSign = -1)
+        internal Tetrahedron(Point p0, Point p1, Point p2, Point p3, int boundaryCount, int domainCount, bool standAlone = false, int volumeSign = -1)
         {
             points[0] = p0;
             points[1] = p1;
@@ -33,9 +33,9 @@ namespace MeshData
                 p2.Tetrahedrons.Add(this);
                 p3.Tetrahedrons.Add(this);
 
-                isin = new BitArray(2 * p0.Boundary.Length - 1);
-                isOnBoundary = new BitArray(2 * p0.Boundary.Length - 1);
-                boundary = new BitArray(p0.Boundary.Length);
+                isin = new BitArray(domainCount/*2 * p0.Boundary.Length - 1*/);
+                isOnBoundary = new BitArray(domainCount/*2 * p0.Boundary.Length - 1*/);
+                boundary = new BitArray(boundaryCount/*p0.Boundary.Length*/);
             }
 
             OrigVolume = Volume;

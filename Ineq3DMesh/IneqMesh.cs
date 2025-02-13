@@ -58,6 +58,10 @@ namespace MeshData
             else
                 ineqTreeBoxed = ineqTree;
 
+            boundaryCount = ineqTreeBoxed.ExpressionList.Count;
+            domainCount = ineqTreeBoxed.Root.DomainCount;//2 * boundaryCount - 1;
+
+
             CreateBackgroundMesh();
             
             ResolveMeshApriori(ineqTreeBoxed.Root, 0);
@@ -122,7 +126,7 @@ namespace MeshData
                         {
                             foreach (int i in expressionIndexes)
                                 p.Boundary[i] = false;
-                        });                
+                        });
 
                 Parallel.ForEach(Points, p =>
                 {
@@ -849,7 +853,7 @@ namespace MeshData
 
         public Tetrahedron CreateTetrahedron(Point p0, Point p1, Point p2, Point p3)
         {
-            Tetrahedron t = new Tetrahedron(p0, p1, p2, p3);
+            Tetrahedron t = new Tetrahedron(p0, p1, p2, p3, boundaryCount, domainCount);
             return t;
         }
 
@@ -1116,9 +1120,9 @@ namespace MeshData
                 fanPoints.Add(p[0]);
                 fanPoints.Add(p[1]);
 
-                Tetrahedron tt = new Tetrahedron(p[0], p[1], e.P1, midPoint, true);
+                Tetrahedron tt = new Tetrahedron(p[0], p[1], e.P1, midPoint, boundaryCount, domainCount, true);
                 fanTetrahedrons.Add(tt);
-                tt = new Tetrahedron(p[0], p[1], e.P2, midPoint, true);
+                tt = new Tetrahedron(p[0], p[1], e.P2, midPoint, boundaryCount, domainCount, true);
                 fanTetrahedrons.Add(tt);
 
                 if (t.Quality < origMinQuality)
@@ -1293,9 +1297,9 @@ namespace MeshData
                 {
                     Point[] p = t.Points.Where(pp => pp != e.P1 && pp != e.P2).ToArray();
 
-                    Tetrahedron tt = new Tetrahedron(p[0], p[1], e.P1, midPoint, true);
+                    Tetrahedron tt = new Tetrahedron(p[0], p[1], e.P1, midPoint, boundaryCount, domainCount, true);
                     fanTetrahedrons.Add(tt);
-                    tt = new Tetrahedron(p[0], p[1], e.P2, midPoint, true);
+                    tt = new Tetrahedron(p[0], p[1], e.P2, midPoint, boundaryCount, domainCount, true);
                     fanTetrahedrons.Add(tt);
                 }
 

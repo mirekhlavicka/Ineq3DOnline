@@ -12,6 +12,9 @@ namespace MeshData
         protected HashSet<Point> points = new HashSet<Point>();
         protected HashSet<Tetrahedron> tetrahedrons = new HashSet<Tetrahedron>();
 
+        protected int boundaryCount = 0;
+        protected int domainCount = 0;
+
         public void Clear()
         {
             points = new HashSet<Point>();
@@ -52,7 +55,7 @@ namespace MeshData
 
         public Tetrahedron AddTetrahedron(Point p0, Point p1, Point p2, Point p3, int volumeSign = -1)
         {
-            Tetrahedron t = new Tetrahedron(p0, p1, p2, p3, false, volumeSign);
+            Tetrahedron t = new Tetrahedron(p0, p1, p2, p3, boundaryCount, domainCount, false, volumeSign);
             tetrahedrons.Add(t);
             return t;
         }
