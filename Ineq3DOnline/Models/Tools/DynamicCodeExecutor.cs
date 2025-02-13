@@ -29,7 +29,7 @@ namespace Ineq3DOnline
         public static IneqMesh Execute(string code)
         {
             // Create a syntax tree
-            var syntaxTree = CSharpSyntaxTree.ParseText(codeTemplate.Replace("{0}", code));
+            var syntaxTree = CSharpSyntaxTree.ParseText(codeTemplate.Replace("{0}", code.Replace("(#", "(IneqTree)((x, y, z) => ")));
 
             // Reference necessary assemblies
             var references = AppDomain.CurrentDomain.GetAssemblies()
