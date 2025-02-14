@@ -417,7 +417,7 @@
                 if ($('#formCreateMesh').valid()) {
                     showSpinner();
                     let save = (this.id == 'btnSaveMesh');
-                    $.post('@Url.Action("SetIneqMesh")' + (save ? '?save=true' : ''),
+                    $.post('@Url.Action("SetIneqMesh")' + (save ? '?save=true&saveJSON=' + $('#chckSaveJSON').prop('checked') + '&savePLY=' + $('#chckSavePLY').prop('checked')  : ''),
                         $('#formCreateMesh').serialize(),
                         function (data) {
                             if (data.success) {

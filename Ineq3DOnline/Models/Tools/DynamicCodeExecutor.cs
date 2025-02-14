@@ -11,12 +11,13 @@ using System.Web.SessionState;
 namespace Ineq3DOnline
 {
     public class DynamicCodeExecutor
-    {
+    {      
         private static string codeTemplate = @"
             using System;
             using System.Collections.Generic;
             using MeshData;
             using Ineq3DOnline;
+            using static Ineq3DOnline.MyMath;
 
             namespace DynamicNamespace
             {
@@ -29,7 +30,7 @@ namespace Ineq3DOnline
         public static IneqMesh Execute(string code)
         {
             // Create a syntax tree
-            var syntaxTree = CSharpSyntaxTree.ParseText(codeTemplate.Replace("{0}", code.Replace("(#", "(IneqTree)((x, y, z) => ")));
+            var syntaxTree = CSharpSyntaxTree.ParseText(codeTemplate.Replace("{0}", code.Replace("(#", "new IneqTree((x, y, z) => ")));
 
             // Reference necessary assemblies
             var references = AppDomain.CurrentDomain.GetAssemblies()
@@ -74,10 +75,27 @@ namespace Ineq3DOnline
         {
             return Regex.Replace(input, @"\((-?\d+),\s*(-?\d+)\)", match =>
             {
-                int n1 = int.Parse(match.Groups[1].Value) - 10;
+                int n1 = int.Parse(match.Groups[1].Value) - 11;
                 int n2 = int.Parse(match.Groups[2].Value);
                 return $"({n1}, {n2})";
             });
         }
+    }
+
+    public static class MyMath
+    {
+        public static double sin(double x) => Math.Sin(x);
+        public static double cos(double x) => Math.Cos(x);
+        public static double tan(double x) => Math.Tan(x);
+        public static double asin(double x) => Math.Asin(x);
+        public static double acos(double x) => Math.Acos(x);
+        public static double atan(double x) => Math.Atan(x);
+        public static double pow(double x, double y) => Math.Pow(x, y);
+        public static double sqrt(double x) => Math.Sqrt(x);
+        public static double abs(double x) => Math.Abs(x);
+        public static double exp(double x) => Math.Exp(x);
+        public static double ln(double x) => Math.Log(x);
+
+        public static double PI = Math.PI;
     }
 }

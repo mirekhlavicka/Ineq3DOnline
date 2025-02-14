@@ -1,7 +1,7 @@
 ﻿@model Ineq3DOnline.Models.IneqMeshViewModel
 
 <!-- Modal -->
-<div class="modal fade" id="modalCreateMesh" role="dialog">
+<div class="modal fade" id="modalCreateMesh" role="dialog" style="overflow:hidden">
     <div class="modal-dialog cm-dialog">
 
         <form role="form" id="formCreateMesh">
@@ -27,7 +27,6 @@
 
                                 <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:15px">
                                     <div class="btn-group">
-                                        @*<button type="button" class="btn btn-primary btn-xs" id="btnNextSampleFormula" style="margin-right:5px">Next sample</button>*@
                                         <button type="button" class="btn btn-primary btn-xs" id="btnClearFormula">Clear</button>
                                     </div>
                                 </div>
@@ -110,9 +109,13 @@
                     </div>
 
                 </div>
-                <div class="modal-footer">
-                    <div style="display:inline-block;margin-right:50px">
-                        @Html.EditorFor(m => Model.Name, new { htmlAttributes = new { @class = "form-control input-sm", placeholder = "Enter name to save", style= "display: inline-block; width: 200px" } })
+                <div class="modal-footer" style="display:flex">
+                    <div style="display: inline-block; flex-grow: 1; text-align: left;">
+
+                        <input type="checkbox" title="Save JSON data" id="chckSaveJSON" checked="checked" />
+                        <input type="checkbox" title="Save PLY data" id="chckSavePLY" checked="checked" />
+
+                        @Html.EditorFor(m => Model.Name, new { htmlAttributes = new { @class = "form-control input-sm", placeholder = "Enter name to save", style = "display: inline-block; width: 200px" } })
                         <button type="button" class="btn btn-primary btn-sm" id="btnSaveMesh" style="margin-bottom: 3px">Save</button>
                     </div>
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -138,6 +141,7 @@
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
             });
             cmFormula.setSize("100%", "calc(100vh - 350px)");
+            makeDraggable($("#modalCreateMesh")[0]);
         } else {
             cmFormula.setValue($('#Formula').val());
             cmFormula.refresh();
@@ -151,6 +155,59 @@
             cmFormula.focus();
         }
     })
+
+    function makeDraggable(modal) {
+        let offsetX = 0, offsetY = 0, isDragging = false;
+
+        const modalDialog = modal.querySelector(".modal-dialog"); // Drag the modal-dialog
+        const header = modal.querySelector(".modal-header"); // Dragging starts from header
+
+        if (!modalDialog || !header) return; // Ensure elements exist
+
+        const dragMouseDown = (e) => {
+            e.preventDefault();
+
+            // Get initial cursor position
+            offsetX = e.clientX - modalDialog.getBoundingClientRect().left;
+            offsetY = e.clientY - modalDialog.getBoundingClientRect().top;
+
+            isDragging = true;
+
+            document.addEventListener("mousemove", elementDrag);
+            document.addEventListener("mouseup", closeDragElement);
+        };
+
+        const elementDrag = (e) => {
+            if (!isDragging) return;
+
+            e.preventDefault();
+
+            // Calculate new position
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+
+            // Ensure modal stays within screen bounds
+            //newX = Math.max(0, Math.min(window.innerWidth - modalDialog.offsetWidth, newX));
+            //newY = Math.max(0, Math.min(window.innerHeight - modalDialog.offsetHeight, newY));
+
+            // Apply new position
+            modalDialog.style.position = "absolute";
+            modalDialog.style.margin = "0"; // Fix Bootstrap margins
+            modalDialog.style.left = `${newX}px`;
+            modalDialog.style.top = `${newY}px`;
+            modalDialog.style.transform = "none"; // Remove Bootstrap centering
+        };
+
+        const closeDragElement = () => {
+            isDragging = false;
+            document.removeEventListener("mousemove", elementDrag);
+            document.removeEventListener("mouseup", closeDragElement);
+        };
+
+        // Make modal draggable by clicking on the header
+        header.style.cursor = "move";
+        header.addEventListener("mousedown", dragMouseDown);
+    }
 
 </script>
 

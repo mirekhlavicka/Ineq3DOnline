@@ -138,32 +138,38 @@ namespace Ineq3DOnline.Models
             }
         }
 
-        public void Save(string name)
+        public void Save(string name, bool saveJSON, bool savePLY)
         {
             Name = name;
-            string path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".json");
-            System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(new
+
+            if (saveJSON)
             {
-                Name,
-                X0,
-                Y0,
-                Z0,
-                X1,
-                Y1,
-                Z1,
-                MaxDivisionCount,
-                Quality,
-                CurvatureQuality,
-                Formula = Formula.Replace("[advancedX]", "[advanced]")
-            }, Formatting.None, new JsonSerializerSettings
+
+                string path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".json");
+                System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(new
+                {
+                    Name,
+                    X0,
+                    Y0,
+                    Z0,
+                    X1,
+                    Y1,
+                    Z1,
+                    MaxDivisionCount,
+                    Quality,
+                    CurvatureQuality,
+                    Formula = Formula.Replace("[advancedX]", "[advanced]")
+                }, Formatting.None, new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                    NullValueHandling = NullValueHandling.Ignore
+                }));
+            }
+
+            if (savePLY &&!String.IsNullOrEmpty(PLY))
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                NullValueHandling = NullValueHandling.Ignore
-            }));
-            if (!String.IsNullOrEmpty(PLY))
-            {
-                path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".ply");
+                string path = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name + ".ply");
                 System.IO.File.WriteAllText(path, PLY);
             }
         }

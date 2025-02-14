@@ -42,7 +42,7 @@ namespace Ineq3DOnline.Controllers
         }
 
         [HttpPost, ValidateInput(false)]
-        public ActionResult SetIneqMesh(IneqMeshViewModel ineqMeshViewModel, bool save = false)
+        public ActionResult SetIneqMesh(IneqMeshViewModel ineqMeshViewModel, bool save = false, bool saveJSON = true, bool savePLY = true)
         {
             if (ModelState.IsValid)
             {
@@ -50,7 +50,7 @@ namespace Ineq3DOnline.Controllers
                 {
                     if (save)
                     {
-                        ((IneqMeshViewModel)Session["IneqMeshViewModel"]).Save(ineqMeshViewModel.Name);
+                        ((IneqMeshViewModel)Session["IneqMeshViewModel"]).Save(ineqMeshViewModel.Name, saveJSON, savePLY);
                     }
                     else 
                     {

@@ -125,6 +125,11 @@ namespace MeshData
             return this;
         }
 
+        public static IneqTree operator !(IneqTree ineqTree)
+        {
+            return ineqTree.Not();
+        }
+
         public static IneqTree operator &(IneqTree left, IneqTree right)
         {
             return new IneqTree(NodeType.NodeAnd, left, right);
