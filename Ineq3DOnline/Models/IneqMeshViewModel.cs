@@ -140,7 +140,7 @@ namespace Ineq3DOnline.Models
 
         public void Save(string name, bool saveJSON, bool savePLY)
         {
-            Name = name;
+            Name = name.Trim();
 
             if (saveJSON)
             {

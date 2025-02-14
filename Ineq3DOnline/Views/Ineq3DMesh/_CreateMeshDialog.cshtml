@@ -149,6 +149,10 @@
         cmFormula.focus();
     })
 
+    $('#modalCreateMesh').on('hide.bs.modal', function () {
+        $('#Formula').val(cmFormula.getValue());
+    });
+
     $('#modalCreateMesh a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         if (cmFormula) {
             cmFormula.refresh();
