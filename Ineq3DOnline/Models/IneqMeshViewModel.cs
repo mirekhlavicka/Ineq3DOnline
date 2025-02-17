@@ -140,7 +140,18 @@ namespace Ineq3DOnline.Models
 
         public void Save(string name, bool saveJSON, bool savePLY)
         {
-            Name = name.Trim();
+            name = name.Trim();
+            Name = name;
+
+            if (name.Contains("\\"))
+            {
+                string folder = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/Samples"), name.Split('\\')[0]);
+
+                if (!System.IO.Directory.Exists(folder))
+                {
+                    System.IO.Directory.CreateDirectory(folder);
+                }
+            }
 
             if (saveJSON)
             {
@@ -174,13 +185,16 @@ namespace Ineq3DOnline.Models
             }
         }
 
-        public IEnumerable<string> DataSamples
+        public IEnumerable<string> GetDataSamples(string folder = "")
         {
-            get
-            {
-                string path = HttpContext.Current.Server.MapPath("~/Samples");
+                string path = HttpContext.Current.Server.MapPath("~/Samples" + (folder == "" ? "" : "\\" + folder));
                 return System.IO.Directory.GetFiles(path, "*.json").Select(fn => System.IO.Path.GetFileNameWithoutExtension(fn));
-            }
+        }
+
+        public IEnumerable<string> GetDataSampleFolders()
+        {
+            string path = HttpContext.Current.Server.MapPath("~/Samples");
+            return System.IO.Directory.GetDirectories(path).Select(d => System.IO.Path.GetFileName(d));
         }
     }
 }

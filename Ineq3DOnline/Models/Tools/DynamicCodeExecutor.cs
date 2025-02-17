@@ -18,6 +18,7 @@ namespace Ineq3DOnline
             using MeshData;
             using Ineq3DOnline;
             using static Ineq3DOnline.MyMath;
+            using static Ineq3DOnline.IneqLib;
 
             namespace DynamicNamespace
             {
@@ -75,7 +76,7 @@ namespace Ineq3DOnline
         {
             return Regex.Replace(input, @"\((-?\d+),\s*(-?\d+)\)", match =>
             {
-                int n1 = int.Parse(match.Groups[1].Value) - 11;
+                int n1 = int.Parse(match.Groups[1].Value) - 12;
                 int n2 = int.Parse(match.Groups[2].Value);
                 return $"({n1}, {n2})";
             });

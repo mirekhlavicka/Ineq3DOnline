@@ -10,12 +10,45 @@
     Html.RenderPartial("_SetUFuncDialog", Model);
 }
 
+<style>
+    .dropdown-submenu {
+        display: none;
+        position: relative;
+        margin-left: 20px;
+        margin-right: 20px;
+        webkit-box-shadow: none;
+        box-shadow: none;
+    }
+    .selectedSample {
+        background-color: #000!important;
+        color: #fff!important;
+    }    
+</style>
+
 @section SampleData
 {
     <li class="dropdown">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Samples<span class="caret"></span></a>
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Samples <span class="caret"></span></a>
         <ul class="dropdown-menu" style="max-height: calc(-100px + 100dvh); overflow-y: auto; scrollbar-color: black gray; scrollbar-width: thin; ">
-            @foreach (var m in Model.DataSamples)
+
+            @foreach (var f in Model.GetDataSampleFolders())
+            {
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" onclick="event.stopPropagation(); event.preventDefault(); var ul = $(this).closest('li').find('ul'); if ($(ul).is(':visible')) { ul.hide('fast') } else { $('.dropdown-submenu').hide('fast'); ul.show('fast') }; return false;" role="button" aria-haspopup="true" aria-expanded="false">
+                        @f <span class="caret" />
+                    </a>
+                    <ul class="dropdown-submenu dropdown-menu">
+                        @foreach (var m in Model.GetDataSamples(f))
+                        {
+                            <li><a href="?mesh=@f\@m" data-mesh="@f\@m">@m</a></li>
+                        }
+                    </ul>
+                </li>
+}
+
+
+
+            @foreach (var m in Model.GetDataSamples())
             {
                 <li><a href="?mesh=@m" data-mesh="@m">@m</a></li>
             }
@@ -417,7 +450,7 @@
                 if ($('#formCreateMesh').valid()) {
                     showSpinner();
                     let save = (this.id == 'btnSaveMesh');
-                    $.post('@Url.Action("SetIneqMesh")' + (save ? '?save=true&saveJSON=' + $('#chckSaveJSON').prop('checked') + '&savePLY=' + $('#chckSavePLY').prop('checked')  : ''),
+                    $.post('@Url.Action("SetIneqMesh")' + (save ? '?save=true&saveJSON=' + $('#chckSaveJSON').prop('checked') + '&savePLY=' + $('#chckSavePLY').prop('checked') : ''),
                         $('#formCreateMesh').serialize(),
                         function (data) {
                             if (data.success) {
@@ -447,8 +480,8 @@
             $('#btnNextSampleUFunc').click(function (e) {
                 sampleUFuncIndex++;
                 $.post('@Url.Action("GetSampleUFunc", "Ineq3DMesh")',
-                    {sampleUFuncIndex: sampleUFuncIndex},
-                    function( data ) {
+                    { sampleUFuncIndex: sampleUFuncIndex },
+                    function (data) {
                         $('#UFunc').val(data.ufunc);
                     });
             });
@@ -507,14 +540,14 @@
                 try {
                     var ufunc = $('#UFunc').val();
 
-                    dt =  parseFloat($('#tbdt').val());
+                    dt = parseFloat($('#tbdt').val());
                     t = 0.0;
 
-                    if(!expr){
+                    if (!expr) {
                         $("#radioRenderStyle0").prop("checked", true)
                     }
 
-                    if(ufunc.trim() == ''){
+                    if (ufunc.trim() == '') {
                         expr = null;
                     } else {
                         expr = Parser.parse(ufunc);
@@ -524,7 +557,7 @@
                     refreshGeometry();
                     $("[data-valmsg-for='UFunc']").text('')
                 }
-                catch(err) {
+                catch (err) {
                     //alert(err.message);
                     $("[data-valmsg-for='UFunc']").text(err.message)
                 }
@@ -534,12 +567,15 @@
             $(document).on('click', 'a[data-mesh]', function (e) {
                 var meshName = $(this).data('mesh');
 
+                $('a[data-mesh]').removeClass('selectedSample');
+                $(this).addClass('selectedSample')
+
                 window.history.replaceState(null, "", $(this).attr('href'));
 
                 $('#ddImprove').addClass('disabled');
                 $.get('@Url.Action("GetMeshData")' + '?name=' + meshName, function (data) {
 
-                    $('#Name').val(data.name);
+                    $('#Name').val(meshName/*data.name*/);
 
                     $('#Formula').val(data.formula);
 
@@ -591,14 +627,25 @@
                 }
             });
 
+            var a = null;
             @if (String.IsNullOrEmpty(ViewBag.Mesh))
             {
-                <text>$("a[data-mesh]").eq(Math.floor(Math.random() * $("a[data-mesh]").length)).click()</text>
+                <text>
+                var a = $("a[data-mesh]").eq(Math.floor(Math.random() * $("a[data-mesh]").length));
+                a.click();
+                a.closest('ul').toggle();
+                </text>
             }
             else
             {
-                <text>$("a[data-mesh='@ViewBag.Mesh']").click()</text>
-            }
+                <text>
+                var a = $("a[data-mesh]").filter(function () { return $(this).attr("data-mesh") === "@ViewBag.Mesh.Replace("\\", "\\\\")"; });
+                a.click();
+                if (a.closest('ul').hasClass('dropdown-submenu')) {
+                    a.closest('ul').show();
+                }
+                </text>
+                }
 
             });
 
