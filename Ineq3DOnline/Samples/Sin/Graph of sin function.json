@@ -1,1 +1,1 @@
-{"name":"Graph of sin function","x0":-1.0,"y0":-1.0,"z0":-1.0,"x1":1.0,"y1":1.0,"z1":1.0,"maxDivisionCount":12,"quality":false,"curvatureQuality":false,"formula":"z < (sin(6*x)+sin(6*y))/4"}
+{"name":"Sin\\Graph of sin function","x0":-1.0,"y0":-1.0,"z0":-1.0,"x1":1.0,"y1":1.0,"z1":1.0,"maxDivisionCount":12,"quality":false,"curvatureQuality":false,"formula":"z < (sin(6*x)+sin(6*y))/4"}

@@ -34,7 +34,7 @@
             @foreach (var f in Model.GetDataSampleFolders())
             {
                 <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" onclick="event.stopPropagation(); event.preventDefault(); var ul = $(this).closest('li').find('ul'); if ($(ul).is(':visible')) { ul.hide('fast') } else { $('.dropdown-submenu').hide('fast'); ul.show('fast') }; return false;" role="button" aria-haspopup="true" aria-expanded="false">
+                    <a href="#" class="dropdown-toggle" onclick="event.stopPropagation(); event.preventDefault(); var ul = $(this).closest('li').find('ul'); if ($(ul).is(':visible')) { ul.slideUp('fast') } else { $('.dropdown-submenu').slideUp('fast'); ul.slideDown('fast') }; return false;" role="button" aria-haspopup="true" aria-expanded="false">
                         @f <span class="caret" />
                     </a>
                     <ul class="dropdown-submenu dropdown-menu">

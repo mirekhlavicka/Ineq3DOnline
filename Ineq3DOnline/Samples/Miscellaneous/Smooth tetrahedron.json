@@ -1,0 +1,1 @@
+{"name":"Miscellaneous\\Smooth tetrahedron","x0":-3.0,"y0":-3.0,"z0":-3.0,"x1":3.0,"y1":3.0,"z1":3.0,"maxDivisionCount":20,"quality":false,"curvatureQuality":false,"formula":"x^4 + \r\n2*x^2*y^2 +\r\n2*x^2*z^2 + \r\ny^4 + \r\n2*y^2*z^2 + \r\nz^4 + \r\n8*x*y*z -\r\n10*x^2 - \r\n10*y^2 - \r\n10*z^2+20\r\n<0 &&\r\nx^2+y^2>0.3 &&\r\nx^2+z^2>0.3 &&\r\nz^2+y^2>0.3 "}

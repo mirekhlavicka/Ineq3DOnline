@@ -1,0 +1,1 @@
+{"name":"Miscellaneous\\Enzensberger Star","x0":-0.5,"y0":-0.5,"z0":-0.5,"x1":0.5,"y1":0.5,"z1":0.5,"maxDivisionCount":25,"quality":false,"curvatureQuality":false,"formula":"(400*(x^2*y^2+y^2*z^2+x^2*z^2)-(1-x^2-y^2-z^2)^3 < 0) &&\r\n(x^2+y^2>0.002)   &&\r\n(x^2+z^2>0.002)   &&\r\n(z^2+y^2>0.002)  "}
