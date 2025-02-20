@@ -23,6 +23,8 @@ namespace MeshData
 
         public Action<double> OnProgress { get; set; }
 
+        public Func<Point, Func<double, double, double, double>, bool> ProjectToSurfaceSpec = null;
+
         private IneqTree ineqTreeBoxed;
         private IneqTree ineqTree;
 
@@ -568,6 +570,11 @@ namespace MeshData
 
         public bool ProjectToSurface(Point P, double precision, int ineqNumber, bool safe)
         {
+            if (ProjectToSurfaceSpec != null && ProjectToSurfaceSpec(P, ineqTreeBoxed.ExpressionList[ineqNumber]))
+            {
+                return true;
+            }
+
             double n1, n2, n3, n;
             double dx, dy, dz;
             double w, wx, wy, wz;

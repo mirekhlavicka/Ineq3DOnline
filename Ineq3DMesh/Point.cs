@@ -38,19 +38,19 @@ namespace MeshData
         public double X
         {
             get { return x; }
-            private set { x = value; }
+            set { x = value; }
         }
 
         public double Y
         {
             get { return y; }
-            private set { y = value; }
+            set { y = value; }
         }
 
         public double Z
         {
             get { return z; }
-            private set { z = value; }
+            set { z = value; }
         }
 
         public double U

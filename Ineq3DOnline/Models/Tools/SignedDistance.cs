@@ -55,5 +55,16 @@ namespace Ineq3DOnline
             double[] result = meshWrapper.SignedDistance(x, y, z);
             return result[0];
         }
+
+        public bool Project(Point p)
+        {
+            double[] result = meshWrapper.SignedDistance(p.X, p.Y, p.Z);
+
+            p.X = result[1];
+            p.Y = result[2];
+            p.Z = result[3];
+
+            return true;
+        }
     }
 }
