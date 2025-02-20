@@ -633,7 +633,9 @@
                 <text>
                 var a = $("a[data-mesh]").eq(Math.floor(Math.random() * $("a[data-mesh]").length));
                 a.click();
-                a.closest('ul').toggle();
+                if (a.closest('ul').hasClass('dropdown-submenu')) {
+                    a.closest('ul').show();
+                }
                 </text>
             }
             else
