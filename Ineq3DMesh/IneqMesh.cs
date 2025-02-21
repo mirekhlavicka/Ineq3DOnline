@@ -23,7 +23,7 @@ namespace MeshData
 
         public Action<double> OnProgress { get; set; }
 
-        public Func<Point, Func<double, double, double, double>, bool> ProjectToSurfaceSpec = null;
+        public Dictionary<Func<double, double, double, double>, Func<Point, bool>> ProjectToSurfaceSpec = new Dictionary<Func<double, double, double, double>, Func<Point, bool>>();
 
         private IneqTree ineqTreeBoxed;
         private IneqTree ineqTree;
@@ -570,9 +570,14 @@ namespace MeshData
 
         public bool ProjectToSurface(Point P, double precision, int ineqNumber, bool safe)
         {
-            if (ProjectToSurfaceSpec != null && ProjectToSurfaceSpec(P, ineqTreeBoxed.ExpressionList[ineqNumber]))
+            if (ProjectToSurfaceSpec.Count > 0 && ProjectToSurfaceSpec.ContainsKey(ineqTreeBoxed.ExpressionList[ineqNumber]))
             {
-                return true;
+                Point P1 = new Point(P.X, P.Y, P.Z);
+
+                if (ProjectToSurfaceSpec[ineqTreeBoxed.ExpressionList[ineqNumber]](P1))
+                {
+                    return P.MoveTo(P1, safe);
+                }
             }
 
             double n1, n2, n3, n;
