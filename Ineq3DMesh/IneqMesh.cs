@@ -40,7 +40,8 @@ namespace MeshData
         {
             get { return ineqTreeBoxed; }
         }
-
+        
+        public Action PrepareBackgroundMesh { get; set; }
 
         public bool Boxed { get; set; }
 
@@ -71,6 +72,24 @@ namespace MeshData
             foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => t.BoundaryCount == 0 && !t.IsIn[0]).ToArray())
                 DeleteTetrahedron(t);  
             DeleteLonelyPoints();
+
+            /*RefineTetrahedralMesh(new Point(0, 0, 0.75d), 0.3d);
+            RefineTetrahedralMesh(new Point(0, 0, 0.75d), 0.3d);
+            RefineTetrahedralMesh(new Point(0, 0, 0.75d), 0.3d);*/
+
+            /*RefineTetrahedralMesh(new Point(-0.4, -0.4, -0.4), 0.2d);
+            RefineTetrahedralMesh(new Point(-0.4, -0.4, -0.4), 0.2d);
+            RefineTetrahedralMesh(new Point(-0.4, -0.4, -0.4), 0.2d);
+
+            RefineTetrahedralMesh(new Point(0.4, -0.4, -0.4), 0.2d);
+            RefineTetrahedralMesh(new Point(0.4, -0.4, -0.4), 0.2d);
+            RefineTetrahedralMesh(new Point(0.4, -0.4, -0.4), 0.2d);*/
+
+            //RefineTetrahedralMesh(0);
+            if (PrepareBackgroundMesh != null)
+            {
+                PrepareBackgroundMesh();
+            }
 
             ResolveMesh(ineqTreeBoxed.Root, 0);
             foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => !t.IsIn[0]).ToArray())
@@ -759,6 +778,67 @@ namespace MeshData
                 }
             }
             this.tetrahedrons= new HashSet<Tetrahedron>(tetrahedrons);
+        }
+
+        public void RefineTetrahedralMesh(Point c, double r)
+        {
+            var tetras = Tetrahedrons.Where(t => t.IsOnBoundaryDomain(0) && t.Points.Any(p => p.Distance(c) <= r)).ToArray();
+
+            foreach (var t in tetras)
+            {
+                if (!Tetrahedrons.Contains(t))
+                    continue;
+
+                var ee = t.Edges().OrderByDescending(e => e.SqrLength).First();
+
+                var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
+            }
+        }
+
+        public void RefineTetrahedralMesh(int ineqNumber, int count = 5)
+        {
+            Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber] )), p =>
+            {
+                Eval(p, ineqNumber);
+            });
+
+            var good = new HashSet<Tetrahedron>();
+
+            for (int i = 0; i < count; i++)
+            {
+                var tetras = Tetrahedrons.Where(t =>
+                {
+                    if (!t.Boundary[ineqNumber] || good.Contains(t))
+                    {
+                        return false;
+                    }
+
+                    var midP = t.Points.Average();
+                    Eval(midP, ineqNumber);
+
+                    var res = Math.Abs(midP.U - t.Points.Sum(p => p.U) / 4.0d) > 0.1d * (t.Points.Max(p => p.U) - t.Points.Min(p => p.U));
+
+                    if (!res)
+                    {
+                        good.Add(t);
+                    }
+
+                    return res;
+
+                }).ToArray();
+
+                foreach (var t in tetras)
+                {
+                    if (!Tetrahedrons.Contains(t))
+                        continue;
+
+                    var ee = t.Edges().OrderByDescending(e => e.SqrLength).First();
+
+                    var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
+                    Eval(p, ineqNumber);
+                    p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                }
+            }
         }
 
         public void Jiggle(int count, bool edges = true)
