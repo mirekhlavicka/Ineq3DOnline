@@ -164,6 +164,11 @@ namespace MeshData
             return new Point(p.x / f, p.y / f, p.z / f, p.boundary.Length);
         }
 
+        public static Point operator *(double f, Point p)
+        {
+            return new Point(f * p.x,  f * p.y, f * p.z, p.boundary.Length);
+        }
+
         public bool MoveTo(Point p1, bool safe)
         {
             return MoveTo(p1.X, p1.Y, p1.Z, safe);

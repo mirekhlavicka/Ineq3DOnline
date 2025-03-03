@@ -135,5 +135,19 @@ namespace MeshData
                 f101 * x * (1 - y) * z +
                 f111 * x * y * z;
         }
+
+        public static double FindMaximum(Func<double, double> f, double left = 0.0, double right = 1.0, double eps = 1e-4)
+        {
+            while (right - left > eps)
+            {
+                double m1 = left + (right - left) / 3;
+                double m2 = right - (right - left) / 3;
+                if (f(m1) < f(m2))
+                    left = m1;
+                else
+                    right = m2;
+            }
+            return (left + right) / 2; 
+        }
     }
 }
