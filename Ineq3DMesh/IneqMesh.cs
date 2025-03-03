@@ -295,7 +295,7 @@ namespace MeshData
                                     Dist = dist,
                                     NearPoint = nearPoint,
                                     FarPoint = farPoint,
-                                    Movable = movable
+                                    Movable = movable && nearPoint.Movable
                                 };
                             }
                     )
@@ -455,6 +455,8 @@ namespace MeshData
             {
                 newPoint.Boundary[i] = e.P1.Boundary[i] && e.P2.Boundary[i];
             }
+
+            newPoint.Movable = e.P1.Movable && e.P2.Movable;
 
             newPoint.U = 0;
             AddPoint(newPoint);
@@ -782,7 +784,7 @@ namespace MeshData
             }
         }
 
-        public void RefineTetrahedralMeshByTetrahedrons(int ineqNumber, int count = 5)
+        public void RefineTetrahedralMeshByTetrahedrons(int ineqNumber, int count = 5, double tolerance = 0.1d)
         {
             Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
             {
@@ -791,11 +793,10 @@ namespace MeshData
 
             var good = new HashSet<Tetrahedron>();
 
-            double tolerance = 0.1d;
 
             for (int i = 0; i < count; i++)
             {
-                var tetras = Tetrahedrons.Where(t =>
+                var tetras = Tetrahedrons.AsParallel().Where(t =>
                 {
                     if (!t.Boundary[ineqNumber] || good.Contains(t))
                     {
@@ -805,21 +806,24 @@ namespace MeshData
                     var midP = t.Points.Average();
                     Eval(midP, ineqNumber);
 
-                    var res = Math.Abs(midP.U - t.Points.Sum(p => p.U) / 4.0d) > tolerance * t.Edges().Max(e => Math.Sqrt(e.SqrLength)); /*  (t.Points.Max(p => p.U) - t.Points.Min(p => p.U))  */
+                    var res = Math.Abs(midP.U - t.Points.Sum(p => p.U) / 4.0d) > tolerance * D; /*t.Edges().Max(e => Math.Sqrt(e.SqrLength))*/ /*(t.Points.Max(p => p.U) - t.Points.Min(p => p.U))*/
 
                     if (!res)
                     {
-                        good.Add(t);
+                        lock (good)
+                        {
+                            good.Add(t);
+                        }
                     }
 
                     return res;
 
                 }).ToArray();
 
-                /*if (i == 0)
+                if (tetras.Length == 0)
                 {
-                    tetras = tetras.SelectMany(t => t.Points).SelectMany(p => p.Tetrahedrons).Distinct().ToArray();
-                }*/
+                    break;
+                }
 
                 foreach (var t in tetras)
                 {
@@ -831,13 +835,15 @@ namespace MeshData
                     var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
                     Eval(p, ineqNumber);
                     p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
-                }
 
-                //tolerance -= 0.02d;
+                    p.Movable = false;
+                    p.Points.AsParallel().ForAll(pp => pp.Movable = false);
+
+                }
             }
         }
 
-        public void RefineTetrahedralMeshByEdges(int ineqNumber, int count = 2)
+        public void RefineTetrahedralMeshByEdges(int ineqNumber, int count = 2, double tolerance = 0.1d)
         {
             Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
             {
@@ -845,8 +851,6 @@ namespace MeshData
             });
 
             var good = new HashSet<Edge>();
-
-            double tolerance = 0.05d;
 
             for (int i = 0; i < count; i++)
             {
@@ -860,7 +864,7 @@ namespace MeshData
                     var midP = (e.P1 + e.P2) / 2;
                     Eval(midP, ineqNumber);
 
-                    var res = Math.Abs(midP.U - (e.P1.U + e.P2.U) / 2.0d) > tolerance * Math.Sqrt(e.SqrLength);
+                    var res = Math.Abs(midP.U - (e.P1.U + e.P2.U) / 2.0d) > tolerance * D; // Math.Sqrt(e.SqrLength);
 
                     if (count > 1 && !res)
                     {
@@ -886,7 +890,7 @@ namespace MeshData
             }
         }
 
-        public void RefineTetrahedralMeshByEdgeshMax(int ineqNumber, int count = 5)
+        public void RefineTetrahedralMeshByEdgesMax(int ineqNumber, int count = 5, double tolerance = 0.1d)
         {
             Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
             {
@@ -894,8 +898,6 @@ namespace MeshData
             });
 
             var good = new HashSet<Edge>();
-
-            double tolerance = 0.1d;
 
             for (int i = 0; i < count; i++)
             {
@@ -909,7 +911,7 @@ namespace MeshData
                     var midP = (e.P1 + e.P2) / 2;
                     Eval(midP, ineqNumber);
 
-                    var res = Math.Abs(midP.U - (e.P1.U + e.P2.U) / 2.0d) > tolerance * Math.Sqrt(e.SqrLength);
+                    var res = Math.Abs(midP.U - (e.P1.U + e.P2.U) / 2.0d) > tolerance * D; /*Math.Sqrt(e.SqrLength)*/
 
                     if (count > 1 && !res)
                     {

@@ -10,6 +10,8 @@ namespace MeshData
     {
         public static bool EnableUnsafeMove = false;
 
+        public bool Movable = true;
+
         private double x = 0;
         private double y = 0;
         private double z = 0;
