@@ -84,14 +84,17 @@ namespace MeshData
             DeleteLonelyPoints();
 
             //var c = Points.Count(p => p.BoundaryCount >= 3);
-            CheckTopology();
+            //CheckTopology();
             //c = Points.Count(p => p.BoundaryCount >= 3);
 
             Jiggle(2);
 
-            CheckQuality(0.25d, false);
-            CheckQuality(0.25d, false);
-            CheckTopology();
+            if (PrepareBackgroundMesh == null)
+            {
+                CheckQuality(0.25d, false);
+                CheckQuality(0.25d, false);
+                CheckTopology();
+            }
             
             Point.EnableUnsafeMove = true;
             Jiggle(2);
@@ -818,7 +821,18 @@ namespace MeshData
 
                     return res;
 
-                }).ToArray();
+                })
+                .Select(t => 
+                {
+                    var ee = t.Edges().OrderByDescending(e => e.SqrLength).First();
+                    return new 
+                    { 
+                        t,
+                        ee
+                    }; 
+                })
+                .OrderByDescending(t => t.ee.SqrLength)
+                .ToArray();
 
                 if (tetras.Length == 0)
                 {
@@ -827,10 +841,10 @@ namespace MeshData
 
                 foreach (var t in tetras)
                 {
-                    if (!Tetrahedrons.Contains(t))
+                    if (!Tetrahedrons.Contains(t.t))
                         continue;
 
-                    var ee = t.Edges().OrderByDescending(e => e.SqrLength).First();
+                    var ee = t.ee;// t.Edges().OrderByDescending(e => e.SqrLength).First();
 
                     var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
                     Eval(p, ineqNumber);
@@ -1641,11 +1655,17 @@ namespace MeshData
 
         public void CheckTopology()
         {
+            List<Tetrahedron> tetras = null;
 
-            foreach (var tetra in Tetrahedrons.Where(t => t.P0.BoundaryCount > 0 && t.CommonBoundaryCount > 0).ToList())
+            do
             {
-                DeleteTetrahedron(tetra);
+                tetras = Tetrahedrons.Where(t => t.P0.BoundaryCount > 0 && t.CommonBoundaryCount > 0).ToList();
+                foreach (var tetra in tetras)
+                {
+                    DeleteTetrahedron(tetra);
+                }
             }
+            while (tetras.Count > 0);
 
             foreach (var p in Points.Where(pp => pp.BoundaryCount == 2))
             {
