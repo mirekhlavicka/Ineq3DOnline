@@ -15,6 +15,7 @@ namespace Ineq3DOnline
         private static string codeTemplate = @"
             using System;
             using System.Collections.Generic;
+            using System.Linq;
             using MeshData;
             using Ineq3DOnline;
             using static Ineq3DOnline.MyMath;
@@ -76,7 +77,7 @@ namespace Ineq3DOnline
         {
             return Regex.Replace(input, @"\((-?\d+),\s*(-?\d+)\)", match =>
             {
-                int n1 = int.Parse(match.Groups[1].Value) - 12;
+                int n1 = int.Parse(match.Groups[1].Value) - 13;
                 int n2 = int.Parse(match.Groups[2].Value);
                 return $"({n1}, {n2})";
             });
