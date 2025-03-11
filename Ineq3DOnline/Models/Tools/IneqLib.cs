@@ -246,5 +246,22 @@ namespace Ineq3DOnline
             return res;
         }
 
+        public static void Gradient(Func<double, double, double, double> f, Point P, out double nx, out double ny, out double nz, double d = 1e-4)
+        {
+            double w = f(P.X, P.Y, P.Z);
+
+            double wx = f(P.X + d, P.Y, P.Z);
+            double wy = f(P.X, P.Y + d, P.Z);
+            double wz = f(P.X, P.Y, P.Z + d);
+            nx = (wx - w) / d;
+            ny = (wy - w) / d;
+            nz = (wz - w) / d;
+
+            double n = Math.Sqrt(nx * nx + ny * ny + nz * nz);
+            if (n != 0)
+            {
+                nx = nx / n; ny = ny / n; nz = nz / n;
+            }
+        }
     }
 }
