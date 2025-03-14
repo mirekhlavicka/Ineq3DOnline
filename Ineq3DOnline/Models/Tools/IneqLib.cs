@@ -263,5 +263,67 @@ namespace Ineq3DOnline
                 nx = nx / n; ny = ny / n; nz = nz / n;
             }
         }
+
+        public static double[,] ComputeBasis(double nx, double ny, double nz)
+        {
+            // The input vector (nx, ny, nz) is assumed to be a unit vector.
+            double[] n = { nx, ny, nz };
+
+            // Choose an arbitrary vector different from n
+            double[] t = Math.Abs(nz) < Math.Abs(nx) ? new double[] { 0, 0, 1 } : new double[] { 1, 0, 0 };
+
+            // Compute first perpendicular vector b1 = t × n
+            double[] b1 = new double[]
+            {
+                t[1] * n[2] - t[2] * n[1],
+                t[2] * n[0] - t[0] * n[2],
+                t[0] * n[1] - t[1] * n[0]
+            };
+
+            // Normalize b1
+            double normB1 = Math.Sqrt(b1[0] * b1[0] + b1[1] * b1[1] + b1[2] * b1[2]);
+            b1[0] /= normB1;
+            b1[1] /= normB1;
+            b1[2] /= normB1;
+
+            // Compute second perpendicular vector b2 = n × b1
+            double[] b2 = new double[]
+            {
+                n[1] * b1[2] - n[2] * b1[1],
+                n[2] * b1[0] - n[0] * b1[2],
+                n[0] * b1[1] - n[1] * b1[0]
+            };
+
+            /*// Compute determinant of the basis matrix
+            double determinant = n[0] * (b1[1] * b2[2] - b1[2] * b2[1])
+                               - n[1] * (b1[0] * b2[2] - b1[2] * b2[0])
+                               + n[2] * (b1[0] * b2[1] - b1[1] * b2[0]);
+
+            // Ensure right-handed orientation
+            if (determinant < 0)
+            {
+                b2[0] = -b2[0];
+                b2[1] = -b2[1];
+                b2[2] = -b2[2];
+            }*/
+
+            // Return as a 3x3 matrix with rows as vectors
+            return new double[,] { { n[0], n[1], n[2] }, { b1[0], b1[1], b1[2] }, { b2[0], b2[1], b2[2] } };
+        }
+
+        public static void Transform(ref double x, ref double y, ref double z, Point P, double[,] m)
+        {
+            x = x - P.X;
+            y = y - P.Y;
+            z = z - P.Z;
+
+            double nx = m[0, 0] * x + m[0, 1] * y + m[0, 2] * z;
+            double ny = m[1, 0] * x + m[1, 1] * y + m[1, 2] * z;
+            double nz = m[2, 0] * x + m[2, 1] * y + m[2, 2] * z;
+
+            x = nx;
+            y = ny;
+            z = nz;
+        }
     }
 }
