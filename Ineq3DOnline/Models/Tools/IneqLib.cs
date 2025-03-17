@@ -264,7 +264,7 @@ namespace Ineq3DOnline
             }
         }
 
-        public static double[,] ComputeBasis(double nx, double ny, double nz)
+        public static double[,] ComputeBasis(double nx, double ny, double nz, char axis = 'x')
         {
             // The input vector (nx, ny, nz) is assumed to be a unit vector.
             double[] n = { nx, ny, nz };
@@ -308,7 +308,18 @@ namespace Ineq3DOnline
             }*/
 
             // Return as a 3x3 matrix with rows as vectors
-            return new double[,] { { n[0], n[1], n[2] }, { b1[0], b1[1], b1[2] }, { b2[0], b2[1], b2[2] } };
+            if (axis == 'x')
+            {
+                return new double[,] { { n[0], n[1], n[2] }, { b1[0], b1[1], b1[2] }, { b2[0], b2[1], b2[2] } };
+            }
+            else if (axis == 'y')
+            {
+                return new double[,] { { b2[0], b2[1], b2[2] }, { n[0], n[1], n[2] }, { b1[0], b1[1], b1[2] } };
+            }
+            else// (axis == 'z')
+            {
+                return new double[,] { { b1[0], b1[1], b1[2] }, { b2[0], b2[1], b2[2] }, { n[0], n[1], n[2] } };
+            }
         }
 
         public static void Transform(ref double x, ref double y, ref double z, Point P, double[,] m)

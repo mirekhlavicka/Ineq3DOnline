@@ -774,7 +774,7 @@ namespace MeshData
 
         public void RefineTetrahedralMeshNearPoint(Point c, double r)
         {
-            var tetras = Tetrahedrons.Where(t => t.IsOnBoundaryDomain(0) && t.Points.Any(p => p.Distance(c) <= r)).ToArray();
+            var tetras = Tetrahedrons.Where(t => /*t.IsOnBoundaryDomain(0) && */t.Points.Any(p => p.Distance(c) <= r)).ToArray();
 
             foreach (var t in tetras)
             {
@@ -801,7 +801,7 @@ namespace MeshData
             {
                 var tetras = Tetrahedrons.AsParallel().Where(t =>
                 {
-                    if (!t.Boundary[ineqNumber] || good.Contains(t))
+                    if (!t.Boundary[ineqNumber] || good.Contains(t) || t.Points.All(p =>  Math.Sign(p.U) == 1) || t.Points.All(p => Math.Sign(p.U) == -1))
                     {
                         return false;
                     }
