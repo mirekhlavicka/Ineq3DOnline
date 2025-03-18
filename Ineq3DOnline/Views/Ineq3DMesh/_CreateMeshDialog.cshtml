@@ -23,7 +23,7 @@
                         <div class="tab-content">
                             <div class="tab-pane active" id="tab1">
                                 @Html.TextAreaFor(m => Model.Formula, new { @class = "form-control", style = "display: none; height:700px; margin-top: 10px", spellcheck = "false" })
-                                @Html.ValidationMessageFor(model => model.Formula, "", new { @class = "text-danger" })
+                                @Html.ValidationMessageFor(model => model.Formula, "", new { @class = "text-danger", style= "max-height: 80px; overflow-y: auto" }, "div")
 
                                 <div class="btn-toolbar" role="toolbar" aria-label="..." style="margin-top:15px">
                                     <div class="btn-group">
