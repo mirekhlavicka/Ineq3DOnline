@@ -73,6 +73,10 @@ namespace MeshData
                 DeleteTetrahedron(t);
             DeleteLonelyPoints();
 
+            //RefineTetrahedralMeshRedGreen(Tetrahedrons.Take(10));
+            //RefineTetrahedralMeshRedGreen(Tetrahedrons.Take(10));
+            //return;
+
             if (PrepareBackgroundMesh != null)
             {
                 PrepareBackgroundMesh();
@@ -771,6 +775,103 @@ namespace MeshData
             }
             this.tetrahedrons= new HashSet<Tetrahedron>(tetrahedrons);
         }
+
+        public void RefineTetrahedralMeshRedGreen(IEnumerable<Tetrahedron> refineList)
+        {
+            var newPoints = new Dictionary<Edge, Point>();
+            var red = refineList.ToHashSet();
+            var green = new HashSet<Tetrahedron>();
+
+            foreach (var t in refineList.ToArray())
+            {
+                RefineRed(t, newPoints, red, green);
+            }
+
+            while (green.Count > 0)
+            {
+                foreach (var t in green.ToArray())
+                {
+                    RefineRed(t, newPoints, red, green);
+                }
+            }
+        }
+
+        public void RefineRed(Tetrahedron t, Dictionary<Edge, Point> newPoints, HashSet<Tetrahedron> red, HashSet<Tetrahedron> green)
+        {
+            if (!Tetrahedrons.Contains(t))
+            {
+                return;
+            }
+
+            var midpoints = new Dictionary<(int, int), Point>();
+
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = i + 1; j < 4; j++)
+                {
+                    var e = new Edge(t.Points[i], t.Points[j]);
+
+                    if (newPoints.ContainsKey(e))
+                    {
+                        midpoints[(i, j)] = newPoints[e];
+                    }
+                    else
+                    {
+                        var np = (e.P1 + e.P2) / 2;
+                        for (int b = 0; b < np.Boundary.Length; b++)
+                        {
+                            np.Boundary[b] = e.P1.Boundary[b] && e.P2.Boundary[b];
+                        }
+                        np.Movable = e.P1.Movable && e.P2.Movable;
+                        np.U = 0;
+                        AddPoint(np);
+                        midpoints[(i, j)] = np;
+                        newPoints[e] = np;
+
+                        foreach (Tetrahedron tt in e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons).ToArray())
+                        {
+                            if (!red.Contains(tt) && !green.Contains(tt))
+                            { 
+                                green.Add(tt);
+                            }
+                        }
+                    }
+                }
+            }
+
+            int volumeSign = Math.Sign(t.Volume);
+            var newTetras = new List<Tetrahedron>();
+            var v = t.Points;
+            var m = midpoints;
+
+            newTetras.Add(AddTetrahedron(v[0], m[(0, 1)], m[(0, 2)], m[(0, 3)], volumeSign));
+            newTetras.Add(AddTetrahedron(v[1], m[(0, 1)], m[(1, 2)], m[(1, 3)], volumeSign));
+            newTetras.Add(AddTetrahedron(v[2], m[(0, 2)], m[(1, 2)], m[(2, 3)], volumeSign));
+            newTetras.Add(AddTetrahedron(v[3], m[(0, 3)], m[(1, 3)], m[(2, 3)], volumeSign));
+
+            newTetras.Add(AddTetrahedron(m[(0, 1)], m[(0, 2)], m[(0, 3)], m[(1, 2)], volumeSign));
+            newTetras.Add(AddTetrahedron(m[(1, 2)], m[(1, 3)], m[(2, 3)], m[(0, 3)], volumeSign));
+            newTetras.Add(AddTetrahedron(m[(0, 2)], m[(1, 2)], m[(2, 3)], m[(0, 3)], volumeSign));
+            newTetras.Add(AddTetrahedron(m[(0, 1)], m[(1, 2)], m[(1, 3)], m[(0, 3)], volumeSign));
+
+            foreach (var tt in newTetras)
+            {
+                tt.IsIn.Or(t.IsIn);
+                tt.Boundary.Or(t.Boundary);
+                tt.IsOnBoundary.Or(t.IsOnBoundary);
+            }
+
+            DeleteTetrahedron(t);
+            if (red.Contains(t))
+            { 
+                red.Remove(t);
+            }
+            if (green.Contains(t))
+            {
+                green.Remove(t);
+            }
+        }
+
 
         public void RefineTetrahedralMeshNearPoint(Point c, double r)
         {
