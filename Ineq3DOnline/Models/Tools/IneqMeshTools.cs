@@ -124,7 +124,7 @@ namespace Ineq3DOnline.Models
                 }
             }
 
-            var centerPoints = ineqMesh.Tetrahedrons.SelectMany(t => t.Triangles()
+            var centerPoints = ineqMesh.Tetrahedrons.AsParallel().SelectMany(t => t.Triangles()
                             .Where(tr => tr.BoundaryCount == 1 && tr.Boundary))
                             .Select(tr => new
                             {
@@ -134,7 +134,8 @@ namespace Ineq3DOnline.Models
                                 maxLength = Math.Max(Math.Max(tr.P1.Distance(tr.P2), tr.P1.Distance(tr.P3)), tr.P2.Distance(tr.P3))
                             });
 
-            foreach (var cp in centerPoints)
+            //foreach (var cp in centerPoints)
+            centerPoints.ForAll(cp =>
             {
                 Point origp = new Point(cp.p.X, cp.p.Y, cp.p.Z);
 
@@ -144,9 +145,12 @@ namespace Ineq3DOnline.Models
 
                 if (dist >= cp.maxLength / 50.0d)
                 {
-                    refList.Add(cp.tr);
+                    lock (refList)
+                    {
+                        refList.Add(cp.tr);
+                    }
                 }
-            }
+            });
 
             ineqMesh.RefineBoundaryTriangles(refList);
 

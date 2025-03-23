@@ -1091,22 +1091,44 @@ namespace MeshData
 
         public void Jiggle(int count, bool edges = true)
         {
-            for (int i = 0; i < count; i++)
-                //Points.AsParallel().AsEnumerable().ForAll(point =>
-                foreach(var point in Points)
-                {
-                    CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
-                }//);
+            if (Point.EnableUnsafeMove)
+            {
+                for (int i = 0; i < count; i++)
+                    Points.AsParallel().ForAll(point =>
+                    {
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                    });
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
+                    foreach (var point in Points)
+                    {
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                    }
+            }
         }
 
         public void Jiggle(int count, IEnumerable<Point> points, bool edges = true)
         {
-            for (int i = 0; i < count; i++)
-                //points.AsParallel().ForAll(point =>
-                foreach (var point in Points)
-                {
-                    CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
-                }//);
+            if (Point.EnableUnsafeMove)
+            {
+                for (int i = 0; i < count; i++)
+                    points.AsParallel().ForAll(point =>
+                    {
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                    });
+
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
+                    foreach (var point in Points)
+                    {
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                    };
+            }
+
         }
 
 
