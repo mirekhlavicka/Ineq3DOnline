@@ -43,6 +43,8 @@ namespace MeshData
         
         public Action PrepareBackgroundMesh { get; set; }
 
+        public Action PrepareBackgroundMeshBeforeApriory { get; set; }
+
         public bool Boxed { get; set; }
 
         public void Create()
@@ -66,6 +68,11 @@ namespace MeshData
 
 
             CreateBackgroundMesh();
+
+            if (PrepareBackgroundMeshBeforeApriory != null)
+            {
+                PrepareBackgroundMeshBeforeApriory();
+            }
 
             ResolveMeshApriori(ineqTreeBoxed.Root, 0);
             SpreadTetrahedronsBoundaryFlags();
@@ -796,7 +803,7 @@ namespace MeshData
 
                     if (!(
                             dividedEdges.Length == 1 ||
-                            (dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any()) ||
+                            //(dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any()) ||
                             (dividedEdges.Length == 3 && dividedEdges.SelectMany(e => e).Distinct().Count() == 3)
                         )
                     )
@@ -814,10 +821,8 @@ namespace MeshData
                 int volumeSign = Math.Sign(t.Volume);
                 var newTetras = new List<Tetrahedron>();
 
-
                 if (dividedEdges.Length == 1)
                 {
-
                     var e = dividedEdges[0];
                     var np = newPoints[e];
                     var v = t.Points.Where(p => p != e.P1 && p != e.P2).ToArray();
@@ -825,28 +830,35 @@ namespace MeshData
                     newTetras.Add(AddTetrahedron(np, e.P1, v[0], v[1], volumeSign));
                     newTetras.Add(AddTetrahedron(np, e.P2, v[0], v[1], volumeSign));
 
-                    foreach (var tt in newTetras)
-                    {
-                        tt.IsIn.Or(t.IsIn);
-                        tt.Boundary.Or(t.Boundary);
-                        tt.IsOnBoundary.Or(t.IsOnBoundary);
-                    }
-
-                    DeleteTetrahedron(t);
-                    if (refine.Contains(t))
-                    {
-                        refine.Remove(t);
-                    }
                 }
 
-                if (dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any())
+                /*if (dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any())
                 {
-                    //RefineRed(t, newPoints, refine);
-                }
+                    
+                }*/
 
                 if (dividedEdges.Length == 3 && dividedEdges.SelectMany(e => e).Distinct().Count() == 3)
                 {
-                    //RefineRed(t, newPoints, refine);
+                    var p0 = t.Points.Where(p => !dividedEdges.Any(e => e.Contains(p))).Single();
+                    var mp = dividedEdges.Select(e => newPoints[e]).ToArray();
+
+                    newTetras.Add(AddTetrahedron(p0, mp[0], mp[1], mp[2], volumeSign));                    
+                    newTetras.Add(AddTetrahedron(p0, mp[0], mp[1], dividedEdges[0].Intersect(dividedEdges[1]).Single(), volumeSign));
+                    newTetras.Add(AddTetrahedron(p0, mp[0], mp[2], dividedEdges[0].Intersect(dividedEdges[2]).Single(), volumeSign));
+                    newTetras.Add(AddTetrahedron(p0, mp[1], mp[2], dividedEdges[1].Intersect(dividedEdges[2]).Single(), volumeSign));
+                }
+
+                foreach (var tt in newTetras)
+                {
+                    tt.IsIn.Or(t.IsIn);
+                    tt.Boundary.Or(t.Boundary);
+                    tt.IsOnBoundary.Or(t.IsOnBoundary);
+                }
+
+                DeleteTetrahedron(t);
+                if (refine.Contains(t))
+                {
+                    refine.Remove(t);
                 }
             }
         }
