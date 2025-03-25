@@ -803,7 +803,7 @@ namespace MeshData
 
                     if (!(
                             dividedEdges.Length == 1 ||
-                            //(dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any()) ||
+                            (dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any()) ||
                             (dividedEdges.Length == 3 && dividedEdges.SelectMany(e => e).Distinct().Count() == 3)
                         )
                     )
@@ -814,7 +814,7 @@ namespace MeshData
                 }
             }
 
-            foreach (var t in refine.ToArray())
+            foreach (var t in refine/*.ToArray()*/)
             {
                 var dividedEdges = t.Edges().Where(e => newPoints.ContainsKey(e)).ToArray();
 
@@ -829,20 +829,27 @@ namespace MeshData
 
                     newTetras.Add(AddTetrahedron(np, e.P1, v[0], v[1], volumeSign));
                     newTetras.Add(AddTetrahedron(np, e.P2, v[0], v[1], volumeSign));
-
                 }
 
-                /*if (dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any())
+                if (dividedEdges.Length == 2 && !dividedEdges[0].Intersect(dividedEdges[1]).Any())
                 {
-                    
-                }*/
+                    var e1 = dividedEdges[0];
+                    var e2 = dividedEdges[1];
+                    var p1 = newPoints[e1];
+                    var p2 = newPoints[e2];
+
+                    newTetras.Add(AddTetrahedron(e1.P1, p1, e2.P1, p2, volumeSign));
+                    newTetras.Add(AddTetrahedron(e1.P2, p1, e2.P1, p2, volumeSign));
+                    newTetras.Add(AddTetrahedron(e1.P1, p1, e2.P2, p2, volumeSign));
+                    newTetras.Add(AddTetrahedron(e1.P2, p1, e2.P2, p2, volumeSign));
+                }
 
                 if (dividedEdges.Length == 3 && dividedEdges.SelectMany(e => e).Distinct().Count() == 3)
                 {
                     var p0 = t.Points.Where(p => !dividedEdges.Any(e => e.Contains(p))).Single();
                     var mp = dividedEdges.Select(e => newPoints[e]).ToArray();
 
-                    newTetras.Add(AddTetrahedron(p0, mp[0], mp[1], mp[2], volumeSign));                    
+                    newTetras.Add(AddTetrahedron(p0, mp[0], mp[1], mp[2], volumeSign));
                     newTetras.Add(AddTetrahedron(p0, mp[0], mp[1], dividedEdges[0].Intersect(dividedEdges[1]).Single(), volumeSign));
                     newTetras.Add(AddTetrahedron(p0, mp[0], mp[2], dividedEdges[0].Intersect(dividedEdges[2]).Single(), volumeSign));
                     newTetras.Add(AddTetrahedron(p0, mp[1], mp[2], dividedEdges[1].Intersect(dividedEdges[2]).Single(), volumeSign));
@@ -856,10 +863,10 @@ namespace MeshData
                 }
 
                 DeleteTetrahedron(t);
-                if (refine.Contains(t))
+                /*if (refine.Contains(t))
                 {
                     refine.Remove(t);
-                }
+                }*/
             }
         }
 
@@ -951,7 +958,7 @@ namespace MeshData
             }
         }
 
-        public void RefineTetrahedralMeshNearPointRedGreen(Point[] c, double r, int count = 1)
+        public void RefineTetrahedralMeshNearPointRedGreen(IEnumerable<Point> c, double r, int count = 1)
         {
             for (int i = 0; i < count; i++)
             {
@@ -960,7 +967,7 @@ namespace MeshData
             }
         }
 
-        public void RefineTetrahedralMeshByTetrahedrons(int ineqNumber, int count = 5, double tolerance = 0.1d)
+        public void RefineTetrahedralMeshByTetrahedrons(int ineqNumber, int count = 5, double tolerance = 0.1d, bool redgreen = false)
         {
             Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
             {
@@ -1012,20 +1019,27 @@ namespace MeshData
                     break;
                 }
 
-                foreach (var t in tetras)
+                if (redgreen && i < 1)
                 {
-                    if (!Tetrahedrons.Contains(t.t))
-                        continue;
+                    RefineTetrahedralMeshRedGreen(tetras.Select(t => t.t));
+                }
+                else
+                {
+                    foreach (var t in tetras)
+                    {
+                        if (!Tetrahedrons.Contains(t.t))
+                            continue;
 
-                    var ee = t.ee;// t.Edges().OrderByDescending(e => e.SqrLength).First();
+                        var ee = t.ee;// t.Edges().OrderByDescending(e => e.SqrLength).First();
 
-                    var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
-                    Eval(p, ineqNumber);
-                    p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                        var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
+                        Eval(p, ineqNumber);
+                        p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
 
-                    p.Movable = false;
-                    p.Points.AsParallel().ForAll(pp => pp.Movable = false);
+                        p.Movable = false;
+                        p.Points.AsParallel().ForAll(pp => pp.Movable = false);
 
+                    }
                 }
             }
         }
