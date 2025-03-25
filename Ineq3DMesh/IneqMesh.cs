@@ -100,7 +100,7 @@ namespace MeshData
 
             Jiggle(2);
 
-            if (PrepareBackgroundMesh == null)
+            if (PrepareBackgroundMesh == null && PrepareBackgroundMeshBeforeApriory == null)
             {
                 CheckQuality(0.25d, false);
                 CheckQuality(0.25d, false);
@@ -951,11 +951,13 @@ namespace MeshData
             }
         }
 
-        public void RefineTetrahedralMeshNearPointRedGreen(Point c, double r)
+        public void RefineTetrahedralMeshNearPointRedGreen(Point[] c, double r, int count = 1)
         {
-            var tetras = Tetrahedrons.Where(t => t.Points.Any(p => p.Distance(c) <= r)).ToArray();
-
-            RefineTetrahedralMeshRedGreen(tetras);
+            for (int i = 0; i < count; i++)
+            {
+                var tetras = Tetrahedrons.Where(t => c.Any(p => t.Points.Average().Distance(p) <= r)).ToArray();
+                RefineTetrahedralMeshRedGreen(tetras);
+            }
         }
 
         public void RefineTetrahedralMeshByTetrahedrons(int ineqNumber, int count = 5, double tolerance = 0.1d)
