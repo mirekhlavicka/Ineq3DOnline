@@ -10,7 +10,7 @@ namespace MeshData
 {
     public class IneqMesh : Mesh
     {
-        private const double maxWarpDist = 0.5d;// 0.48d 
+        private const double maxWarpDist = 0.4d;// 0.48d 
         
         public double X0 { get; set; }
         public double Y0 { get; set; }
@@ -80,10 +80,6 @@ namespace MeshData
                 DeleteTetrahedron(t);
             DeleteLonelyPoints();
 
-            //RefineTetrahedralMeshRedGreen(Tetrahedrons.Take(10));
-            //RefineTetrahedralMeshRedGreen(Tetrahedrons.Take(10));
-            //return;
-
             if (PrepareBackgroundMesh != null)
             {
                 PrepareBackgroundMesh();
@@ -97,7 +93,7 @@ namespace MeshData
             //var c = Points.Count(p => p.BoundaryCount >= 3);
             //CheckTopology();
             //c = Points.Count(p => p.BoundaryCount >= 3);
-
+            
             Jiggle(2);
 
             if (PrepareBackgroundMesh == null && PrepareBackgroundMeshBeforeApriory == null)
