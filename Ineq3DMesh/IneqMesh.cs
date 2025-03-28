@@ -10,7 +10,7 @@ namespace MeshData
 {
     public class IneqMesh : Mesh
     {
-        private const double maxWarpDist = 0.4d;// 0.48d 
+        private const double maxWarpDist = 0.5d;// 0.48d 
         
         public double X0 { get; set; }
         public double Y0 { get; set; }
@@ -430,17 +430,20 @@ namespace MeshData
 
             if (movable)
             {
-                nearPoint.MoveTo(midPoint, true);
-                nearPoint.U = 0;
-
-                if (nearPoint.BoundaryCount == 1)
-                    ProjectToEdge(nearPoint, ineqNumber, nearPoint.BoundaryFirstIndex, true);
-                else if (nearPoint.BoundaryCount == 2)
+                movable = nearPoint.MoveTo(midPoint, true);
+                if (movable)
                 {
-                    ProjectToCorner(nearPoint, ineqNumber, nearPoint.BoundaryFirstIndex, nearPoint.BoundarySecondIndex, true);
-                }                
+                    nearPoint.U = 0;
+
+                    if (nearPoint.BoundaryCount == 1)
+                        ProjectToEdge(nearPoint, ineqNumber, nearPoint.BoundaryFirstIndex, true);
+                    else if (nearPoint.BoundaryCount == 2)
+                    {
+                        ProjectToCorner(nearPoint, ineqNumber, nearPoint.BoundaryFirstIndex, nearPoint.BoundarySecondIndex, true);
+                    }
+                }
             }
-            else
+            if(!movable)
             {
                 if (Math.Abs(e.P1.U) < 1e-10)
                 {

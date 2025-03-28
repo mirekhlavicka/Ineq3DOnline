@@ -195,7 +195,7 @@ namespace MeshData
             }
         }
 
-        public bool CheckVolume(double tolerance = 0.001d)
+        public bool CheckVolume(double tolerance = 0.01d)
         {
             double volume = Volume;
             return OrigVolume * volume > 0 && Math.Abs(volume) > tolerance * Math.Abs(OrigVolume); 

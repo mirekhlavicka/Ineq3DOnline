@@ -192,7 +192,17 @@ namespace MeshData
 
                 this.x = x; this.y = y; this.z = z;
 
-                int p = 0;
+                if (Tetrahedrons.Any(t => !t.CheckVolume()))
+                {
+                    this.x = origX;
+                    this.y = origY;
+                    this.z = origZ;
+                    return false;
+                }
+                else
+                    return true;
+
+                /*int p = 0;
                 while(p < 20 && Tetrahedrons.Any(t => !t.CheckVolume()))
                 {
                     this.x = origX + 0.9 * (this.x - origX);
@@ -210,8 +220,8 @@ namespace MeshData
                     return false;
                 }
                 else
-                    return true;
-                
+                    return true;*/
+
             }
         }
 
