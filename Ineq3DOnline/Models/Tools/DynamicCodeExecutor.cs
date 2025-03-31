@@ -23,6 +23,8 @@ namespace Ineq3DOnline
 
             namespace DynamicNamespace
             {
+                using FuncXYZ = Func<double, double, double, double>;
+
                 public class DynamicClass
                 {
                     {0}
@@ -77,7 +79,7 @@ namespace Ineq3DOnline
         {
             return Regex.Replace(input, @"\((-?\d+),\s*(-?\d+)\)", match =>
             {
-                int n1 = int.Parse(match.Groups[1].Value) - 13;
+                int n1 = int.Parse(match.Groups[1].Value) - 15;
                 int n2 = int.Parse(match.Groups[2].Value);
                 return $"({n1}, {n2})";
             });

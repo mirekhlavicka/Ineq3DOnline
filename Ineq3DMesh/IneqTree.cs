@@ -6,6 +6,7 @@ using System.Text;
 namespace MeshData
 {
     using FuncXYZ = Func<double, double, double, double>;
+    public delegate void Transformer(ref double x, ref double y, ref double z);
 
     public class IneqTree
     {
@@ -120,6 +121,16 @@ namespace MeshData
             if (root != null)
             {
                 root.Not();
+            }
+
+            return this;
+        }
+
+        public IneqTree Transform(Transformer t)
+        {
+            if (root != null)
+            {
+                root.Transform(t);
             }
 
             return this;
@@ -261,6 +272,23 @@ namespace MeshData
                 {
                     NodeType = NodeType.NodeAnd;
                     left.Not(); right.Not();                    
+                }
+            }
+
+            internal void Transform(Transformer t)
+            {
+                if (NodeType == NodeType.NodeExpression)
+                {
+                    var oldEx = Expression;
+                    Expression = ((x, y, z) => 
+                    {
+                        t(ref x, ref y, ref z);
+                        return oldEx(x, y, z);
+                    });
+                }
+                else
+                {
+                    left.Transform(t); right.Transform(t);
                 }
             }
         }
