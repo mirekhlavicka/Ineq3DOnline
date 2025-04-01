@@ -782,7 +782,7 @@ namespace MeshData
             this.tetrahedrons= new HashSet<Tetrahedron>(tetrahedrons);
         }
 
-        public void RefineTetrahedralMeshRedGreen(IEnumerable<Tetrahedron> refineList)
+        public IEnumerable<Point>  RefineTetrahedralMeshRedGreen(IEnumerable<Tetrahedron> refineList)
         {
             var newPoints = new Dictionary<Edge, Point>();
             var refine = refineList.ToHashSet();
@@ -867,6 +867,8 @@ namespace MeshData
                     refine.Remove(t);
                 }*/
             }
+
+            return newPoints.Values;
         }
 
         public void RefineRed(Tetrahedron t, Dictionary<Edge, Point> newPoints, HashSet<Tetrahedron> refine)
@@ -1020,7 +1022,13 @@ namespace MeshData
 
                 if (redgreen && i < 1)
                 {
-                    RefineTetrahedralMeshRedGreen(tetras.Select(t => t.t));
+                    var newPoints = RefineTetrahedralMeshRedGreen(tetras.Select(t => t.t));
+                    foreach (var p in newPoints)
+                    {
+                        Eval(p, ineqNumber);
+                        p.Movable = false;
+                        p.Points.AsParallel().ForAll(pp => pp.Movable = false);
+                    }
                 }
                 else
                 {
