@@ -4,7 +4,8 @@ using MeshData;
 
 namespace Ineq3DOnline
 {
-    public class IneqLib
+    using FuncXYZ = Func<double, double, double, double>;
+    public static class IneqLib
     {
         public static IneqTree Ball(double x0, double y0, double z0, double r, double p = 2, bool outside = false)
         {
@@ -263,6 +264,78 @@ namespace Ineq3DOnline
                 nx = nx / n; ny = ny / n; nz = nz / n;
             }
         }
+
+        public static void ProjectToSurface(this IneqMesh mesh, Point P, int ineqNumber)
+        {
+            mesh.ProjectToSurface(P, 100, ineqNumber, false);
+        }
+
+        public static bool ProjectToSurface(Point P, FuncXYZ f, double D = 0.1d, double precision = 100)
+        {
+            double n1, n2, n3, n;
+            double dx, dy, dz;
+            double w, wx, wy, wz;
+            dx = D / 10000000d;
+            dy = D / 10000000d;
+            dz = D / 10000000d;
+
+            w = f(P.X, P.Y, P.Z);
+
+            wx = f(P.X + dx, P.Y, P.Z);
+            wy = f(P.X, P.Y + dy, P.Z);
+            wz = f(P.X, P.Y, P.Z + dz);
+            n1 = (wx - w) / dx;
+            n2 = (wy - w) / dy;
+            n3 = (wz - w) / dz;
+
+            n = Math.Sqrt(n1 * n1 + n2 * n2 + n3 * n3);
+            if (n != 0)
+            {
+                n1 = n1 / n; n2 = n2 / n; n3 = n3 / n;
+            }
+            else
+            {
+                return false;
+            }
+            Point A, B;
+            double w1, tet;
+
+            A = new Point(P.X, P.Y, P.Z);
+            tet = -w / n;
+            B = new Point(P.X + tet * n1, P.Y + tet * n2, P.Z + tet * n3);
+
+            double stopdist = D / precision;
+            double errordist = 2 * D / 3.0d;
+            int p = 0;
+            int maxItCount = 100;
+
+            if (tet > errordist)
+            {
+                p = maxItCount;
+            }
+
+            while (Math.Abs(tet) > stopdist && p < maxItCount)
+            {
+                p++;
+                w1 = f(B.X, B.Y, B.Z);
+                if (w1 == w || tet > errordist)
+                {
+                    p = maxItCount;
+                    break;
+                }
+                tet = -w1 * tet / (w1 - w);
+                A.MoveTo(B, false);
+                w = w1;
+                B.MoveTo(B.X + tet * n1, B.Y + tet * n2, B.Z + tet * n3, false);
+            }
+            //if (p < maxItCount && Math.Sqrt((P.X - B.X) * (P.X - B.X) + (P.Y - B.Y) * (P.Y - B.Y) + (P.Z - B.Z) * (P.Z - B.Z)) < errordist)
+            //{
+                return P.MoveTo(B, false);
+            //}
+            //else
+            //    return false;
+        }
+
 
         public static double[,] ComputeBasis(double nx, double ny, double nz, char axis = 'x')
         {

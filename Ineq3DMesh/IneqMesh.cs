@@ -1033,7 +1033,7 @@ namespace MeshData
 
                         var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
                         Eval(p, ineqNumber);
-                        p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                        //p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
 
                         p.Movable = false;
                         p.Points.AsParallel().ForAll(pp => pp.Movable = false);
