@@ -75,7 +75,13 @@ namespace MeshData
             }
 
             ResolveMeshApriori(ineqTreeBoxed.Root, 0);
-            SpreadTetrahedronsBoundaryFlags();
+            SpreadTetrahedronsBoundaryFlags();            
+
+            if (PrepareBackgroundMesh != null)
+            {
+                SpreadTetrahedronsBoundaryFlags();
+            }
+
             foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => t.BoundaryCount == 0 && !t.IsIn[0]).ToArray())
                 DeleteTetrahedron(t);
             DeleteLonelyPoints();
