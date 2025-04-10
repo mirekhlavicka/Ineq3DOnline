@@ -75,21 +75,21 @@ namespace MeshData
             }
 
             ResolveMeshApriori(ineqTreeBoxed.Root, 0);
-            SpreadTetrahedronsBoundaryFlags();            
+            SpreadTetrahedronsBoundaryFlags();
 
-            if (PrepareBackgroundMesh != null)
+            /*if (PrepareBackgroundMesh != null)
             {
                 SpreadTetrahedronsBoundaryFlags();
-            }
-
-            foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => t.BoundaryCount == 0 && !t.IsIn[0]).ToArray())
-                DeleteTetrahedron(t);
-            DeleteLonelyPoints();
+            }*/
 
             if (PrepareBackgroundMesh != null)
             {
                 PrepareBackgroundMesh();
             }
+
+            foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => t.BoundaryCount == 0 && !t.IsIn[0]).ToArray())
+                DeleteTetrahedron(t);
+            DeleteLonelyPoints();
 
             ResolveMesh(ineqTreeBoxed.Root, 0);
             foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => !t.IsIn[0]).ToArray())
@@ -322,7 +322,7 @@ namespace MeshData
                 ResolveEdge(e.Edge, e.MidPoint, e.NearPoint, true, ineqNumber);
             }
 
-            if (!onSurface)
+            /*if (!onSurface)
             {
                 foreach (var fanEdges in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && !e.Movable && e.NearPoint.BoundaryCount == 1 && e.Dist < maxWarpDist).GroupBy(e => e.NearPoint))
                 {
@@ -338,7 +338,7 @@ namespace MeshData
                         fanEdges.Select(e1 => e1.MidPoint).ToArray(),
                         e.NearPoint.BoundaryFirstIndex);                        
                 }
-            }
+            }*/
 
             foreach (var e in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && e.Edge.Valid)) 
             {
@@ -346,7 +346,7 @@ namespace MeshData
             }
         }
 
-        private Point ReplicateSurfacePoint(Point p, Point p1, Edge[] edges, Point[] midPoints,  int ineqNumber)
+        /*private Point ReplicateSurfacePoint(Point p, Point p1, Edge[] edges, Point[] midPoints,  int ineqNumber)
         {
             if (edges.Length < 2)
                 return null;
@@ -427,12 +427,17 @@ namespace MeshData
             }
 
             return newPoint;
-        } 
+        }*/ 
         
         private void ResolveEdge(Edge e, Point midPoint, Point nearPoint, bool movable, int ineqNumber)
         {
             if (e.P1.U * e.P2.U >= 0)
                 return;
+
+            if (nearPoint.Tetrahedrons.Any(t => t.Points.Where(p => p.U == 0).Count() >= 3))
+            { 
+                movable = false;
+            }
 
             if (movable)
             {
@@ -976,6 +981,8 @@ namespace MeshData
 
         public void RefineTetrahedralMeshByTetrahedrons(int ineqNumber, int count = 5, double tolerance = 0.1d, bool redgreen = false)
         {
+            Points.AsParallel().ForAll(p => p.U = 0);
+            
             Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
             {
                 Eval(p, ineqNumber);
@@ -988,7 +995,7 @@ namespace MeshData
             {
                 var tetras = Tetrahedrons.AsParallel().Where(t =>
                 {
-                    if (!t.Boundary[ineqNumber] || good.Contains(t) || t.Points.All(p =>  Math.Sign(p.U) == 1) || t.Points.All(p => Math.Sign(p.U) == -1))
+                    if (!t.Boundary[ineqNumber] || good.Contains(t) /*|| t.Points.All(p =>  Math.Sign(p.U) == 1) || t.Points.All(p => Math.Sign(p.U) == -1)*/)
                     {
                         return false;
                     }
@@ -1047,7 +1054,14 @@ namespace MeshData
 
                         var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
                         Eval(p, ineqNumber);
-                        //p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                        p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                        p.Points.AsParallel().ForAll(pp => 
+                        {
+                            if (pp.U == 0)
+                            {
+                                Eval(pp, ineqNumber);
+                            }
+                        });
 
                         p.Movable = false;
                         p.Points.AsParallel().ForAll(pp => pp.Movable = false);
