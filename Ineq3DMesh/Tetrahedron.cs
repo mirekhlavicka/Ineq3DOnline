@@ -112,11 +112,14 @@ namespace MeshData
             return !IsIn[domaiNumber] && IsOnBoundary[domaiNumber];
         }
 
-
-
         public BitArray Boundary
         {
             get { return boundary; }
+        }
+
+        public bool IntersectBoundary()
+        {
+            return !(Points.All(p => Math.Sign(p.U) == 1) || Points.All(p => Math.Sign(p.U) == -1));
         }
 
         public int BoundaryCount

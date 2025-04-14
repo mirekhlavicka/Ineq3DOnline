@@ -1087,6 +1087,92 @@ namespace MeshData
             }
         }
 
+        public void RefineTetrahedralMeshByTetrahedronsBeforeApriory(int ineqNumber, int count = 5, double tolerance = 0.1d, bool redgreen = false)
+        {
+            Parallel.ForEach(Points, p =>
+            {
+                Eval(p, ineqNumber);
+            });
+
+            var good = new HashSet<Tetrahedron>();
+
+            for (int i = 0; i < count; i++)
+            {
+                var tetras = Tetrahedrons.AsParallel().Where(t =>
+                {
+                    if (!t.IntersectBoundary())
+                    {
+                        return false;
+                    }
+
+                    var midP = t.Points.Average();
+                    Eval(midP, ineqNumber);
+
+                    var res = Math.Abs(midP.U - t.Points.Sum(p => p.U) / 4.0d) > tolerance * D; /*t.Edges().Max(e => Math.Sqrt(e.SqrLength))*/ /*(t.Points.Max(p => p.U) - t.Points.Min(p => p.U))*/
+
+                    if (!res)
+                    {
+                        lock (good)
+                        {
+                            good.Add(t);
+                        }
+                    }
+
+                    return res;
+
+                })
+                .Select(t =>
+                {
+                    var ee = t.Edges().OrderByDescending(e => e.SqrLength).First();
+                    return new
+                    {
+                        t,
+                        ee
+                    };
+                })
+                .OrderByDescending(t => t.ee.SqrLength)
+                .ToArray();
+
+                if (tetras.Length == 0)
+                {
+                    break;
+                }
+
+                if (redgreen && i < 1)
+                {
+                    var newPoints = RefineTetrahedralMeshRedGreen(tetras.Select(t => t.t));
+                    Parallel.ForEach(newPoints, p =>
+                    {
+                        Eval(p, ineqNumber);
+                        p.Movable = false;
+                        foreach (var pp in p.Points)
+                        {
+                            pp.Movable = false;
+                        }
+                    });
+                }
+                else
+                {
+                    foreach (var t in tetras)
+                    {
+                        if (!Tetrahedrons.Contains(t.t))
+                            continue;
+
+                        var ee = t.ee;
+
+                        var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
+                        Eval(p, ineqNumber);
+
+                        p.Movable = false;
+                        foreach (var pp in p.Points)
+                        {
+                            pp.Movable = false;
+                        }
+                    }
+                }
+            }
+        }
+
         public void RefineTetrahedralMeshByEdges(int ineqNumber, int count = 2, double tolerance = 0.1d)
         {
             Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
