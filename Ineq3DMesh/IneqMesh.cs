@@ -995,7 +995,15 @@ namespace MeshData
             {
                 var tetras = Tetrahedrons.AsParallel().Where(t =>
                 {
-                    if (!t.Boundary[ineqNumber] || good.Contains(t) /*|| t.Points.All(p =>  Math.Sign(p.U) == 1) || t.Points.All(p => Math.Sign(p.U) == -1)*/)
+                    if (
+                        !t.Boundary[ineqNumber] || good.Contains(t) 
+                        || 
+                        (
+                            //redgreen && i < 1 &&
+                            (
+                                t.Points.All(p =>  Math.Sign(p.U) == 1) || t.Points.All(p => Math.Sign(p.U) == -1)
+                            )
+                        ))
                     {
                         return false;
                     }
@@ -1036,12 +1044,15 @@ namespace MeshData
                 if (redgreen && i < 1)
                 {
                     var newPoints = RefineTetrahedralMeshRedGreen(tetras.Select(t => t.t));
-                    foreach (var p in newPoints)
+                    Parallel.ForEach(newPoints, p =>
                     {
                         Eval(p, ineqNumber);
                         p.Movable = false;
-                        p.Points.AsParallel().ForAll(pp => pp.Movable = false);
-                    }
+                        foreach (var pp in p.Points)
+                        {
+                            pp.Movable = false;
+                        }
+                    });
                 }
                 else
                 {
@@ -1050,22 +1061,27 @@ namespace MeshData
                         if (!Tetrahedrons.Contains(t.t))
                             continue;
 
-                        var ee = t.ee;// t.Edges().OrderByDescending(e => e.SqrLength).First();
+                        var ee = t.ee;
 
                         var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
                         Eval(p, ineqNumber);
-                        p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
-                        p.Points.AsParallel().ForAll(pp => 
+                        foreach (var tt in p.Tetrahedrons) 
+                        {
+                            tt.Boundary[ineqNumber] = true;
+                        }
+                        foreach(var pp in p.Points)
                         {
                             if (pp.U == 0)
                             {
                                 Eval(pp, ineqNumber);
                             }
-                        });
+                        }
 
                         p.Movable = false;
-                        p.Points.AsParallel().ForAll(pp => pp.Movable = false);
-
+                        foreach (var pp in p.Points)
+                        {
+                            pp.Movable = false;
+                        }
                     }
                 }
             }
