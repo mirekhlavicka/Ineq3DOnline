@@ -20,6 +20,8 @@ namespace MeshData
 
         private HashSet<Tetrahedron> tetrahedrons = new HashSet<Tetrahedron>();
 
+        private Dictionary<int, double> values = new Dictionary<int, double>(); 
+
         private Point() { }
 
         public Point(double x, double y, double z)
@@ -40,25 +42,30 @@ namespace MeshData
         public double X
         {
             get { return x; }
-            set { x = value; }
+            set { x = value; values.Clear(); }
         }
 
         public double Y
         {
             get { return y; }
-            set { y = value; }
+            set { y = value; values.Clear(); }
         }
 
         public double Z
         {
             get { return z; }
-            set { z = value; }
+            set { z = value; values.Clear(); }
         }
 
         public double U
         {
             get { return u; }
             set { u = value; }
+        }
+
+        public Dictionary<int, double> Values
+        { 
+            get { return values; }
         }
 
         public BitArray Boundary
@@ -182,6 +189,7 @@ namespace MeshData
             {
                 this.x = x; this.y = y; this.z = z;
 
+                values.Clear();
                 return true;
             }
             else
@@ -200,7 +208,10 @@ namespace MeshData
                     return false;
                 }
                 else
+                {
+                    values.Clear();
                     return true;
+                }
 
                 /*int p = 0;
                 while(p < 20 && Tetrahedrons.Any(t => !t.CheckVolume()))
