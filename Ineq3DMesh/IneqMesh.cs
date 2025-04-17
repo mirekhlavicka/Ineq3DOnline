@@ -1118,7 +1118,6 @@ namespace MeshData
                     }
 
                     return res;
-
                 })
                 .Select(t =>
                 {
@@ -1158,6 +1157,25 @@ namespace MeshData
                             continue;
 
                         var ee = t.ee;
+
+                        var newPoint = (ee.P1 + ee.P2) / 2;
+                        double minQuality = 1.0d;
+                        foreach (Tetrahedron tt in ee.P1.Tetrahedrons.Intersect(ee.P2.Tetrahedrons).ToArray())
+                        {
+                            Point[] pp = tt.Points.Where(ppp => ppp != ee.P1 && ppp != ee.P2).ToArray();
+
+                            int volumeSign = Math.Sign(tt.Volume);
+
+                            Tetrahedron ttt = new Tetrahedron(pp[0], pp[1], ee.P1, newPoint, 0, 0, true, volumeSign);
+                            minQuality = Math.Min(minQuality, ttt.Quality);
+                            ttt = new Tetrahedron(pp[0], pp[1], ee.P2, newPoint, 0, 0, true, volumeSign);
+                            minQuality = Math.Min(minQuality, ttt.Quality);
+                        }
+
+                        if (minQuality < 0.02d)
+                        {
+                            continue;
+                        }
 
                         var p = DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2);
                         Eval(p, ineqNumber);
@@ -1394,8 +1412,8 @@ namespace MeshData
             else
             {
                 p.U = Eval(p.X, p.Y, p.Z, ineqNumber);
-                p.Values[ineqNumber] = p.U;
-            }
+                    p.Values[ineqNumber] = p.U;
+                }
                 
             /*if (Math.Abs(p.U) < 1e-10)
             {
@@ -1969,85 +1987,97 @@ namespace MeshData
         }
 
 
-        public void CheckCurvatureQuality()
+        public void CheckCurvatureQuality(int count = 5)
         {
-            List<Triangle> refList = new List<Triangle>();
+            var good = new HashSet<Triangle>();
 
-            var edges = Edges
-                .Where(e => e.P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && e.P2.Boundary[bi.i]).Count() == 2)
-                .Select(e =>
-                {
-                    var cf = e.P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && e.P2.Boundary[bi.i]).ToArray();
-
-                    return new
-                    {
-                        bf1 = cf[0].i,
-                        bf2 = cf[1].i,
-                        p = e.Average(),
-                        e = e,
-                        length = e.P1.Distance(e.P2)
-                    };
-                }).ToArray();
-
-            foreach (var ee in edges)
+            for (int j = 0; j < count; j++)
             {
-                if (!ee.e.Valid)
-                {
-                    continue;
-                }
-                Point origp = new Point(ee.p.X, ee.p.Y, ee.p.Z);
+                List<Triangle> refList = new List<Triangle>();
 
-                ProjectToEdge(ee.p, ee.bf1, ee.bf2, false);
-
-                double dist = origp.Distance(ee.p);
-
-                if (dist >= ee.length / 50.0d)
-                {
-                    var e = ee.e;
-
-                    var trians = e
-                        .P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons)
-                        .SelectMany(tt => tt.Triangles())
-                        .Where(tr => tr.Boundary)
-                        .Where(tr => tr.Contains(e.P1) && tr.Contains(e.P2));
-                    /*.GroupBy(tr => tr)
-                    .Where(gr => gr.Count() == 1)
-                    .Select(gr => gr.Single());*/
-
-                    refList.AddRange(trians);
-
-                }
-            }
-
-            var centerPoints = Tetrahedrons.AsParallel().SelectMany(t => t.Triangles()
-                            .Where(tr => tr.BoundaryCount == 1 && tr.Boundary))
-                            .Select(tr => new
-                            {
-                                bf = tr.CommonBoundaryFlag.Value,
-                                p = tr.Average(),
-                                tr,
-                                maxLength = Math.Max(Math.Max(tr.P1.Distance(tr.P2), tr.P1.Distance(tr.P3)), tr.P2.Distance(tr.P3))
-                            });
-
-            //foreach (var cp in centerPoints)
-            centerPoints.ForAll(cp =>
-            {
-                Point origp = new Point(cp.p.X, cp.p.Y, cp.p.Z);
-
-                ProjectToSurface(cp.p, 100, cp.bf, false);
-
-                double dist = origp.Distance(cp.p);
-
-                if (dist >= cp.maxLength / 50.0d)
-                {
-                    lock (refList)
+                var edges = Edges
+                    .Where(e => e.P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && e.P2.Boundary[bi.i]).Count() == 2)
+                    .Select(e =>
                     {
-                        refList.Add(cp.tr);
+                        var cf = e.P1.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && e.P2.Boundary[bi.i]).ToArray();
+
+                        return new
+                        {
+                            bf1 = cf[0].i,
+                            bf2 = cf[1].i,
+                            p = e.Average(),
+                            e = e,
+                            length = e.P1.Distance(e.P2)
+                        };
+                    }).ToArray();
+
+                foreach (var ee in edges)
+                {
+                    if (!ee.e.Valid)
+                    {
+                        continue;
+                    }
+                    Point origp = new Point(ee.p.X, ee.p.Y, ee.p.Z);
+
+                    ProjectToEdge(ee.p, ee.bf1, ee.bf2, false);
+
+                    double dist = origp.Distance(ee.p);
+
+                    if (dist >= ee.length / 50.0d)
+                    {
+                        var e = ee.e;
+
+                        var trians = e
+                            .P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons)
+                            .SelectMany(tt => tt.Triangles())
+                            .Where(tr => tr.Boundary)
+                            .Where(tr => tr.Contains(e.P1) && tr.Contains(e.P2));
+                        /*.GroupBy(tr => tr)
+                        .Where(gr => gr.Count() == 1)
+                        .Select(gr => gr.Single());*/
+
+                        refList.AddRange(trians);
+
                     }
                 }
-            });
 
-            RefineBoundaryTriangles(refList);
+                var centerPoints = Tetrahedrons.AsParallel().SelectMany(t => t.Triangles()
+                                .Where(tr => tr.BoundaryCount == 1 && tr.Boundary && !good.Contains(tr)))
+                                .Select(tr => new
+                                {
+                                    bf = tr.CommonBoundaryFlag.Value,
+                                    p = tr.Average(),
+                                    tr,
+                                    maxLength = Math.Max(Math.Max(tr.P1.Distance(tr.P2), tr.P1.Distance(tr.P3)), tr.P2.Distance(tr.P3))
+                                });
+
+                //foreach (var cp in centerPoints)
+                centerPoints.ForAll(cp =>
+                {
+                    Point origp = new Point(cp.p.X, cp.p.Y, cp.p.Z);
+
+                    ProjectToSurface(cp.p, 100, cp.bf, false);
+
+                    double dist = origp.Distance(cp.p);
+
+                    if (dist >= cp.maxLength / 50.0d)
+                    {
+                        lock (refList)
+                        {
+                            refList.Add(cp.tr);
+                        }
+                    }
+                    else
+                    {
+                        lock (good)
+                        {
+                            good.Add(cp.tr);
+                        }
+                    }
+                });
+
+                RefineBoundaryTriangles(refList);
+            }
 
             DeleteLonelyPoints();
 
