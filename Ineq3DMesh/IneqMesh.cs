@@ -72,6 +72,7 @@ namespace MeshData
             if (PrepareBackgroundMeshBeforeApriory != null)
             {
                 PrepareBackgroundMeshBeforeApriory();
+                JiggleBackgroundMash(5);
             }
 
             ResolveMeshApriori(ineqTreeBoxed.Root, 0);
@@ -265,7 +266,7 @@ namespace MeshData
 
             Tetrahedrons.AsParallel().Where(t => t.Boundary[ineqNumber]).ForAll(t =>
             {
-                t.IsIn[domaiNumber] = t.Points.Any(p => p.U < 0);
+                t.IsIn[domaiNumber] = t.Points.Any(p => p.U < 0);// || t.Points.All(p => p.U == 0);
             });
         }  
  
@@ -1355,7 +1356,7 @@ namespace MeshData
             else
             {
                 for (int i = 0; i < count; i++)
-                    foreach (var point in Points)
+                    foreach (var point in points)
                     {
                         CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
                     };
@@ -1363,6 +1364,24 @@ namespace MeshData
 
         }
 
+        public void JiggleBackgroundMash(int count)
+        {
+            var boundaryTriangles = Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => tr.Boundary))
+                .ToArray();
+
+            var boundaryPoints = boundaryTriangles.SelectMany(t => t).Distinct().ToHashSet();
+
+            for (int i = 0; i < count; i++)
+                Points.AsParallel().Where(p => !boundaryPoints.Contains(p)).ForAll(point =>
+                //foreach(var point in Points.Where(p => !boundaryPoints.Contains(p)))
+                {
+                    Point average = point.Points.Average();
+                    if (average != null)
+                    {
+                        point.MoveTo(average, false);
+                    }
+                });
+        }
 
         private void CenterPoint(Point point, double precision, bool safe, bool edges = true)
         {
@@ -1987,9 +2006,9 @@ namespace MeshData
         }
 
 
-        public void CheckCurvatureQuality(int count = 5)
+        public void CheckCurvatureQuality(int count = 1)
         {
-            var good = new HashSet<Triangle>();
+            var good = count == 1 ? null : new HashSet<Triangle>();
 
             for (int j = 0; j < count; j++)
             {
@@ -2042,7 +2061,7 @@ namespace MeshData
                 }
 
                 var centerPoints = Tetrahedrons.AsParallel().SelectMany(t => t.Triangles()
-                                .Where(tr => tr.BoundaryCount == 1 && tr.Boundary && !good.Contains(tr)))
+                                .Where(tr => tr.BoundaryCount == 1 && tr.Boundary && (count == 1 || !good.Contains(tr))))
                                 .Select(tr => new
                                 {
                                     bf = tr.CommonBoundaryFlag.Value,
@@ -2067,7 +2086,7 @@ namespace MeshData
                             refList.Add(cp.tr);
                         }
                     }
-                    else
+                    else if (count  > 1)
                     {
                         lock (good)
                         {
