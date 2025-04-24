@@ -68,6 +68,7 @@ namespace MeshData
 
 
             CreateBackgroundMesh();
+            DeleteLonelyPoints();
 
             if (PrepareBackgroundMeshBeforeApriory != null)
             {
@@ -95,7 +96,7 @@ namespace MeshData
             ResolveMesh(ineqTreeBoxed.Root, 0);
             foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => !t.IsIn[0]).ToArray())
                 DeleteTetrahedron(t);
-            DeleteLonelyPoints();
+            DeleteLonelyPoints();            
 
             //var c = Points.Count(p => p.BoundaryCount >= 3);
             //CheckTopology();
@@ -199,37 +200,6 @@ namespace MeshData
 
             ResolveEdges(EdgesForBoundary(ineqNumber).Where(e => (e.P1.U * e.P2.U < 0)), ineqNumber, false);
 
-            foreach (Point p in Points.Where(p => isBoundaryPoint(p)))
-            {
-                if (p.U < 0)
-                {
-                    p.Boundary[ineqNumber] = false;
-                }
-                else if (p.U > 0)
-                {
-                    p.Boundary[ineqNumber] = false;
-                }
-                else
-                {
-                    if (p.Points.Where(p1 => isBoundaryPoint(p1)).All(p1 => p1.U <= 0))
-                    {
-                        p.U = -1;
-                        p.Boundary[ineqNumber] = false;
-                        CenterPoint(p, 100, true);
-                    }
-                    else if (p.Points.Where(p1 => isBoundaryPoint(p1)).All(p1 => p1.U >= 0))
-                    {
-                        p.U = 1;
-                        p.Boundary[ineqNumber] = false;
-                        CenterPoint(p, 100, true);
-                    }
-                    else
-                    {
-                        p.Boundary[ineqNumber] = true;
-                    }
-                }
-            }
-
             Edge[] innerEdges = Points.Where(p => p.U == 0 && isBoundaryPoint(p))
                     .SelectMany(
                         p1 => p1.Tetrahedrons.Where(t => t.Boundary[ineqNumber]).SelectMany(t => t.Points.Where(p2 => p2 > p1 && p2.U == 0)).Distinct(),
@@ -261,6 +231,37 @@ namespace MeshData
                     newPoint.U = -1;
                     newPoint.Boundary[ineqNumber] = false;
                     CenterPoint(newPoint, 100, true);
+                }
+            }
+
+            foreach (Point p in Points.Where(p => isBoundaryPoint(p)))
+            {
+                if (p.U < 0)
+                {
+                    p.Boundary[ineqNumber] = false;
+                }
+                else if (p.U > 0)
+                {
+                    p.Boundary[ineqNumber] = false;
+                }
+                else
+                {
+                    if (p.Points.Where(p1 => isBoundaryPoint(p1)).All(p1 => p1.U <= 0))
+                    {
+                        p.U = -1;
+                        p.Boundary[ineqNumber] = false;
+                        CenterPoint(p, 100, true);
+                    }
+                    else if (p.Points.Where(p1 => isBoundaryPoint(p1)).All(p1 => p1.U >= 0))
+                    {
+                        p.U = 1;
+                        p.Boundary[ineqNumber] = false;
+                        CenterPoint(p, 100, true);
+                    }
+                    else
+                    {
+                        p.Boundary[ineqNumber] = true;
+                    }
                 }
             }
 
@@ -1376,7 +1377,7 @@ namespace MeshData
                 //foreach(var point in Points.Where(p => !boundaryPoints.Contains(p)))
                 {
                     Point average = point.Points.Average();
-                    if (average != null)
+                    //if (average != null)
                     {
                         point.MoveTo(average, false);
                     }
