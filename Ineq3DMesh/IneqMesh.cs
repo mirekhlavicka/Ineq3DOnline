@@ -73,7 +73,7 @@ namespace MeshData
             if (PrepareBackgroundMeshBeforeApriory != null)
             {
                 PrepareBackgroundMeshBeforeApriory();
-                JiggleBackgroundMash(5);
+                //JiggleBackgroundMash(5);
             }
 
             ResolveMeshApriori(ineqTreeBoxed.Root, 0);
@@ -96,7 +96,7 @@ namespace MeshData
             ResolveMesh(ineqTreeBoxed.Root, 0);
             foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => !t.IsIn[0]).ToArray())
                 DeleteTetrahedron(t);
-            DeleteLonelyPoints();            
+            DeleteLonelyPoints();
 
             //var c = Points.Count(p => p.BoundaryCount >= 3);
             //CheckTopology();
@@ -1174,7 +1174,7 @@ namespace MeshData
                             minQuality = Math.Min(minQuality, ttt.Quality);
                         }
 
-                        if (minQuality < 0.02d)
+                        if (minQuality < 0.01d)
                         {
                             continue;
                         }
