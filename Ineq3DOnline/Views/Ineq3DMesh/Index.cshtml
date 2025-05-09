@@ -309,8 +309,8 @@
                         polygonOffset: true,
                         polygonOffsetFactor: 1, // positive value pushes polygon further away
                         polygonOffsetUnits: 1,
-                        vertexColors: expr && levelStyle != 1 ? THREE.NoColors : THREE.VertexColors,
-                        color: 0xffffff,
+                        vertexColors: !$('#chckColors').prop('checked') || (expr && levelStyle != 1) ? THREE.NoColors : THREE.VertexColors,
+                        color: 0xe0e0e0,
                         map: expr && levelStyle != 1  ?  texture : null,
                         specular: 0x111111,
                         shininess: 70,
@@ -323,10 +323,11 @@
                         polygonOffset: true,
                         polygonOffsetFactor: 1, // positive value pushes polygon further away
                         polygonOffsetUnits: 1,
-                        vertexColors: expr ? THREE.NoColors : THREE.VertexColors,
-                        color: 0xffffff,
-                        map: expr ?  texture : null,
+                        vertexColors: !$('#chckColors').prop('checked') || (expr && levelStyle != 1) ? THREE.NoColors : THREE.VertexColors,
+                        color: 0xe0e0e0,
+                        map: expr && levelStyle != 1 ? texture : null,
                         side: $('#chckDoubleSide').prop('checked') ? THREE.DoubleSide : THREE.FrontSide,
+                        shading: $('#chckSmooth').prop('checked') || renderStyle == 1 ? THREE.SmoothShading : THREE.FlatShading,
                         wireframe: renderStyle == 1/*, opacity: 0.5, color: 0x44ff44, transparent: true*/ });
                     break;
                 case 2:
@@ -616,7 +617,7 @@
                 return false;
             });
 
-            $('input[name=radioRenderStyle],input[name=radioMaterial],input[name=radioLevels],#chckSmooth,#chckDoubleSide,#chckBoundingBox').on('change', function () {
+            $('input[name=radioRenderStyle],input[name=radioMaterial],input[name=radioLevels],#chckSmooth,#chckDoubleSide,#chckBoundingBox,#chckColors').on('change', function () {
                 refreshGeometry();
             });
 
