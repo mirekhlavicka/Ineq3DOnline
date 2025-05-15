@@ -87,10 +87,15 @@
 
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Animate <span class="caret"></span></a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu dropdown-menu-form">
                             <li><a href="#modalSetUFunc" id="lnkSetUFunc" data-toggle="modal" data-target="#modalSetUFunc" data-keyboard="true">Flow simulation</a></li>
                             <li class="divider"></li>
                             <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckAutoRotate">&nbsp;Auto rotate</label></a></li>
+
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioAutoRotateX" name="radioAutoRotateAxis" value="x" checked="checked">&nbsp;around X axis</label></a></li>
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioAutoRotateY" name="radioAutoRotateAxis" value="y">&nbsp;around Y axis</label></a></li>
+                            <li><a href="#" class="radio"><label><input type="radio" id="radioAutoRotateZ" name="radioAutoRotateAxis" value="z">&nbsp;around Z axis</label></a></li>
+
                             <li><a href="#" id="lnkRotateFaster">Increase rotation angle</a></li>
                             <li><a href="#" id="lnkRotateSlower">Decrease rotation angle</a></li>
                         </ul>
@@ -105,7 +110,7 @@
                             <li><a href="#" class="radio"><label><input type="radio" id="radioMaterial1" name="radioMaterial" value="1">&nbsp;Lambert</label></a></li>
                             <li><a href="#" class="radio"><label><input type="radio" id="radioMaterial2" name="radioMaterial" value="2">&nbsp;Normal</label></a></li>
                             <li class="divider"></li>
-                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckColors">&nbsp;Colors</label></a></li>
+                            <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckColors" checked="checked">&nbsp;Colors</label></a></li>
                             <li class="divider"></li>
                             <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckSmooth" checked="checked">&nbsp;Smooth</label></a></li>
                             <li><a href="#" class="checkbox"><label><input type="checkbox" id="chckDoubleSide">&nbsp;Double side</label></a></li>

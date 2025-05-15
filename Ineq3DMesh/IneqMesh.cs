@@ -1432,8 +1432,8 @@ namespace MeshData
             else
             {
                 p.U = Eval(p.X, p.Y, p.Z, ineqNumber);
-                    p.Values[ineqNumber] = p.U;
-                }
+                p.Values[ineqNumber] = p.U;
+            }
                 
             /*if (Math.Abs(p.U) < 1e-10)
             {

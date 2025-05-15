@@ -146,6 +146,7 @@
         var camera, scene, renderer, controls, geometry, material, mesh, bbox;
         var rotation_x = 0;
         var rotation_y = 0;
+        var rotation_z = 0;
 
         var spinner;
         var texture;
@@ -295,6 +296,7 @@
             if (mesh) {
                 rotation_x = mesh.rotation.x;
                 rotation_y = mesh.rotation.y;
+                rotation_z = mesh.rotation.z;
             }
 
             clearScene();
@@ -391,6 +393,7 @@
 
             mesh.rotation.x = rotation_x;
             mesh.rotation.y = rotation_y;
+            mesh.rotation.z = rotation_z;
 
             hideSpinner();
         }
@@ -420,9 +423,26 @@
             requestAnimationFrame(render);
             controls.update();
 
+            var axis = $('input[name=radioAutoRotateAxis]:checked').val();
+            var resetRotation = function (a) {
+                if (axis != a && mesh.rotation[a] > 0) {
+                    let angle = mesh.rotation[a]; 
+                    let reducedAngle = angle % (2 * Math.PI);
+                    if (reducedAngle < 0) {
+                        reducedAngle += 2 * Math.PI;
+                    }
+                    mesh.rotation[a] = reducedAngle;
+                    mesh.rotation[a] -= 0.1;
+                    mesh.rotation[a] = Math.max(0, mesh.rotation[a]);
+                }
+            }
+
             if (mesh && $('#chckAutoRotate').prop('checked')) {
-                mesh.rotation.x += dangle;
-                mesh.rotation.y += 2 * dangle;
+                mesh.rotation[axis] += dangle;
+                resetRotation('x');
+                resetRotation('y');
+                resetRotation('z');
+                
             } else if (mesh && start_dangle > 0) {
                 mesh.rotation.x += start_dangle;
                 mesh.rotation.y += 2 * start_dangle;
@@ -630,6 +650,13 @@
                 dangle -= 0.0005;
                 return false;
             });
+
+            /*$('input[name=radioAutoRotateAxis]').on('change', function () {
+                mesh.rotation.x = 0;
+                mesh.rotation.y = 0;
+                mesh.rotation.z = 0;
+            });*/
+
 
             $("#lnkDownloadMesh").attr("href", '@Url.Action("GetMesh", "Ineq3DMesh")');
             $("#lnkDownloadMeshSTL").attr("href", '@Url.Action("GetMesh", "Ineq3DMesh")' + "?stl=true");
