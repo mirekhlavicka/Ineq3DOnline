@@ -416,7 +416,7 @@
         }
 
         var count = 0;
-        var dangle = 0.004;
+        var dangle = 0.005;
         var start_dangle = 0;
         var render = function () {
             count++;
@@ -642,12 +642,12 @@
             });
 
             $('#lnkRotateFaster').click(function (e) {
-                dangle += 0.0005;
+                dangle += 0.005;
                 return false;
             });
 
             $('#lnkRotateSlower').click(function (e) {
-                dangle -= 0.0005;
+                dangle -= 0.005;
                 return false;
             });
 

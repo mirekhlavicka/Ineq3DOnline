@@ -1192,6 +1192,56 @@ namespace MeshData
             }
         }
 
+        public void FindCrossEdges(int ineqNumber)
+        {
+            Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
+            {
+                Eval(p, ineqNumber);
+            });
+
+            int find = 1;
+
+            //while (find > 0)
+            {
+                find = 0;
+
+                var edges = EdgesForBoundary(ineqNumber).Where(e =>
+                {
+                    var res = e.P1.U * e.P2.U > 0;
+                    return res;
+                })
+                .OrderByDescending(e => e.SqrLength)
+                .ToArray();
+
+                foreach (var e in edges)
+                {
+                    var l = Math.Sqrt(e.SqrLength);
+                    var d1 = Math.Abs(e.P1.U);
+                    var d2 = Math.Abs(e.P2.U);
+
+                    if (d1 + d2 > l)
+                    {
+                        continue;
+                    }
+
+                    var p1 = e.P1 + (d1 / l) * (e.P2 - e.P1);
+                    var p2 = e.P2 + (d2 / l) * (e.P1 - e.P2);
+                    var p = (p1 + p2) / 2;
+
+                    Eval(p, ineqNumber);
+
+                    if (e.P1.U * p.U < 0)
+                    {
+                        find++;
+                        var u = p.U;
+                        p = DivideEdge(e, -1, p);
+                        p.U = u;
+                        p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                    }
+                }
+            }
+        }
+
         //public void RefineTetrahedralMeshByEdges(int ineqNumber, int count = 2, double tolerance = 0.1d)
         //{
         //    Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
@@ -1311,7 +1361,7 @@ namespace MeshData
         //                moved = e.P2.MoveTo(pmax, true);
         //                //e.P2.Movable = false;
         //            }
-                    
+
         //            if(!moved)
         //            {
         //                var p = DivideEdge(e, -1, pmax);
