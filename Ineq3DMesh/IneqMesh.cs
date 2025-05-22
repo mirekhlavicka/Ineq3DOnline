@@ -1192,7 +1192,7 @@ namespace MeshData
             }
         }
 
-        public void FindCrossEdges(int ineqNumber)
+        public void FindCrossEdges(int ineqNumber, int division = 4)
         {
             Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
             {
@@ -1226,17 +1226,23 @@ namespace MeshData
 
                     var p1 = e.P1 + (d1 / l) * (e.P2 - e.P1);
                     var p2 = e.P2 + (d2 / l) * (e.P1 - e.P2);
-                    var p = (p1 + p2) / 2;
 
-                    Eval(p, ineqNumber);
-
-                    if (e.P1.U * p.U < 0)
+                    for (int i = 1; i < division; i++)
                     {
-                        find++;
-                        var u = p.U;
-                        p = DivideEdge(e, -1, p);
-                        p.U = u;
-                        p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                        var p = p1 + ((double)i / (double)division) *  (p2 - p1);
+
+                        Eval(p, ineqNumber);
+
+                        if (e.P1.U * p.U < 0)
+                        {
+                            find++;
+                            var u = p.U;
+                            p = DivideEdge(e, -1, p);
+                            p.U = u;
+                            p.Tetrahedrons.AsParallel().ForAll(tt => tt.Boundary[ineqNumber] = true);
+                            break;
+                        }
+
                     }
                 }
             }
