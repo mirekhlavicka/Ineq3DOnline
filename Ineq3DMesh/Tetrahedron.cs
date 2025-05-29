@@ -121,6 +121,12 @@ namespace MeshData
         {
             return !(Points.All(p => Math.Sign(p.U) == 1) || Points.All(p => Math.Sign(p.U) == -1));
         }
+        public bool CanIntersectBoundary()
+        {
+            var maxLength = Math.Sqrt(Edges().Max(e => e.SqrLength));
+
+            return Points.Any(p => Math.Abs(p.U) < maxLength);
+        }
 
         public int BoundaryCount
         {
