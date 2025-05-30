@@ -300,7 +300,7 @@ namespace MeshData
                                     dist = (length != 0 ? dist2 / length : 0);
                                 }
 
-                                if (dist >= maxWarpDist)
+                                if (dist >= maxWarpDist || (!nearPoint.Movable && dist >= 0.01d))
                                     movable = false;
 
                                 if (nearPoint.BoundaryCount >= 3 && dist < 0.05) //less then 1/2^n in bisection is enough
@@ -313,7 +313,7 @@ namespace MeshData
                                     Dist = dist,
                                     NearPoint = nearPoint,
                                     FarPoint = farPoint,
-                                    Movable = movable && nearPoint.Movable
+                                    Movable = movable //&& nearPoint.Movable
                                 };
                             }
                     )
