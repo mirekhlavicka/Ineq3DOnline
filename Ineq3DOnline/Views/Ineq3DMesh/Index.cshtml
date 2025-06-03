@@ -424,14 +424,17 @@
             controls.update();
 
             var axis = $('input[name=radioAutoRotateAxis]:checked').val();
+
+            var normalizeAngle = function(angle) {
+                const twoPi = 2 * Math.PI;
+                return ((angle % twoPi) + twoPi) % twoPi;
+            }
+
             var resetRotation = function (a) {
-                if (axis != a && mesh.rotation[a] > 0) {
+                if (axis != a && mesh.rotation[a] != 0) {
                     let angle = mesh.rotation[a]; 
-                    let reducedAngle = angle % (2 * Math.PI);
-                    if (reducedAngle < 0) {
-                        reducedAngle += 2 * Math.PI;
-                    }
-                    mesh.rotation[a] = reducedAngle;
+                    angle = normalizeAngle(angle)
+                    mesh.rotation[a] = angle;
                     mesh.rotation[a] -= 0.1;
                     mesh.rotation[a] = Math.max(0, mesh.rotation[a]);
                 }
