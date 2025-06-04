@@ -1088,7 +1088,7 @@ namespace MeshData
         //    }
         //}
 
-        public void RefineTetrahedralMesh(int ineqNumber, int count = 5, double tolerance = 0.1d, bool redgreen = false, bool relativeTolerance = false)
+        public void RefineTetrahedralMesh(int ineqNumber, int count = 5, double tolerance = 0.1d, bool redgreen = false, double relativeTolerance = 0)
         {
             Parallel.ForEach(Points, p =>
             {
@@ -1109,7 +1109,8 @@ namespace MeshData
                     var midP = t.Points.Average();
                     Eval(midP, ineqNumber);
 
-                    var res = Math.Abs(midP.U - t.Points.Sum(p => p.U) / 4.0d) > tolerance * (relativeTolerance ? Math.Sqrt(t.Edges().Max(e => e.SqrLength)) : D);
+                    var err = Math.Abs(midP.U - t.Points.Sum(p => p.U) / 4.0d);
+                    var res =  (tolerance > 0 && err > tolerance *  D) || (relativeTolerance > 0 && err > relativeTolerance * Math.Sqrt(t.Edges().Max(e => e.SqrLength)));
 
                     if (!res)
                     {
