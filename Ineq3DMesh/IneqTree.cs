@@ -136,6 +136,18 @@ namespace MeshData
             return this;
         }
 
+        public IneqTree ToFunc(double eps)
+        {
+            if (root != null)
+            {
+                return new IneqTree(root.ToFunc(eps));
+            }
+            else
+            { 
+                return null;
+            }
+        }
+
         public static IneqTree operator !(IneqTree ineqTree)
         {
             return ineqTree.Not();
@@ -289,6 +301,51 @@ namespace MeshData
                 else
                 {
                     left.Transform(t); right.Transform(t);
+                }
+            }
+
+            internal FuncXYZ ToFunc(double eps)
+            {
+                if (NodeType == NodeType.NodeExpression)
+                {
+                    return Expression;
+                }
+
+                var l = left.ToFunc(eps);
+                var r = right.ToFunc(eps);
+
+                if (NodeType == NodeType.NodeAnd)
+                {
+                    if (eps > 0)
+                    {
+                        return ((x, y, z) => 
+                        {
+                            var a = l(x, y, z);
+                            var b = r(x, y, z);
+                            return (a + b + Math.Sqrt((a - b) * (a - b) + eps * eps)) / 2.0d;
+                        });
+                    }
+                    else
+                    {
+                        return ((x, y, z) => { return Math.Max(l(x, y, z), r(x, y, z)); });
+                    }
+                }
+                else 
+                {
+                    if (eps > 0)
+                    {
+                        return ((x, y, z) =>
+                        {
+                            var a = l(x, y, z);
+                            var b = r(x, y, z);
+                            return (a + b - Math.Sqrt((a - b) * (a - b) + eps * eps)) / 2.0d;
+                        });
+
+                    }
+                    else
+                    {
+                        return ((x, y, z) => { return Math.Min(l(x, y, z), r(x, y, z)); });
+                    }
                 }
             }
         }
