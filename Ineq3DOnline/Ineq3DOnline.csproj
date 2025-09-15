@@ -163,6 +163,7 @@
     <Compile Include="Models\IneqMeshViewModel.cs" />
     <Compile Include="Models\Tools\IneqTreeParser.cs" />
     <Compile Include="Models\MeshSamples.cs" />
+    <Compile Include="Models\Tools\PlatonicSolids.cs" />
     <Compile Include="Models\Tools\PLYTools.cs" />
     <Compile Include="Models\Tools\HelixDistance.cs" />
     <Compile Include="Models\Tools\SignedDistance.cs" />
