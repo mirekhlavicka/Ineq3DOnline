@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using MeshData;
 
 namespace Ineq3DOnline.PlatonicSolids
 {
@@ -14,10 +15,10 @@ namespace Ineq3DOnline.PlatonicSolids
         public static Vec3 operator /(Vec3 a, double d) => new Vec3(a.X / d, a.Y / d, a.Z / d);
 
         public double Length() => Math.Sqrt(X * X + Y * Y + Z * Z);
-        public Vec3 Normalize()
+        public Vec3 Normalize(double r = 1.0d)
         {
             var len = Length();
-            return new Vec3(X / len, Y / len, Z / len);
+            return new Vec3(r * X / len, r * Y / len, r * Z / len);
         }
 
         public static double Dot(Vec3 a, Vec3 b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
@@ -53,7 +54,23 @@ namespace Ineq3DOnline.PlatonicSolids
             Edges = edgeSet.ToList();
         }
 
-        public static Polyhedron CreateIcosahedron()
+        public IneqTree ToIneqTree()
+        { 
+            var res = new IneqTree();
+
+            foreach (var face in Faces)
+            { 
+                var vx = face.Sum(i => Vertices[i].X) / face.Length;
+                var vy = face.Sum(i => Vertices[i].Y) / face.Length;
+                var vz = face.Sum(i => Vertices[i].Z) / face.Length;
+
+                res = res & ((x, y ,z) => (x - vx) * vx + (y - vy) * vy + (z - vz) * vz) ;
+            }
+
+            return res;
+        }
+
+        public static Polyhedron CreateIcosahedron(double r = 1.0d)
         {
             double phi = (1.0 + Math.Sqrt(5.0)) / 2.0;
 
@@ -65,7 +82,7 @@ namespace Ineq3DOnline.PlatonicSolids
             new Vec3( 0, -1, -phi), new Vec3( 0,  1, -phi),
             new Vec3( phi,  0, -1), new Vec3( phi,  0,  1),
             new Vec3(-phi,  0, -1), new Vec3(-phi,  0,  1)
-        }.Select(v => v.Normalize()).ToList();
+        }.Select(v => v.Normalize(r)).ToList();
 
             var faces = new List<int[]>
         {
@@ -78,7 +95,7 @@ namespace Ineq3DOnline.PlatonicSolids
             return new Polyhedron(verts, faces);
         }
 
-        public static Polyhedron CreateDodecahedron()
+        public static Polyhedron CreateDodecahedron(double r = 1.0d)
         {
             var ico = CreateIcosahedron();
 
@@ -88,7 +105,7 @@ namespace Ineq3DOnline.PlatonicSolids
             {
                 var face = ico.Faces[f];
                 var centroid = (ico.Vertices[face[0]] + ico.Vertices[face[1]] + ico.Vertices[face[2]]) / 3.0;
-                dodeVerts.Add(centroid.Normalize());
+                dodeVerts.Add(centroid.Normalize(r));
             }
 
             // Step 2: for each icosahedron vertex collect adjacent faces and order them

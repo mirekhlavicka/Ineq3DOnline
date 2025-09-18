@@ -322,7 +322,7 @@ namespace MeshData
                         {
                             var a = l(x, y, z);
                             var b = r(x, y, z);
-                            return (a + b + Math.Sqrt((a - b) * (a - b) + eps * eps)) / 2.0d;
+                            return (a + b + SmoothAbs(a - b,eps)) / 2.0d;
                         });
                     }
                     else
@@ -338,7 +338,7 @@ namespace MeshData
                         {
                             var a = l(x, y, z);
                             var b = r(x, y, z);
-                            return (a + b - Math.Sqrt((a - b) * (a - b) + eps * eps)) / 2.0d;
+                            return (a + b - SmoothAbs(a - b, eps )) / 2.0d;
                         });
 
                     }
@@ -347,6 +347,43 @@ namespace MeshData
                         return ((x, y, z) => { return Math.Min(l(x, y, z), r(x, y, z)); });
                     }
                 }
+            }
+
+            static double Bump0 = Bump(0.0);
+            public static double SmoothAbs(double x, double epsilon0 = 0.03d)
+            {
+                
+                double R = 10 * epsilon0;
+
+                double ax = Math.Abs(x);
+                if (ax >= R)
+                {
+                    return ax; // exact outside transition zone
+                }
+
+                // Normalized t in [0,1]
+                double t = ax / R;
+
+                // Cubic Hermite polynomial: ψ(t) = 1 - t - t^2 + t^3
+                //double psi = 1 - t * t + t * t * t;
+
+                // ε(|x|), smoothly decaying from ε0 at 0 to 0 at R
+                //double eps = epsilon0 * psi;
+
+                // Normalized bump: b(t)/b(0)
+                double bump = Bump(t) / Bump0;
+
+                double eps = epsilon0 * bump;
+
+                // Smooth approximation
+                return Math.Sqrt(x * x + eps * eps);
+            }
+
+            private static double Bump(double t)
+            {
+                if (Math.Abs(t) >= 1.0) return 0.0;
+                double denom = 1.0 - t * t;
+                return Math.Exp(-1.0 / denom);
             }
         }
     }

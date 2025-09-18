@@ -20,10 +20,11 @@ namespace Ineq3DOnline
             else
             {
                 return new IneqTree((x, y, z) =>
-                    Math.Pow(Math.Abs(x - x0), p) +
-                    Math.Pow(Math.Abs(y - y0), p) +
-                    Math.Pow(Math.Abs(z - z0), p) -
-                    Math.Pow(r, p));
+                    Math.Pow(
+                        Math.Pow(Math.Abs(x - x0), p) +
+                        Math.Pow(Math.Abs(y - y0), p) +
+                        Math.Pow(Math.Abs(z - z0), p), 1/p) -
+                    r);
             }
         }
 
@@ -89,10 +90,10 @@ namespace Ineq3DOnline
                 {
                     double vp = (x - x1) * nx + (y - y1) * ny + (z - z1) * nz;
                     return
-                        Math.Pow((x - x1) - vp * nx, 2) +
+                        Math.Sqrt(Math.Pow((x - x1) - vp * nx, 2) +
                         Math.Pow((y - y1) - vp * ny, 2) +
-                        Math.Pow((z - z1) - vp * nz, 2) -
-                        r * r;
+                        Math.Pow((z - z1) - vp * nz, 2)) -
+                        r;
                 }) &
                     new IneqTree((x, y, z) =>
                     {
