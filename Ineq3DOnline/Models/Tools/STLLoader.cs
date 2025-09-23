@@ -21,7 +21,8 @@ class STLLoader
             }
             else
             {
-                reader.BaseStream.Seek(0, SeekOrigin.Begin); // Reset stream for text reading
+                //reader.BaseStream.Seek(0, SeekOrigin.Begin); // Reset stream for text reading
+                reader.Close();
                 ReadAsciiSTL(filePath, vertices, triangles);
             }
         }

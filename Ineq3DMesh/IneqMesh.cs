@@ -983,7 +983,7 @@ namespace MeshData
         //public void RefineTetrahedralMeshByTetrahedrons(int ineqNumber, int count = 5, double tolerance = 0.1d, bool redgreen = false)
         //{
         //    Points.AsParallel().ForAll(p => p.U = 0);
-            
+
         //    Parallel.ForEach(Points.Where(p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber])), p =>
         //    {
         //        Eval(p, ineqNumber);
@@ -1087,6 +1087,29 @@ namespace MeshData
         //        }
         //    }
         //}
+
+
+        public void RefineTetrahedralMesh(IneqTree ineq, int count = 5, double tolerance = 0.1d, bool redgreen = false, double relativeTolerance = 0)
+        {
+            RefineTetrahedralMesh(ineq.Root, count, tolerance, redgreen, relativeTolerance);
+        }
+
+        private void RefineTetrahedralMesh(IneqTree.IneqNode ineq, int count, double tolerance, bool redgreen, double relativeTolerance)
+        {
+            if (ineq.NodeType == IneqTree.NodeType.NodeExpression)
+            {
+                int ineqNumber = ineqTreeBoxed.ExpressionList.IndexOf(ineq.Expression);
+                if (ineqNumber >= 0)
+                {
+                    RefineTetrahedralMesh(ineqNumber, count, tolerance, redgreen, relativeTolerance);
+                }
+            }
+            else
+            {
+                RefineTetrahedralMesh(ineq.Left, count, tolerance, redgreen, relativeTolerance);
+                RefineTetrahedralMesh(ineq.Right, count, tolerance, redgreen, relativeTolerance);
+            }
+        }
 
         public void RefineTetrahedralMesh(int ineqNumber, int count = 5, double tolerance = 0.1d, bool redgreen = false, double relativeTolerance = 0)
         {
