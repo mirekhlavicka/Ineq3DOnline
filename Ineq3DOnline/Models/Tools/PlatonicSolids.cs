@@ -13,6 +13,7 @@ namespace Ineq3DOnline.PlatonicSolids
 
         public static Vec3 operator +(Vec3 a, Vec3 b) => new Vec3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
         public static Vec3 operator /(Vec3 a, double d) => new Vec3(a.X / d, a.Y / d, a.Z / d);
+        public static Vec3 operator *(double f, Vec3 a) => new Vec3(f * a.X, f * a.Y, f * a.Z);
 
         public double Length() => Math.Sqrt(X * X + Y * Y + Z * Z);
         public Vec3 Normalize(double r = 1.0d)
