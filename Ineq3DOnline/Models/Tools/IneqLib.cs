@@ -53,7 +53,7 @@ namespace Ineq3DOnline
             });
         }
 
-        public static IneqTree Cylinder(double x1, double y1, double z1, double x2, double y2, double z2, double r, double d, bool outside = false)
+        public static IneqTree Cylinder(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, double d = 0, bool outside = false, Func<double, double> rf = null)
         {
             double nx, ny, nz, n;
 
@@ -66,16 +66,35 @@ namespace Ineq3DOnline
             ny /= n;
             nz /= n;
 
+            if (d == 0)
+            {
+                d = n / 2;
+            }
+
             if (outside)
             {
                 return new IneqTree((x, y, z) =>
                 {
+                    if (rf != null)
+                    {
+                        r = rf(z);
+                    }
+
                     double vp = (x - x1) * nx + (y - y1) * ny + (z - z1) * nz;
+
+                    double rr = r;
+
+                    if (rf != null)
+                    {
+                        rr = rf(vp);
+                    }
+
                     return
-                        -Math.Pow((x - x1) - vp * nx, 2) -
-                        Math.Pow((y - y1) - vp * ny, 2) -
-                        Math.Pow((z - z1) - vp * nz, 2) +
-                        r * r;
+                        -Math.Sqrt(
+                            Math.Pow((x - x1) - vp * nx, 2) +
+                            Math.Pow((y - y1) - vp * ny, 2) +
+                            Math.Pow((z - z1) - vp * nz, 2)) +
+                        rr;
                 }) |
                     new IneqTree((x, y, z) =>
                     {
@@ -89,11 +108,20 @@ namespace Ineq3DOnline
                 return new IneqTree((x, y, z) =>
                 {
                     double vp = (x - x1) * nx + (y - y1) * ny + (z - z1) * nz;
+
+                    double rr = r;
+
+                    if (rf != null)
+                    {
+                        rr = rf(vp);
+                    }
+
                     return
-                        Math.Sqrt(Math.Pow((x - x1) - vp * nx, 2) +
-                        Math.Pow((y - y1) - vp * ny, 2) +
-                        Math.Pow((z - z1) - vp * nz, 2)) -
-                        r;
+                        Math.Sqrt(
+                            Math.Pow((x - x1) - vp * nx, 2) +
+                            Math.Pow((y - y1) - vp * ny, 2) +
+                            Math.Pow((z - z1) - vp * nz, 2)) -
+                        rr;
                 }) &
                     new IneqTree((x, y, z) =>
                     {
