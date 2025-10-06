@@ -23,7 +23,7 @@ namespace Ineq3DOnline
                     Math.Pow(
                         Math.Pow(Math.Abs(x - x0), p) +
                         Math.Pow(Math.Abs(y - y0), p) +
-                        Math.Pow(Math.Abs(z - z0), p), 1/p) -
+                        Math.Pow(Math.Abs(z - z0), p), 1 / p) -
                     r);
             }
         }
@@ -359,7 +359,7 @@ namespace Ineq3DOnline
             }
             //if (p < maxItCount && Math.Sqrt((P.X - B.X) * (P.X - B.X) + (P.Y - B.Y) * (P.Y - B.Y) + (P.Z - B.Z) * (P.Z - B.Z)) < errordist)
             //{
-                return P.MoveTo(B, false);
+            return P.MoveTo(B, false);
             //}
             //else
             //    return false;
@@ -437,6 +437,117 @@ namespace Ineq3DOnline
             x = nx;
             y = ny;
             z = nz;
+        }
+    }
+
+    public static class Interpolation
+    {
+        public static Func<double, double> Lagrange(double[] X, double[] Y)
+        {
+            if (X == null || Y == null)
+                throw new ArgumentNullException("X and Y must not be null.");
+            if (X.Length != Y.Length)
+                throw new ArgumentException("X and Y must have the same length.");
+            if (X.Length == 0)
+                throw new ArgumentException("X and Y must not be empty.");
+
+            int n = X.Length;
+
+            return (double x) =>
+            {
+                double result = 0.0;
+
+                for (int i = 0; i < n; i++)
+                {
+                    double term = Y[i];
+                    for (int j = 0; j < n; j++)
+                    {
+                        if (i != j)
+                        {
+                            term *= (x - X[j]) / (X[i] - X[j]);
+                        }
+                    }
+                    result += term;
+                }
+
+                return result;
+            };
+        }
+
+        /// <summary>
+        /// Creates a cubic clamped B-spline that interpolates all given points.
+        /// Returns a function f(x) for evaluation.
+        /// </summary>
+        public static Func<double, double> CubicSpline(double[] X, double[] Y)
+        {
+            int n = X.Length;
+            if (n < 2)
+                throw new ArgumentException("Need at least 2 points.");
+
+            // Step 1: Compute cubic spline coefficients (natural spline)
+            double[] h = new double[n - 1];
+            for (int i = 0; i < n - 1; i++)
+                h[i] = X[i + 1] - X[i];
+
+            double[] alpha = new double[n - 1];
+            for (int i = 1; i < n - 1; i++)
+                alpha[i] = (3.0 / h[i]) * (Y[i + 1] - Y[i]) - (3.0 / h[i - 1]) * (Y[i] - Y[i - 1]);
+
+            double[] l = new double[n];
+            double[] mu = new double[n];
+            double[] z = new double[n];
+
+            l[0] = 1.0; mu[0] = 0.0; z[0] = 0.0;
+
+            for (int i = 1; i < n - 1; i++)
+            {
+                l[i] = 2 * (X[i + 1] - X[i - 1]) - h[i - 1] * mu[i - 1];
+                mu[i] = h[i] / l[i];
+                z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
+            }
+
+            l[n - 1] = 1.0; z[n - 1] = 0.0;
+
+            double[] c = new double[n];
+            double[] b = new double[n - 1];
+            double[] d = new double[n - 1];
+
+            c[n - 1] = 0.0;
+
+            for (int j = n - 2; j >= 0; j--)
+            {
+                c[j] = z[j] - mu[j] * c[j + 1];
+                b[j] = (Y[j + 1] - Y[j]) / h[j] - h[j] * (c[j + 1] + 2 * c[j]) / 3.0;
+                d[j] = (c[j + 1] - c[j]) / (3.0 * h[j]);
+            }
+
+            // Step 2: Return evaluation function
+            return (double x) =>
+            {
+                // Clamp x to domain
+                if (x <= X[0]) return Y[0];
+                if (x >= X[n - 1]) return Y[n - 1];
+
+                // Find the interval [X[i], X[i+1]]
+                int i = 0;
+                int j = n - 2;
+                while (i <= j)
+                {
+                    int m = (i + j) / 2;
+                    if (X[m] <= x && x <= X[m + 1])
+                    {
+                        i = m;
+                        break;
+                    }
+                    else if (x < X[m])
+                        j = m - 1;
+                    else
+                        i = m + 1;
+                }
+
+                double dx = x - X[i];
+                return Y[i] + b[i] * dx + c[i] * dx * dx + d[i] * dx * dx * dx;
+            };
         }
     }
 }
