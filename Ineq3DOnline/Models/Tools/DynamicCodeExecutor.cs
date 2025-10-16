@@ -94,6 +94,7 @@ namespace Ineq3DOnline
         public static double asin(double x) => Math.Asin(x);
         public static double acos(double x) => Math.Acos(x);
         public static double atan(double x) => Math.Atan(x);
+        public static double atan2(double x, double y) => Math.Atan2(x, y);
         public static double pow(double x, double y) => Math.Pow(x, y);
         public static double sqrt(double x) => Math.Sqrt(x);
         public static double abs(double x) => Math.Abs(x);
