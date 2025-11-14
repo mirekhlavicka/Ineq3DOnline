@@ -12,6 +12,7 @@ namespace Ineq3DOnline.PlatonicSolids
         public Vec3(double x, double y, double z) { X = x; Y = y; Z = z; }
 
         public static Vec3 operator +(Vec3 a, Vec3 b) => new Vec3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+        public static Vec3 operator -(Vec3 a, Vec3 b) => new Vec3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
         public static Vec3 operator /(Vec3 a, double d) => new Vec3(a.X / d, a.Y / d, a.Z / d);
         public static Vec3 operator *(double f, Vec3 a) => new Vec3(f * a.X, f * a.Y, f * a.Z);
 
@@ -66,6 +67,37 @@ namespace Ineq3DOnline.PlatonicSolids
                 var vz = face.Sum(i => Vertices[i].Z) / face.Length;
 
                 res = res & ((x, y ,z) => (x - vx) * vx + (y - vy) * vy + (z - vz) * vz) ;
+            }
+
+            return res;
+        }
+
+        public IneqTree ToIneqTreeStar(double factor, double factor1)
+        {
+            var res = new IneqTree();
+
+            foreach (var face in Faces)
+            {
+                var vx = face.Sum(i => Vertices[i].X) / face.Length;
+                var vy = face.Sum(i => Vertices[i].Y) / face.Length;
+                var vz = face.Sum(i => Vertices[i].Z) / face.Length;
+
+                var v = factor * (new Vec3(vx, vy, vz));   
+
+                IneqTree f = (IneqTree)((x, y, z) => (x - factor1 * vx) * vx + (y - factor1 * vy) * vy + (z - factor1 * vz) * vz);
+                var f1 = new IneqTree();
+
+                for (int j = 0; j <= face.Length - 1; j++)
+                { 
+                    var v0 = Vertices[face[j]];
+                    var v1 = Vertices[face[(j + 1) % face.Length]];
+
+                    var n = Vec3.Cross(v0 - v, v1 - v);
+
+                    f1 = f1 & ((x, y, z) => (x - v.X) * n.X + (y - v.Y) * n.Y + (z - v.Z) * n.Z);
+                }
+
+                res = res | (!f & f1);
             }
 
             return res;
