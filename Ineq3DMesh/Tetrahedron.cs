@@ -231,5 +231,34 @@ namespace MeshData
                 .Count();
             }
         }
+
+        private static double SignedTetraVolume(Point a, Point b, Point c, Point d)
+        {
+            var ab = b - a;
+            var ac = c - a;
+            var ad = d - a;
+            return Point.Dot(ab, Point.Cross(ac, ad)) / 6.0;
+        }
+
+        public  bool ContainsPoint(Point p, double eps = 1e-12)
+        {
+            double v0 = SignedTetraVolume(P0, P1, P2, P3);
+
+            // Degenerate tetrahedron?
+            if (Math.Abs(v0) < eps)
+                return false;
+
+            double v1 = SignedTetraVolume(p, P1, P2, P3);
+            double v2 = SignedTetraVolume(P0, p, P2, P3);
+            double v3 = SignedTetraVolume(P0, P1, p, P3);
+            double v4 = SignedTetraVolume(P0, P1, P2, p);
+
+            // Check if all have same sign (or zero)
+            bool hasPos = (v1 > eps) || (v2 > eps) || (v3 > eps) || (v4 > eps);
+            bool hasNeg = (v1 < -eps) || (v2 < -eps) || (v3 < -eps) || (v4 < -eps);
+
+            // Inside if all volumes are same sign (and non-degenerate)
+            return !(hasPos && hasNeg);
+        }
     }
 }

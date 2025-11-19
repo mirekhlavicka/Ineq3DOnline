@@ -406,6 +406,82 @@ namespace MeshData
                 return hash;
             }
         }
+
+        public class IntersectionResult
+        {
+            public string Type;   // "inside", "edge", "vertex", or "none"
+            public Point Point;   // intersection point (if any)
+            public Edge? Edge;   // optional: "P1P2", "P2P3", "P3P1"
+        }
+
+        public IntersectionResult IntersectLine(Point A, Point B, double eps = 1e-10)
+        {
+            var AB = B - A;
+            var N = Point.Cross(P2 - P1, P3 - P1);  // plane normal
+            double denom = Point.Dot(N, AB);
+
+            // Line and plane parallel?
+            if (Math.Abs(denom) < eps)
+                return new IntersectionResult { Type = "none", Point = null };
+
+            // Compute intersection parameter t
+            double t = Point.Dot(N, P1 - A) / denom;
+            var I = A + t * AB; // intersection point
+
+            // Now check if I is inside triangle (using barycentric coords)
+            var v0 = P2 - P1;
+            var v1 = P3 - P1;
+            var v2 = I - P1;
+
+            double d00 = Point.Dot(v0, v0);
+            double d01 = Point.Dot(v0, v1);
+            double d11 = Point.Dot(v1, v1);
+            double d20 = Point.Dot(v2, v0);
+            double d21 = Point.Dot(v2, v1);
+
+            double denomBary = d00 * d11 - d01 * d01;
+            if (Math.Abs(denomBary) < eps)
+                return new IntersectionResult { Type = "none", Point = null }; // degenerate triangle
+
+            double v = (d11 * d20 - d01 * d21) / denomBary;
+            double w = (d00 * d21 - d01 * d20) / denomBary;
+            double u = 1.0 - v - w;
+
+            // Check if inside or on edge/vertex
+            if (u < -eps || v < -eps || w < -eps)
+                return new IntersectionResult { Type = "none", Point = null };
+
+            // Classify location
+            string type;
+            Edge? edge = null;
+
+            bool onU = Math.Abs(u) < eps;
+            bool onV = Math.Abs(v) < eps;
+            bool onW = Math.Abs(w) < eps;
+
+            int onCount = (onU ? 1 : 0) + (onV ? 1 : 0) + (onW ? 1 : 0);
+
+            if (onCount == 3)
+                type = "vertex"; // Degenerate triangle actually
+            else if (onCount == 2)
+            {
+                type = "vertex";
+                if (onU && onV) I = P3;
+                else if (onV && onW) I = P1;
+                else if (onW && onU) I = P2;
+            }
+            else if (onCount == 1)
+            {
+                type = "edge";
+                if (onU) edge = new Edge(P2, P3);// "P2P3";
+                else if (onV) edge = new Edge(P3, P1); //"P3P1";
+                else if (onW) edge = new Edge(P1, P2);//"P1P2";
+            }
+            else
+                type = "inside";
+
+            return new IntersectionResult { Type = type, Point = I, Edge = edge };
+        }
     }
 
 

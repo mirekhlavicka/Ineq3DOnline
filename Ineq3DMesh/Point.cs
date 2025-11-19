@@ -11,6 +11,7 @@ namespace MeshData
         public static bool EnableUnsafeMove = false;
 
         public bool Movable = true;
+        public bool Forced = false;
 
         private double x = 0;
         private double y = 0;
@@ -160,23 +161,32 @@ namespace MeshData
 
         public static Point operator +(Point p1, Point p2)
         {
-            return new Point(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z, p1.boundary.Length);
+            return new Point(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z, p1.boundary?.Length ?? 0);
         }
 
         public static Point operator -(Point p1, Point p2)
         {
-            return new Point(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z, p1.boundary.Length);
+            return new Point(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z, p1.boundary?.Length ?? 0);
         }
 
         public static Point operator /(Point p, double f)
         {
-            return new Point(p.x / f, p.y / f, p.z / f, p.boundary.Length);
+            return new Point(p.x / f, p.y / f, p.z / f, p.boundary?.Length ?? 0);
         }
 
         public static Point operator *(double f, Point p)
         {
-            return new Point(f * p.x,  f * p.y, f * p.z, p.boundary.Length);
+            return new Point(f * p.x,  f * p.y, f * p.z, p.boundary?.Length ?? 0);
         }
+
+        public static double Dot(Point a, Point b)
+                => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+
+        public static Point Cross(Point a, Point b)
+            => new Point(
+                a.Y * b.Z - a.Z * b.Y,
+                a.Z * b.X - a.X * b.Z,
+                a.X * b.Y - a.Y * b.X);
 
         public bool MoveTo(Point p1, bool safe)
         {
@@ -185,6 +195,11 @@ namespace MeshData
         
         public bool MoveTo(double x, double y, double z, bool safe)
         {
+            if (Forced)
+            { 
+                return false;
+            }
+
             if (EnableUnsafeMove || !safe)
             {
                 this.x = x; this.y = y; this.z = z;
@@ -236,7 +251,7 @@ namespace MeshData
             }
         }
 
-        public bool CanMoveTo(Point p1)
+        /*public bool CanMoveTo(Point p1)
         {
             return CanMoveTo(p1.X, p1.Y, p1.Z);
         }
@@ -261,10 +276,15 @@ namespace MeshData
             this.z = origZ;
 
             return res;
-        }
+        }*/
 
         public bool CanMoveTo(Point p1, IEnumerable<Tetrahedron> exceptTetras, double tolerance = 0.001d)
         {
+            if (Forced)
+            {
+                return false;
+            }
+            
             double origX = this.x;
             double origY = this.y;
             double origZ = this.z;

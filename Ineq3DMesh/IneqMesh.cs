@@ -300,7 +300,7 @@ namespace MeshData
                                     dist = (length != 0 ? dist2 / length : 0);
                                 }
 
-                                if (dist >= maxWarpDist || (!nearPoint.Movable && dist >= 0.01d))
+                                if (dist >= maxWarpDist || (!nearPoint.Movable && dist >= 0.01d) || (nearPoint.Forced))
                                     movable = false;
 
                                 if (nearPoint.BoundaryCount >= 3 && dist < 0.05) //less then 1/2^n in bisection is enough
@@ -483,6 +483,7 @@ namespace MeshData
             }
 
             newPoint.Movable = e.P1.Movable && e.P2.Movable;
+            newPoint.Forced = e.P1.Forced && e.P2.Forced;
 
             newPoint.U = 0;
             AddPoint(newPoint);
@@ -911,6 +912,7 @@ namespace MeshData
                             np.Boundary[b] = e.P1.Boundary[b] && e.P2.Boundary[b];
                         }
                         np.Movable = e.P1.Movable && e.P2.Movable;
+                        np.Forced = e.P1.Forced && e.P2.Forced;
                         np.U = 0;
                         AddPoint(np);
                         midpoints[(i, j)] = np;
@@ -1460,7 +1462,7 @@ namespace MeshData
             var boundaryPoints = boundaryTriangles.SelectMany(t => t).Distinct().ToHashSet();
 
             for (int i = 0; i < count; i++)
-                Points.AsParallel().Where(p => !boundaryPoints.Contains(p)).ForAll(point =>
+                Points.AsParallel().Where(p => !boundaryPoints.Contains(p) && !p.Forced).ForAll(point =>
                 //foreach(var point in Points.Where(p => !boundaryPoints.Contains(p)))
                 {
                     Point average = point.Points.Average();
@@ -1473,6 +1475,11 @@ namespace MeshData
 
         private void CenterPoint(Point point, double precision, bool safe, bool edges = true)
         {
+            if (point.Forced)
+            { 
+                return;
+            }
+
             int boundaryCount = point.BoundaryCount;
             if (boundaryCount == 0)
             {
@@ -2265,6 +2272,180 @@ namespace MeshData
             DeleteLonelyPoints();
 
             return;
+        }
+
+        public Point ForcePoint(Point p, bool fixedPoint, Point p1)
+        {
+            if (p.Forced)
+            {
+                return p;
+            }
+
+            var np = Points.OrderBy(pp => pp.Distance(p)).First();
+
+            if (np.Forced && np.Distance(p) <= 1e-4)
+            {
+                return np;
+            }
+
+            if (!np.Forced && np.MoveTo(p, true))
+            {
+                np.Forced = true;
+                np.Movable = false;
+
+                return np;
+            }
+
+            var t = Tetrahedrons.FirstOrDefault(tt => tt.ContainsPoint(p));
+
+            if (fixedPoint)
+            {
+                p = AddPoint(p.X, p.Y, p.Z);
+                AddTetrahedron(t.P0, t.P1, t.P2, p);
+                AddTetrahedron(t.P0, t.P1, p, t.P3);
+                AddTetrahedron(t.P0, p, t.P2, t.P3);
+                AddTetrahedron(p, t.P1, t.P2, t.P3);
+
+                DeleteTetrahedron(t);
+
+                p.Forced = true;
+                p.Movable = false;
+
+            }
+            else
+            {
+                var intRes = t.Triangles().Select(trian => new { trian, res = trian.IntersectLine(p, p1)}).Where(r => r.res.Point != null && r.res.Point != p1).OrderBy(r => p.Distance(r.res.Point)).First();
+
+                if (intRes.res.Type == "inside")
+                {
+                    var tr = intRes.trian;
+                    var intP = intRes.res.Point;
+
+                    var t1 = tr.P1.Tetrahedrons.Intersect(tr.P2.Tetrahedrons).Intersect(tr.P3.Tetrahedrons).Where(tt => tt != t).Single();
+
+                    p = AddPoint(intP.X, intP.Y, intP.Z);
+
+                    var p4 = t.Points.Single(pp => pp != tr.P1 && pp != tr.P2 && pp != tr.P3);
+
+                    AddTetrahedron(tr.P1, tr.P2, p, p4);
+                    AddTetrahedron(tr.P2, tr.P3, p, p4);
+                    AddTetrahedron(tr.P3, tr.P1, p, p4);
+
+                    DeleteTetrahedron(t);
+
+                    p4 = t1.Points.Single(pp => pp != tr.P1 && pp != tr.P2 && pp != tr.P3);
+
+                    AddTetrahedron(tr.P1, tr.P2, p, p4);
+                    AddTetrahedron(tr.P2, tr.P3, p, p4);
+                    AddTetrahedron(tr.P3, tr.P1, p, p4);
+
+                    DeleteTetrahedron(t1);
+
+
+                    p.Forced = true;
+                    p.Movable = false;
+                }
+                if (intRes.res.Type == "vertex")
+                {
+                    p = intRes.res.Point;
+                    p.Forced = true;
+                    p.Movable = false;
+                }
+                if (intRes.res.Type == "edge")
+                {
+                    var intP = intRes.res.Point;
+                    p = new Point(intP.X, intP.Y, intP.Z, ineqTreeBoxed.ExpressionList.Count);
+                    
+                    DivideEdge(intRes.res.Edge.Value, -1, p);
+
+                    p.Forced = true;
+                    p.Movable = false;
+                }
+            }
+
+            return p;
+        }
+
+        public void ForceEdge(Point p1, Point p2, IneqTree ineq)
+        {
+            ForceEdge(ref p1, ref p2, ineq, 0, true);
+        }
+
+        public void ForceEdge(ref Point p1, ref Point p2, IneqTree ineq, int l, bool fixedPoints)
+        {
+            if (l > 20)
+            {
+                return;
+            }
+
+            p1 = ForcePoint(p1, fixedPoints, p2);
+            p2 = ForcePoint(p2, fixedPoints, p1);
+
+            if(!p1.Points.Contains(p2) && p1.Forced && p2.Forced)
+            {
+                var cp = (p1 + p2) / 2;
+
+                ForceEdge(ref p1, ref cp, ineq, l + 1, false);
+                ForceEdge(ref p2, ref cp, ineq, l + 1, false);
+            }
+            else if (p1.Forced && p2.Forced && ineq != null && ineq.Root.NodeType == IneqTree.NodeType.NodeExpression)
+            {
+                int ineqNumber = ineqTreeBoxed.ExpressionList.IndexOf(ineq.Root.Expression);
+
+                var np1 = p1;
+                var np2 = p2;
+                var points = p1.Tetrahedrons.Intersect(p2.Tetrahedrons).SelectMany(t => t.Points).Where(p => p != np1 && p != np2).Distinct();
+
+                foreach (var p in points)
+                {
+                    Eval(p, ineqNumber);
+                }
+
+                if (points.All(p => p.U >= 0))
+                {
+                    var edges = p1.Tetrahedrons.Intersect(p2.Tetrahedrons).SelectMany(t => t.Edges()).Where(e => (e.P1 != np1 && e.P1 != np2) || (e.P2 != np1 && e.P2 != np2)).Distinct();
+
+                    foreach (var e in edges.ToArray())
+                    {
+                        if (!e.Valid)
+                            continue;
+
+                        Eval(e.P1, ineqNumber);
+                        Eval(e.P2, ineqNumber);
+
+                        if (e.P1.U * e.P2.U < 0)
+                            continue;
+
+                        int count = 10;
+                        var f = Enumerable.Range(1, count - 1).Select(i =>
+                        {
+                            var mp = e.P1 + (((double)i) / 10.0d) * (e.P2 - e.P1);
+                            Eval(mp, ineqNumber);
+                            return new { i, mp };
+                        }).Where(it => it.mp.U < 0).OrderBy(it => Math.Abs(it.i - count / 2)).FirstOrDefault();
+
+                        if (f != null)
+                        {
+                            DivideEdge(e, 0, f.mp);
+                            f.mp.Movable = false;
+                            foreach (var pp in f.mp.Points)
+                            {
+                                pp.Movable = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            foreach (var pp in p1.Points)
+            {
+                pp.Movable = false;
+            }
+
+            foreach (var pp in p2.Points)
+            {
+                pp.Movable = false;
+            }
         }
     }
 }
