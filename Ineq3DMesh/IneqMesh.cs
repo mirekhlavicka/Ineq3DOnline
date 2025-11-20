@@ -2314,9 +2314,9 @@ namespace MeshData
             }
             else
             {
-                var intRes = t.Triangles().Select(trian => new { trian, res = trian.IntersectLine(p, p1)}).Where(r => r.res.Point != null && r.res.Point != p1).OrderBy(r => p.Distance(r.res.Point)).First();
+                var intRes = t.Triangles().Select(trian => new { trian, res = trian.IntersectLine(p, p1)}).Where(r => r.res.Point != null && r.res.Point != p1).OrderBy(r => p.Distance(r.res.Point)).FirstOrDefault();
 
-                if (intRes.res.Type == "inside")
+                if (intRes != null && intRes.res.Type == "inside")
                 {
                     var tr = intRes.trian;
                     var intP = intRes.res.Point;
@@ -2345,13 +2345,13 @@ namespace MeshData
                     p.Forced = true;
                     p.Movable = false;
                 }
-                if (intRes.res.Type == "vertex")
+                if (intRes != null && intRes.res.Type == "vertex")
                 {
                     p = intRes.res.Point;
                     p.Forced = true;
                     p.Movable = false;
                 }
-                if (intRes.res.Type == "edge")
+                if (intRes != null && intRes.res.Type == "edge")
                 {
                     var intP = intRes.res.Point;
                     p = new Point(intP.X, intP.Y, intP.Z, ineqTreeBoxed.ExpressionList.Count);
@@ -2371,7 +2371,7 @@ namespace MeshData
             ForceEdge(ref p1, ref p2, ineq, 0, true);
         }
 
-        public void ForceEdge(ref Point p1, ref Point p2, IneqTree ineq, int l, bool fixedPoints)
+        private void ForceEdge(ref Point p1, ref Point p2, IneqTree ineq, int l, bool fixedPoints)
         {
             if (l > 20)
             {
@@ -2381,14 +2381,14 @@ namespace MeshData
             p1 = ForcePoint(p1, fixedPoints, p2);
             p2 = ForcePoint(p2, fixedPoints, p1);
 
-            if(!p1.Points.Contains(p2) && p1.Forced && p2.Forced)
+            if(!p1.Points.Contains(p2) && p1.Forced && p2.Forced && (p1 != p2))
             {
                 var cp = (p1 + p2) / 2;
 
                 ForceEdge(ref p1, ref cp, ineq, l + 1, false);
                 ForceEdge(ref p2, ref cp, ineq, l + 1, false);
             }
-            else if (p1.Forced && p2.Forced && ineq != null && ineq.Root.NodeType == IneqTree.NodeType.NodeExpression)
+            else if (p1.Forced && p2.Forced && (p1 != p2) && ineq != null && ineq.Root.NodeType == IneqTree.NodeType.NodeExpression)
             {
                 int ineqNumber = ineqTreeBoxed.ExpressionList.IndexOf(ineq.Root.Expression);
 
@@ -2419,14 +2419,14 @@ namespace MeshData
                         int count = 10;
                         var f = Enumerable.Range(1, count - 1).Select(i =>
                         {
-                            var mp = e.P1 + (((double)i) / 10.0d) * (e.P2 - e.P1);
+                            var mp = e.P1 + (((double)i) / count) * (e.P2 - e.P1);
                             Eval(mp, ineqNumber);
                             return new { i, mp };
                         }).Where(it => it.mp.U < 0).OrderBy(it => Math.Abs(it.i - count / 2)).FirstOrDefault();
 
                         if (f != null)
                         {
-                            DivideEdge(e, 0, f.mp);
+                            DivideEdge(e, -1, f.mp);
                             f.mp.Movable = false;
                             foreach (var pp in f.mp.Points)
                             {

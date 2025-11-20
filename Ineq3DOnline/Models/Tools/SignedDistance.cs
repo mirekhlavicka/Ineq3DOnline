@@ -11,10 +11,28 @@ namespace Ineq3DOnline
 	public class SignedDistance
 	{
         private TriangleMeshInterop.TriangleMeshWrapper meshWrapper = null;
+        List<double[]> v = null;
+        List<int[]> t = null;
+
+        List<double[]> V 
+        {
+            get
+            {
+                return v;
+            }
+        }
+
+        List<int[]> T
+        {
+            get
+            {
+                return t;
+            }
+        }
+
         public SignedDistance(string filePath, double d = 2, double x0 = 0, double y0 = 0, double z0 = 0)
 		{
-            List<double[]> v = null;
-            List<int[]> t = null;
+
             filePath = System.IO.Path.Combine(HttpContext.Current.Server.MapPath("~/MeshSamples"), filePath);
 
             STLLoader.LoadSTL(filePath, out v, out t);
@@ -103,6 +121,135 @@ namespace Ineq3DOnline
             p.Z = result[3];
 
             return true;
+        }
+
+        public List<Tuple<int, int, double>> FindSharpEdges(double thresholdDegrees)
+        {
+            double threshold = thresholdDegrees * Math.PI / 180.0;
+
+            // edge → triangles
+            var edgeTris = new Dictionary<Tuple<int, int>, List<int>>();
+
+            for (int ti = 0; ti < t.Count; ti++)
+            {
+                int[] tri = t[ti];
+                AddEdge(edgeTris, tri[0], tri[1], ti);
+                AddEdge(edgeTris, tri[1], tri[2], ti);
+                AddEdge(edgeTris, tri[2], tri[0], ti);
+            }
+
+            var sharpEdges = new List<Tuple<int, int, double>>();
+
+            foreach (var kv in edgeTris)
+            {
+                var edge = kv.Key;
+                List<int> tris = kv.Value;
+
+                if (tris.Count != 2)
+                    continue; // skip boundary edges
+
+                int t1 = tris[0];
+                int t2 = tris[1];
+
+                double angle = DihedralAngle(v, t[t1], t[t2], edge.Item1, edge.Item2);
+
+                double deviation = Math.Abs(angle - Math.PI);
+
+                if (deviation > threshold)
+                {
+                    sharpEdges.Add(Tuple.Create(edge.Item1, edge.Item2, angle));
+                }
+            }
+
+            return sharpEdges;
+        }
+
+        private static void AddEdge(
+            Dictionary<Tuple<int, int>, List<int>> dict,
+            int a, int b, int triIndex)
+        {
+            if (a > b) { int tmp = a; a = b; b = tmp; }
+
+            var key = Tuple.Create(a, b);
+
+            List<int> list;
+            if (!dict.TryGetValue(key, out list))
+            {
+                list = new List<int>();
+                dict[key] = list;
+            }
+            list.Add(triIndex);
+        }
+
+        private static double DihedralAngle(
+            List<double[]> v,
+            int[] tri1,
+            int[] tri2,
+            int a, int b)
+        {
+            var A = v[a];
+            var B = v[b];
+
+            int c1 = ThirdVertex(tri1, a, b);
+            int c2 = ThirdVertex(tri2, a, b);
+
+            var C1 = v[c1];
+            var C2 = v[c2];
+
+            var n1 = Normalize(Cross(Sub(B, A), Sub(C1, A)));
+            var n2 = Normalize(Cross(Sub(B, A), Sub(C2, A)));
+
+            double dot = Dot(n1, n2);
+            if (dot < -1) dot = -1;
+            if (dot > 1) dot = 1;
+
+            return Math.Acos(dot);
+        }
+
+        private static int ThirdVertex(int[] tri, int a, int b)
+        {
+            if (tri[0] != a && tri[0] != b) return tri[0];
+            if (tri[1] != a && tri[1] != b) return tri[1];
+            return tri[2];
+        }
+
+        // -------- vector helpers --------
+
+        private static double[] Sub(double[] a, double[] b)
+        {
+            return new double[] { a[0] - b[0], a[1] - b[1], a[2] - b[2] };
+        }
+
+        private static double Dot(double[] a, double[] b)
+        {
+            return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        }
+
+        private static double[] Cross(double[] a, double[] b)
+        {
+            return new double[]
+            {
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0],
+            };
+        }
+
+        private static double[] Normalize(double[] v)
+        {
+            double len = Math.Sqrt(Dot(v, v));
+            return new double[] { v[0] / len, v[1] / len, v[2] / len };
+        }
+
+        public void ForceSharpEdges(IneqMesh ineqMesh, IneqTree ineq, double thresholdDegrees)
+        {
+            foreach (var e in FindSharpEdges(thresholdDegrees))
+            {
+                var p1 = new Point(v[e.Item1][0], v[e.Item1][1], v[e.Item1][2]);
+                var p2 = new Point(v[e.Item2][0], v[e.Item2][1], v[e.Item2][2]);
+
+                ineqMesh.ForceEdge(p1, p2, ineq);
+            }
         }
     }
 }
