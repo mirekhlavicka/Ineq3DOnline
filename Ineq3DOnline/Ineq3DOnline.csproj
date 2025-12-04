@@ -168,6 +168,7 @@
     <Compile Include="Models\Tools\HelixDistance.cs" />
     <Compile Include="Models\Tools\SignedDistance.cs" />
     <Compile Include="Models\Tools\STLLoader.cs" />
+    <Compile Include="Models\Tools\WireFrameDistance.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
