@@ -123,7 +123,7 @@ namespace Ineq3DOnline
             return true;
         }
 
-        public List<Tuple<int, int, double>> FindSharpEdges(double thresholdDegrees)
+        public List<Tuple<int, int, double[], double[]>> FindSharpEdges(double thresholdDegrees)
         {
             double threshold = thresholdDegrees * Math.PI / 180.0;
 
@@ -138,7 +138,7 @@ namespace Ineq3DOnline
                 AddEdge(edgeTris, tri[2], tri[0], ti);
             }
 
-            var sharpEdges = new List<Tuple<int, int, double>>();
+            var sharpEdges = new List<Tuple<int, int, double[], double[]>>();
 
             foreach (var kv in edgeTris)
             {
@@ -151,13 +151,13 @@ namespace Ineq3DOnline
                 int t1 = tris[0];
                 int t2 = tris[1];
 
-                double angle = DihedralAngle(v, t[t1], t[t2], edge.Item1, edge.Item2);
+                double angle = DihedralAngle(v, t[t1], t[t2], edge.Item1, edge.Item2, out var n1, out var n2);
 
                 double deviation = Math.Abs(angle - Math.PI);
 
                 if (deviation > threshold)
                 {
-                    sharpEdges.Add(Tuple.Create(edge.Item1, edge.Item2, angle));
+                    sharpEdges.Add(Tuple.Create(edge.Item1, edge.Item2, n1, n2));
                 }
             }
 
@@ -185,7 +185,8 @@ namespace Ineq3DOnline
             List<double[]> v,
             int[] tri1,
             int[] tri2,
-            int a, int b)
+            int a, int b,
+            out double[] n1, out double[] n2)
         {
             var A = v[a];
             var B = v[b];
@@ -196,8 +197,8 @@ namespace Ineq3DOnline
             var C1 = v[c1];
             var C2 = v[c2];
 
-            var n1 = Normalize(Cross(Sub(B, A), Sub(C1, A)));
-            var n2 = Normalize(Cross(Sub(B, A), Sub(C2, A)));
+            n1 = Normalize(Cross(Sub(B, A), Sub(C1, A)));
+            n2 = Normalize(Cross(Sub(B, A), Sub(C2, A)));
 
             double dot = Dot(n1, n2);
             if (dot < -1) dot = -1;
@@ -241,14 +242,14 @@ namespace Ineq3DOnline
             return new double[] { v[0] / len, v[1] / len, v[2] / len };
         }
 
-        public void ForceSharpEdges(IneqMesh ineqMesh, IneqTree ineq, double thresholdDegrees)
+        public void ForceSharpEdges(IneqMesh ineqMesh, double thresholdDegrees)
         {
             foreach (var e in FindSharpEdges(thresholdDegrees))
             {
                 var p1 = new Point(v[e.Item1][0], v[e.Item1][1], v[e.Item1][2]);
                 var p2 = new Point(v[e.Item2][0], v[e.Item2][1], v[e.Item2][2]);
 
-                ineqMesh.ForceEdge(p1, p2, ineq);
+                ineqMesh.ForceEdge(p1, p2, e.Item3, e.Item4);
             }
         }
     }

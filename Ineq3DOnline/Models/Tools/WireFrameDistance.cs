@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MeshData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -30,10 +31,10 @@ namespace Ineq3DOnline
             edges.Add(new Edge {v1 = v1, v2 = v2});
         }
 
-        public double From(double x, double y, double z)
+        public double From(double x, double y, double z, double eps = 0)
         {
             double px = x, py = y, pz = z;
-            double minDistSq = double.MaxValue;
+            double minDist = 1000000;//double.MaxValue;
 
             foreach (var e in edges)
             {
@@ -54,6 +55,7 @@ namespace Ineq3DOnline
                 double vv = vx * vx + vy * vy + vz * vz; // |v|^2
 
                 double t;
+                double dist;
                 if (vv < 1e-20)
                 {
                     // v1 and v2 are the same point → treat as point distance
@@ -71,9 +73,7 @@ namespace Ineq3DOnline
                     double dx = wx;
                     double dy = wy;
                     double dz = wz;
-                    double distSq = dx * dx + dy * dy + dz * dz;
-                    if (distSq < minDistSq)
-                        minDistSq = distSq;
+                    dist = Math.Sqrt(dx * dx + dy * dy + dz * dz);
                 }
                 else if (t >= 1.0)
                 {
@@ -81,9 +81,7 @@ namespace Ineq3DOnline
                     double dx = px - x2;
                     double dy = py - y2;
                     double dz = pz - z2;
-                    double distSq = dx * dx + dy * dy + dz * dz;
-                    if (distSq < minDistSq)
-                        minDistSq = distSq;
+                    dist = Math.Sqrt(dx * dx + dy * dy + dz * dz);
                 }
                 else
                 {
@@ -96,13 +94,54 @@ namespace Ineq3DOnline
                     double dy = py - projy;
                     double dz = pz - projz;
 
-                    double distSq = dx * dx + dy * dy + dz * dz;
-                    if (distSq < minDistSq)
-                        minDistSq = distSq;
+                    dist = Math.Sqrt(dx * dx + dy * dy + dz * dz);
+                }
+
+                if (eps == 0)
+                {
+                    if (dist < minDist)
+                        minDist = dist;
+                }
+                else
+                {
+
+                    minDist = SmoothMin(minDist, dist, eps);
                 }
             }
 
-            return Math.Sqrt(minDistSq);
+            return minDist;
         }
+
+        private double SmoothMin(double a, double b, double eps)
+        {
+            return (a + b - MeshData.IneqTree.IneqNode.SmoothAbs(a - b, eps)) / 2.0d;
+        }
+
+        public IneqTree ToPrism(double r, int count, double f = 1.0d)
+        { 
+            var res = new IneqTree();
+
+            foreach (var e in edges)
+            {
+                double x1 = e.v1.X, y1 = e.v1.Y, z1 = e.v1.Z;
+                double x2 = e.v2.X, y2 = e.v2.Y, z2 = e.v2.Z;
+                double xc = (x1 + x2) / 2;
+                double yc = (y1 + y2) / 2;
+                double zc = (z1 + z2) / 2;
+
+                x1 = xc + f * (x1 - xc); y1 = yc + f * (y1 - yc); z1 = zc + f * (z1 - zc);
+                x2 = xc + f * (x2 - xc); y2 = yc + f * (y2 - yc); z2 = zc + f * (z2 - zc);
+
+                res = res | IneqLib.Prism(x1, y1, z1, x2, y2, z2, r, count);
+            }
+
+            return res;
+        }
+
+        /*public static double SmoothAbs(double x, double eps)
+        {
+
+            return Math.Sqrt(x * x + eps * eps);
+        }*/
     }
 }

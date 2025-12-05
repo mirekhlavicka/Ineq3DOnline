@@ -132,6 +132,38 @@ namespace Ineq3DOnline
             }
         }
 
+        public static IneqTree Prism(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, int count = 4)
+        {
+            IneqTree res = new IneqTree();
+
+            for (int i = 0; i < count; i++)
+            {
+                double x0 = r * Math.Cos(i * 2 * Math.PI / count);
+                double y0 = r * Math.Sin(i * 2 * Math.PI / count);
+                double z0 = 0;
+
+                res = res & ((x, y, z) => (x - x0) * x0 + (y - y0) * y0 + (z - z0) * z0);
+            }
+
+            var p1 = new Point(x1, y1, z1);
+            var p2 = new Point(x2, y2, z2);
+
+            var n = (p2 - p1);
+            var nn = p1.Distance(p2);
+
+            var m = ComputeBasis(n.X / nn, n.Y / nn, n.Z / nn, 'z');
+
+            res = res & ((x, y, z) => z - nn);
+            res = res & ((x, y, z) => -z);
+
+            res.Transform(delegate (ref double x, ref double y, ref double z)
+            {
+                Transform(ref x, ref y, ref z, p1, m);
+            });
+
+            return res;
+        }
+
         public static IneqTree Balls(int count, double R, double r, double p = 2)
         {
             IneqTree res = new IneqTree();

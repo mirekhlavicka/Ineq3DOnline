@@ -8,10 +8,12 @@ using System.Collections;
 
 namespace MeshData
 {
+    using FuncXYZ = Func<double, double, double, double>;
+
     public class IneqMesh : Mesh
     {
         private const double maxWarpDist = 0.5d;// 0.48d 
-        
+
         public double X0 { get; set; }
         public double Y0 { get; set; }
         public double Z0 { get; set; }
@@ -40,7 +42,7 @@ namespace MeshData
         {
             get { return ineqTreeBoxed; }
         }
-        
+
         public Action PrepareBackgroundMesh { get; set; }
 
         public Action PrepareBackgroundMeshBeforeApriory { get; set; }
@@ -101,7 +103,7 @@ namespace MeshData
             //var c = Points.Count(p => p.BoundaryCount >= 3);
             //CheckTopology();
             //c = Points.Count(p => p.BoundaryCount >= 3);
-            
+
             Jiggle(3);
 
             if (PrepareBackgroundMesh == null && PrepareBackgroundMeshBeforeApriory == null)
@@ -110,11 +112,11 @@ namespace MeshData
                 CheckQuality(0.25d, false);
                 CheckTopology();
             }
-            
+
             Point.EnableUnsafeMove = true;
             Jiggle(3);
         }
-        
+
         private void ResolveMesh(IneqTree.IneqNode node, int domaiNumber)
         {
             if (domaiNumber == 0)
@@ -168,7 +170,7 @@ namespace MeshData
         private void ResolveIneq(int ineqNumber, int domaiNumber)
         {
             if (OnProgress != null)
-                OnProgress(0.5 +  0.5 * (double)(ineqNumber + 1) / (ineqTreeBoxed.ExpressionList.Count));
+                OnProgress(0.5 + 0.5 * (double)(ineqNumber + 1) / (ineqTreeBoxed.ExpressionList.Count));
 
             Func<Point, bool> isBoundaryPoint = (p => p.Tetrahedrons.Any(t => t.Boundary[ineqNumber]));
 
@@ -177,8 +179,8 @@ namespace MeshData
                 Eval(p, ineqNumber);
                 if (p.Boundary[ineqNumber])
                     p.U = 0;
-            });            
-            
+            });
+
             ResolveEdges(EdgesForBoundary(ineqNumber).Where(e => (e.P1.U * e.P2.U < 0 && e.P1.HasAnyBoundary(e.P2))), ineqNumber, true);
 
             foreach (Point p in Points.AsParallel().Where(p => p.U == 0 && p.BoundaryCount > 0 && isBoundaryPoint(p)))
@@ -269,8 +271,8 @@ namespace MeshData
             {
                 t.IsIn[domaiNumber] = t.Points.Any(p => p.U < 0);// || t.Points.All(p => p.U == 0);
             });
-        }  
- 
+        }
+
         private void ResolveEdges(ParallelQuery<Edge> qEdges, int ineqNumber, bool onSurface)
         {
             var edges = qEdges
@@ -285,7 +287,7 @@ namespace MeshData
                                 dist2 = p.Distance(e.P2);
                                 length = e.P1.Distance(e.P2);
 
-                                if(dist1 < dist2)
+                                if (dist1 < dist2)
                                 {
                                     nearPoint = e.P1;
                                     farPoint = e.P2;
@@ -319,7 +321,7 @@ namespace MeshData
                     )
                 .ToArray();
 
-            foreach(var e in edges.Where(e => e.Movable).OrderBy(e => e.Dist))
+            foreach (var e in edges.Where(e => e.Movable).OrderBy(e => e.Dist))
             {
                 ResolveEdge(e.Edge, e.MidPoint, e.NearPoint, true, ineqNumber);
             }
@@ -342,7 +344,7 @@ namespace MeshData
                 }
             }*/
 
-            foreach (var e in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && e.Edge.Valid)) 
+            foreach (var e in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && e.Edge.Valid))
             {
                 ResolveEdge(e.Edge, e.MidPoint, e.NearPoint, false, ineqNumber);
             }
@@ -429,15 +431,15 @@ namespace MeshData
             }
 
             return newPoint;
-        }*/ 
-        
+        }*/
+
         private void ResolveEdge(Edge e, Point midPoint, Point nearPoint, bool movable, int ineqNumber)
         {
             if (e.P1.U * e.P2.U >= 0)
                 return;
 
             if (nearPoint.Tetrahedrons.Any(t => t.Points.Where(p => p.U == 0).Count() >= 3))
-            { 
+            {
                 movable = false;
             }
 
@@ -456,7 +458,7 @@ namespace MeshData
                     }
                 }
             }
-            if(!movable)
+            if (!movable)
             {
                 if (Math.Abs(e.P1.U) < 1e-10)
                 {
@@ -468,7 +470,7 @@ namespace MeshData
                     e.P2.U = 0;
                     return;
                 }
-                DivideEdge(e, ineqNumber, midPoint); 
+                DivideEdge(e, ineqNumber, midPoint);
             }
         }
 
@@ -509,7 +511,7 @@ namespace MeshData
                 DeleteTetrahedron(t);
             }
 
-            if (newPoint.BoundaryCount == 1 && ineqNumber>=0)
+            if (newPoint.BoundaryCount == 1 && ineqNumber >= 0)
                 ProjectToEdge(newPoint, ineqNumber, newPoint.BoundaryFirstIndex, true);
             else if (newPoint.BoundaryCount == 2 && ineqNumber >= 0)
             {
@@ -545,7 +547,7 @@ namespace MeshData
                 fromPoint = (toPoint == e.P1 ? e.P2 : e.P1);
                 if (!fromPoint.HasAllBoundary(toPoint))
                     return false;
-            }           
+            }
 
             if (!fromPoint.CanMoveTo(toPoint, fromPoint.Tetrahedrons.Intersect(toPoint.Tetrahedrons), 0.15d))
             {
@@ -561,7 +563,7 @@ namespace MeshData
             {
                 t.ReplacePoint(fromPoint, toPoint);
             }
-            
+
             DeletePoint(fromPoint);
 
             if (jiggle)
@@ -681,8 +683,8 @@ namespace MeshData
 
         public bool ProjectToEdge(Point P, int ineqNumber1, int ineqNumber2, bool safe)
         {
-            double nx1, ny1, nz1, n1;
-            double nx2, ny2, nz2, n2;
+            double nx1, ny1, nz1;//, n1;
+            double nx2, ny2, nz2;//, n2;
             double dx, dy, dz;
             double w, wx, wy, wz;
             dx = D / 100000d;
@@ -696,7 +698,7 @@ namespace MeshData
             nx1 = (wx - w) / dx;
             ny1 = (wy - w) / dy;
             nz1 = (wz - w) / dz;
-            n1 = Math.Sqrt(nx1 * nx1 + ny1 * ny1 + nz1 * nz1);
+            //n1 = Math.Sqrt(nx1 * nx1 + ny1 * ny1 + nz1 * nz1);
 
             w = Eval(P.X, P.Y, P.Z, ineqNumber2);
             wx = Eval(P.X + dx, P.Y, P.Z, ineqNumber2);
@@ -705,19 +707,30 @@ namespace MeshData
             nx2 = (wx - w) / dx;
             ny2 = (wy - w) / dy;
             nz2 = (wz - w) / dz;
-            n2 = Math.Sqrt(nx1 * nx1 + ny1 * ny1 + nz1 * nz1);
+            //n2 = Math.Sqrt(nx1 * nx1 + ny1 * ny1 + nz1 * nz1);
 
             double hh1 = 0, hh2 = 0;
             if (Numeric.Newton2d(ref hh1, ref hh2,
                 (h1, h2) => Eval(P.X + h1 * nx1 + h2 * nx2, P.Y + h1 * ny1 + h2 * ny2, P.Z + h1 * nz1 + h2 * nz2, ineqNumber1),
                 (h1, h2) => Eval(P.X + h1 * nx1 + h2 * nx2, P.Y + h1 * ny1 + h2 * ny2, P.Z + h1 * nz1 + h2 * nz2, ineqNumber2), D))
             {
-                return P.MoveTo(
-                        P.X + hh1 * nx1 + hh2 * nx2,
-                        P.Y + hh1 * ny1 + hh2 * ny2,
-                        P.Z + hh1 * nz1 + hh2 * nz2,
-                        safe
-                    );
+                //******** safe max D distance move test added ***************
+                if (Math.Sqrt((hh1 * nx1 + hh2 * nx2) * (hh1 * nx1 + hh2 * nx2) +
+                (hh1 * ny1 + hh2 * ny2) * (hh1 * ny1 + hh2 * ny2) +
+                (hh1 * nz1 + hh2 * nz2) * (hh1 * nz1 + hh2 * nz2)) < D)
+                {
+
+                    return P.MoveTo(
+                            P.X + hh1 * nx1 + hh2 * nx2,
+                            P.Y + hh1 * ny1 + hh2 * ny2,
+                            P.Z + hh1 * nz1 + hh2 * nz2,
+                            safe
+                        );
+                }
+                else
+                {
+                    return false;
+                }
             }
             else
             {
@@ -736,7 +749,7 @@ namespace MeshData
                 return false;
         }
 
-        private  void CreateBackgroundMesh()
+        private void CreateBackgroundMesh()
         {
             double x0, y0, z0, x1, y1, z1;
 
@@ -746,13 +759,13 @@ namespace MeshData
             y1 = Y1 + D;
             z0 = Z0 - D;
             z1 = Z1 + D;
-            
+
             int xCount = (int)Math.Ceiling(((x1 - x0) / D));
             int yCount = (int)Math.Ceiling(((y1 - y0) / D));
             int zCount = (int)Math.Ceiling(((z1 - z0) / D));
 
-            Point[, ,] points = new Point[xCount + 1, yCount + 1, zCount + 1];
-            Point[, ,] shiftPoints = new Point[xCount + 1, yCount + 1, zCount + 1];
+            Point[,,] points = new Point[xCount + 1, yCount + 1, zCount + 1];
+            Point[,,] shiftPoints = new Point[xCount + 1, yCount + 1, zCount + 1];
 
             for (int k = 0; k <= zCount; k++)
             {
@@ -760,8 +773,8 @@ namespace MeshData
                 {
                     for (int i = 0; i <= xCount; i++)
                     {
-                            points[i, j, k] = CreatePoint(x0 + i * D, y0 + j * D, z0 + k * D);
-                            shiftPoints[i, j, k] = CreatePoint(x0 + i * D + D / 2.0d, y0 + j * D + D / 2.0d, z0 + k * D + D / 2.0d);
+                        points[i, j, k] = CreatePoint(x0 + i * D, y0 + j * D, z0 + k * D);
+                        shiftPoints[i, j, k] = CreatePoint(x0 + i * D + D / 2.0d, y0 + j * D + D / 2.0d, z0 + k * D + D / 2.0d);
                     }
                 }
             }
@@ -793,10 +806,10 @@ namespace MeshData
                     }
                 }
             }
-            this.tetrahedrons= new HashSet<Tetrahedron>(tetrahedrons);
+            this.tetrahedrons = new HashSet<Tetrahedron>(tetrahedrons);
         }
 
-        public IEnumerable<Point>  RefineTetrahedralMeshRedGreen(IEnumerable<Tetrahedron> refineList)
+        public IEnumerable<Point> RefineTetrahedralMeshRedGreen(IEnumerable<Tetrahedron> refineList)
         {
             var newPoints = new Dictionary<Edge, Point>();
             var refine = refineList.ToHashSet();
@@ -921,7 +934,7 @@ namespace MeshData
                         foreach (Tetrahedron tt in e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons).ToArray())
                         {
                             if (!refine.Contains(tt))
-                            { 
+                            {
                                 refine.Add(tt);
                             }
                         }
@@ -953,7 +966,7 @@ namespace MeshData
 
             DeleteTetrahedron(t);
             if (refine.Contains(t))
-            { 
+            {
                 refine.Remove(t);
             }
         }
@@ -1135,7 +1148,7 @@ namespace MeshData
                     Eval(midP, ineqNumber);
 
                     var err = Math.Abs(midP.U - t.Points.Sum(p => p.U) / 4.0d);
-                    var res =  (tolerance > 0 && err > tolerance *  D) || (relativeTolerance > 0 && err > relativeTolerance * Math.Sqrt(t.Edges().Max(e => e.SqrLength)));
+                    var res = (tolerance > 0 && err > tolerance * D) || (relativeTolerance > 0 && err > relativeTolerance * Math.Sqrt(t.Edges().Max(e => e.SqrLength)));
 
                     if (!res)
                     {
@@ -1255,7 +1268,7 @@ namespace MeshData
 
                     for (int i = 1; i < division; i++)
                     {
-                        var p = p1 + ((double)i / (double)division) *  (p2 - p1);
+                        var p = p1 + ((double)i / (double)division) * (p2 - p1);
 
                         Eval(p, ineqNumber);
 
@@ -1437,21 +1450,23 @@ namespace MeshData
             if (Point.EnableUnsafeMove)
             {
                 for (int i = 0; i < count; i++)
+                {
                     points.AsParallel().ForAll(point =>
                     {
                         CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
                     });
-
+                }
             }
             else
             {
                 for (int i = 0; i < count; i++)
+                {
                     foreach (var point in points)
                     {
                         CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
-                    };
+                    }
+                }
             }
-
         }
 
         public void JiggleBackgroundMash(int count)
@@ -1476,7 +1491,7 @@ namespace MeshData
         private void CenterPoint(Point point, double precision, bool safe, bool edges = true)
         {
             if (point.Forced)
-            { 
+            {
                 return;
             }
 
@@ -1514,7 +1529,7 @@ namespace MeshData
                 int ineqNumber2 = point.BoundarySecondIndex;
                 int ineqNumber3 = point.BoundaryThirdIndex;
                 ProjectToCorner(point, ineqNumber1, ineqNumber2, ineqNumber3, safe);
-            } 
+            }
         }
 
         private void Eval(Point p, int ineqNumber)
@@ -1528,12 +1543,12 @@ namespace MeshData
                 p.U = Eval(p.X, p.Y, p.Z, ineqNumber);
                 p.Values[ineqNumber] = p.U;
             }
-                
+
             /*if (Math.Abs(p.U) < 1e-10)
             {
                 p.U = 0;
             }*/
-        }
+            }
 
         private double Eval(double x, double y, double z, int ineqNumber)
         {
@@ -1541,19 +1556,19 @@ namespace MeshData
         }
 
         public Func<double, double, double, double> EvalTotalFunc { get; set; }
-        
+
         public double EvalTotal(Point p)
         {
             if (EvalTotalFunc != null)
                 return EvalTotalFunc(p.X, p.Y, p.Z);
-            
+
             double res = 0;
             for (int i = 0; i < ineqTreeBoxed.ExpressionList.Count; i++)
             {
                 res += Math.Pow(Eval(p.X, p.Y, p.Z, i), 2);
             }
             return res;
-        }        
+        }
 
         public override Point AddPoint(double x, double y, double z)
         {
@@ -1593,12 +1608,12 @@ namespace MeshData
                 ResolveMeshApriori(node.Right, domaiNumberRight);
 
                 int[] expressionIndexes = node.ExpressionIndexes.ToArray();
-                
+
                 Parallel.ForEach(Tetrahedrons, t =>
                 {
                     if (node.NodeType == IneqTree.NodeType.NodeOr)
                     {
-                        if ( t.IsInDomain(domaiNumberLeft) || t.IsInDomain(domaiNumberRight))
+                        if (t.IsInDomain(domaiNumberLeft) || t.IsInDomain(domaiNumberRight))
                         {
                             t.IsIn[domaiNumber] = true;
                             t.IsOnBoundary[domaiNumber] = false;
@@ -1655,7 +1670,7 @@ namespace MeshData
 
             Parallel.ForEach(Tetrahedrons, t =>
             {
-                if(t.Points.All(p => p.U < 0))
+                if (t.Points.All(p => p.U < 0))
                 {
                     t.IsIn[domaiNumber] = true;
                     t.IsOnBoundary[domaiNumber] = false;
@@ -1666,7 +1681,8 @@ namespace MeshData
                     t.IsIn[domaiNumber] = false;
                     t.IsOnBoundary[domaiNumber] = false;
                     t.Boundary[ineqNumber] = false;
-                } else
+                }
+                else
                 {
                     t.IsIn[domaiNumber] = false;
                     t.IsOnBoundary[domaiNumber] = true;
@@ -1696,7 +1712,7 @@ namespace MeshData
                 }
             }
 
-            Points.AsParallel().ForAll(p => p.Boundary.SetAll(false)); 
+            Points.AsParallel().ForAll(p => p.Boundary.SetAll(false));
         }
 
         public void RefineBoundaryTriangle(Triangle t0)
@@ -1769,10 +1785,10 @@ namespace MeshData
                     .OrderBy(t => t.Quality)
                     .ToArray();
             }
-            
+
             foreach (var t in badTetra)
             {
-                if (!Tetrahedrons.Contains(t) || t.Quality >=  minQuality)
+                if (!Tetrahedrons.Contains(t) || t.Quality >= minQuality)
                     continue;
 
                 var divideAndCollapse = t.Edges().Select(e =>
@@ -1815,7 +1831,7 @@ namespace MeshData
         }
 
 
-        private void TryDivideAndCollapse(Edge e, ref Point toPoint, ref double minQuality, bool allowDivide) 
+        private void TryDivideAndCollapse(Edge e, ref Point toPoint, ref double minQuality, bool allowDivide)
         {
             Point midPoint = (e.P1 + e.P2) / 2;
 
@@ -1824,7 +1840,7 @@ namespace MeshData
 
             double origMinQuality = 1000;
             double pMinQuality = 1000;
-            
+
             for (int i = 0; i < midPoint.Boundary.Length; i++)
             {
                 midPoint.Boundary[i] = e.P1.Boundary[i] && e.P2.Boundary[i];
@@ -1858,7 +1874,7 @@ namespace MeshData
 
                 pMinQuality = 1000;
 
-                midPoint.MoveTo(p, false); 
+                midPoint.MoveTo(p, false);
                 foreach (var t in fanTetrahedrons.Where(t => !t.Points.Contains(p)))
                 {
                     if (!t.CheckVolume(0.15d))
@@ -1868,7 +1884,7 @@ namespace MeshData
                     else if (t.Quality < pMinQuality)
                     {
                         pMinQuality = t.Quality;
-                    }                    
+                    }
                 }
 
                 if (pMinQuality > minQuality)
@@ -1940,7 +1956,7 @@ namespace MeshData
                     Point midPoint = DivideEdge(divideAndCollapse.Edge, -1, (divideAndCollapse.Edge.P1 + divideAndCollapse.Edge.P2) / 2);
                     if (divideAndCollapse.ToPoint != null)
                     {
-                        CollapseEdge(new Edge(midPoint, divideAndCollapse.ToPoint), divideAndCollapse.ToPoint, false); 
+                        CollapseEdge(new Edge(midPoint, divideAndCollapse.ToPoint), divideAndCollapse.ToPoint, false);
                     }
                 }
                 //else
@@ -2037,67 +2053,67 @@ namespace MeshData
                 toPoint = null;
             }
 
-/*
-            toPoint = null;
-            minQuality = 0;
+            /*
+                        toPoint = null;
+                        minQuality = 0;
 
-            foreach (Point p in fanPoints)
-            {
-                if (!midPoint.HasAllBoundary(p))
-                    continue;
+                        foreach (Point p in fanPoints)
+                        {
+                            if (!midPoint.HasAllBoundary(p))
+                                continue;
 
-                pMinQuality = 1000;
+                            pMinQuality = 1000;
 
-                midPoint.MoveTo(p, false);
-                foreach (var t in fanTetrahedrons.Where(t => !t.Points.Contains(p)))
-                {
-                    if (!t.CheckVolume(0.15d))
-                    {
-                        pMinQuality = -1;
-                    }
-                    else if (t.Quality < pMinQuality)
-                    {
-                        pMinQuality = t.Quality;
-                    }
-                }
+                            midPoint.MoveTo(p, false);
+                            foreach (var t in fanTetrahedrons.Where(t => !t.Points.Contains(p)))
+                            {
+                                if (!t.CheckVolume(0.15d))
+                                {
+                                    pMinQuality = -1;
+                                }
+                                else if (t.Quality < pMinQuality)
+                                {
+                                    pMinQuality = t.Quality;
+                                }
+                            }
 
-                if (pMinQuality > minQuality)
-                {
-                    minQuality = pMinQuality;
-                    toPoint = p;
-                }
-            }
+                            if (pMinQuality > minQuality)
+                            {
+                                minQuality = pMinQuality;
+                                toPoint = p;
+                            }
+                        }
 
-            if (allowDivide && minQuality <= origMinQuality)
-            {
-                Point average = fanPoints.Union(e).Average();
-                midPoint.MoveTo(average, false);
-                pMinQuality = 1000;
-                foreach (var t in fanTetrahedrons)
-                {
-                    if (!t.CheckVolume(0.05d))
-                    {
-                        pMinQuality = -1;
-                    }
-                    else if (t.Quality < pMinQuality)
-                    {
-                        pMinQuality = t.Quality;
-                    }
-                }
+                        if (allowDivide && minQuality <= origMinQuality)
+                        {
+                            Point average = fanPoints.Union(e).Average();
+                            midPoint.MoveTo(average, false);
+                            pMinQuality = 1000;
+                            foreach (var t in fanTetrahedrons)
+                            {
+                                if (!t.CheckVolume(0.05d))
+                                {
+                                    pMinQuality = -1;
+                                }
+                                else if (t.Quality < pMinQuality)
+                                {
+                                    pMinQuality = t.Quality;
+                                }
+                            }
 
-                if (pMinQuality > minQuality)
-                {
-                    minQuality = pMinQuality;
-                    toPoint = null;
-                }
-            }
+                            if (pMinQuality > minQuality)
+                            {
+                                minQuality = pMinQuality;
+                                toPoint = null;
+                            }
+                        }
 
-            if (minQuality < origMinQuality)
-            {
-                minQuality = 0;
-                toPoint = null;
-            }
-            */
+                        if (minQuality < origMinQuality)
+                        {
+                            minQuality = 0;
+                            toPoint = null;
+                        }
+                        */
         }
 
 
@@ -2181,7 +2197,7 @@ namespace MeshData
                             refList.Add(cp.tr);
                         }
                     }
-                    else if (count  > 1)
+                    else if (count > 1)
                     {
                         lock (good)
                         {
@@ -2264,7 +2280,7 @@ namespace MeshData
             {
                 foreach (int ineqNumber in p.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i).ToArray())
                 {
-                    if (!p.Points.Any(p1 => p1.Boundary[ineqNumber] && p1.BoundaryCount < p.BoundaryCount ))
+                    if (!p.Points.Any(p1 => p1.Boundary[ineqNumber] && p1.BoundaryCount < p.BoundaryCount))
                         p.Boundary[ineqNumber] = false;
                 }
             }
@@ -2274,7 +2290,8 @@ namespace MeshData
             return;
         }
 
-        public Point ForcePoint(Point p, bool fixedPoint, Point p1)
+        //*******************************************************************************
+        /*public Point ForcePoint(Point p, bool fixedPoint, Point p1)
         {
             if (p.Forced)
             {
@@ -2288,7 +2305,7 @@ namespace MeshData
                 return np;
             }
 
-            if (!np.Forced && np.MoveTo(p, true))
+            if (!np.Forced && np.Movable && np.MoveTo(p, true))
             {
                 np.Forced = true;
                 np.Movable = false;
@@ -2314,7 +2331,7 @@ namespace MeshData
             }
             else
             {
-                var intRes = t.Triangles().Select(trian => new { trian, res = trian.IntersectLine(p, p1)}).Where(r => r.res.Point != null && r.res.Point != p1).OrderBy(r => p.Distance(r.res.Point)).FirstOrDefault();
+                var intRes = t.Triangles().Select(trian => new { trian, res = trian.IntersectLine(p, p1)}).Where(r => r.res.Point != null && r.res.Point != p1 && !r.res.Point.Forced).OrderBy(r => p.Distance(r.res.Point)).FirstOrDefault();
 
                 if (intRes != null && intRes.res.Type == "inside")
                 {
@@ -2345,41 +2362,50 @@ namespace MeshData
                     p.Forced = true;
                     p.Movable = false;
                 }
-                if (intRes != null && intRes.res.Type == "vertex")
+                else if (intRes != null && intRes.res.Type == "vertex")
                 {
                     p = intRes.res.Point;
                     p.Forced = true;
                     p.Movable = false;
                 }
-                if (intRes != null && intRes.res.Type == "edge")
+                else if (intRes != null && intRes.res.Type == "edge")
                 {
                     var intP = intRes.res.Point;
                     p = new Point(intP.X, intP.Y, intP.Z, ineqTreeBoxed.ExpressionList.Count);
-                    
+
                     DivideEdge(intRes.res.Edge.Value, -1, p);
 
                     p.Forced = true;
                     p.Movable = false;
                 }
+                else
+                {
+                    bool bad = true;
+                }
             }
 
             return p;
-        }
+        }*/
 
-        public void ForceEdge(Point p1, Point p2, IneqTree ineq)
+        /*public void ForceEdge(Point p1, Point p2, IneqTree ineq)
         {
             ForceEdge(ref p1, ref p2, ineq, 0, true);
         }
 
         private void ForceEdge(ref Point p1, ref Point p2, IneqTree ineq, int l, bool fixedPoints)
         {
-            if (l > 20)
+            if (l > 8)
             {
                 return;
             }
 
             p1 = ForcePoint(p1, fixedPoints, p2);
             p2 = ForcePoint(p2, fixedPoints, p1);
+
+            if (!p1.Forced || !p2.Forced)
+            {
+                return;
+            }
 
             if(!p1.Points.Contains(p2) && p1.Forced && p2.Forced && (p1 != p2))
             {
@@ -2446,6 +2472,287 @@ namespace MeshData
             {
                 pp.Movable = false;
             }
+        }
+        */
+
+
+        //********************************
+
+
+        //private HashSet<Point> forcedPoints = new HashSet<Point>();
+        //public void ForceEdge(Point p1, Point p2, double[] n1, double[] n2)
+        //{
+        //    forcedPoints.Clear();
+        //    ForceEdge(ref p1, ref p2, n1, n2, 0, true);
+
+        //    var edges = forcedPoints.SelectMany(p => p.Tetrahedrons).SelectMany(t => t.Edges()).Distinct();
+
+        //    foreach (var e in edges.ToArray())
+        //    {
+        //        if (!e.Valid)
+        //            continue;
+
+        //        /*TestEdgePlane(e, p1, n1);
+        //        TestEdgePlane(e, p1, n2);*/
+
+        //    }
+
+        //    foreach (var p in forcedPoints.SelectMany(pp => pp.Points))
+        //    { 
+        //        p.Movable = false;
+        //    }
+        //}
+
+        //private void ForceEdge(ref Point p1, ref Point p2, double[] n1, double[] n2, int l, bool fixedPoints)
+        //{
+        //    if (l > 8)
+        //    {
+        //        return;
+        //    }
+
+        //    p1 = ForcePoint(p1, fixedPoints, p2);
+        //    p2 = ForcePoint(p2, fixedPoints, p1);
+
+        //    if (!p1.Forced || !p2.Forced)
+        //    {
+        //        return;
+        //    }
+
+        //    forcedPoints.Add(p1);
+        //    forcedPoints.Add(p2);
+
+
+        //    if (!p1.Points.Contains(p2) && (p1 != p2))
+        //    {
+        //        var cp = (p1 + p2) / 2;
+
+        //        ForceEdge(ref p1, ref cp, n1, n2, l + 1, false);
+        //        ForceEdge(ref p2, ref cp, n1, n2, l + 1, false);
+        //    }
+        //    /*else if (p1 != p2)
+        //    {
+        //        var np1 = p1;
+        //        var np2 = p2;
+        //        var edges = p1.Tetrahedrons.Intersect(p2.Tetrahedrons).SelectMany(t => t.Edges()).Where(e => (e.P1 != np1 && e.P1 != np2) || (e.P2 != np1 && e.P2 != np2)).Distinct();
+
+        //        foreach (var e in edges.ToArray())
+        //        {
+        //            if (!e.Valid)
+        //                continue;
+
+        //            TestEdgePlane(e, p1, n1);
+        //            TestEdgePlane(e, p1, n2);
+
+        //        }
+        //    }*/
+
+        //    foreach (var pp in p1.Points)
+        //    {
+        //        pp.Movable = false;
+        //    }
+
+        //    foreach (var pp in p2.Points)
+        //    {
+        //        pp.Movable = false;
+        //    }
+        //}
+
+        /*private void TestEdgePlane(Edge e, Point p, double[] n)
+        {
+            if(!e.Valid) 
+                return;
+
+            Func<double, double> f = t =>
+            {
+                var pt = (e.P1 + t * (e.P2 - e.P1)) - p;
+
+                var res = pt.X * n[0] + pt.Y * n[1] + pt.Z * n[2];
+
+                return res;
+            };
+
+            var f0 = f(0);
+            var f1 = f(1);
+
+            if (f0 * f1 < 0)
+            {
+                var t0 = f0 / (f0 - f1);
+                var p0 = e.P1 + t0 * (e.P2 - e.P1);
+                DivideEdge(e, -1, p0);
+                p0.Movable = false;
+            }
+        }*/
+
+        //************************* 
+
+        public void ForceEdge(Point p1, Point p2, double[] n1, double[] n2)
+        {
+            /*p1 = ForcePoint(p1);
+            p2 = ForcePoint(p2);*/
+
+            var f1 = GetLinearFunc(p1, n1);
+            var f2 = GetLinearFunc(p1, n2);
+            var cutTetras = new HashSet<Tetrahedron>();
+
+            var addTetras = Tetrahedrons.Where(tt => tt.ContainsPoint(p1)).ToArray();
+
+            while (addTetras.Length > 0)
+            {
+                cutTetras.UnionWith(addTetras);
+
+                addTetras = addTetras
+                    .SelectMany(t => t.Points)
+                    .SelectMany(p => p.Tetrahedrons)
+                    .Where(t => !cutTetras.Contains(t) && IntersectTetra(t, f1) && IntersectTetra(t, f2) && t.Points.Any(p => BetweenPoints(p, p1, p2)))
+                    .Distinct()
+                    .ToArray();
+            }
+
+            foreach (var e in cutTetras.SelectMany(t => t.Edges()).Distinct().ToArray())
+            {
+                CutEdgePlane(e, p1, n1, cutTetras);
+            }
+
+            foreach (var e in cutTetras.SelectMany(t => t.Edges()).Distinct().ToArray())
+            {
+                CutEdgePlane(e, p1, n2, cutTetras);
+            }
+        }
+
+        private FuncXYZ GetLinearFunc(Point p, double[] n)
+        {
+            return (x, y, z) =>
+            {
+                return (x - p.X) * n[0] + (y - p.Y) * n[1] + (z - p.Z) * n[2];
+            };
+        }
+
+        private bool IntersectTetra(Tetrahedron t, FuncXYZ f)
+        {
+            var vals = t.Points.Select(p => f(p.X, p.Y, p.Z))/*.Where(v => v != 0)*/.ToArray();
+
+            return !(vals.All(v => v > 0) || vals.All(v => v < 0));
+        }
+
+        private bool BetweenPoints(Point p, Point p1, Point p2)
+        {
+            // Vector p1 → p2
+            double vx = p2.X - p1.X;
+            double vy = p2.Y - p1.Y;
+            double vz = p2.Z - p1.Z;
+
+            // Vector p1 → p
+            double wx = p.X - p1.X;
+            double wy = p.Y - p1.Y;
+            double wz = p.Z - p1.Z;
+
+            // Dot products
+            double dot = vx * wx + vy * wy + vz * wz;
+            if (dot < 0) return false;                   // projection is before p1
+
+            double len2 = vx * vx + vy * vy + vz * vz;
+            if (dot > len2) return false;                // projection is after p2
+
+            return true;                                 // projection lies between p1 and p2
+        }
+
+        private void CutEdgePlane(Edge e, Point p, double[] n, HashSet<Tetrahedron> cutTetras)
+        {
+            if (!e.Valid)
+                return;
+
+            Func<double, double> f = t =>
+            {
+                var pt = (e.P1 + t * (e.P2 - e.P1)) - p;
+
+                var res = pt.X * n[0] + pt.Y * n[1] + pt.Z * n[2];
+
+                return res;
+            };
+
+            var f0 = f(0);
+            var f1 = f(1);
+
+            if (Math.Abs(f0) < 1E-6)
+            {
+                e.P1.Movable = false;
+            }
+            else if (Math.Abs(f1) < 1E-6)
+            {
+                e.P2.Movable = false;
+            }
+            else if (f0 * f1 < 0)
+            {
+                var t0 = f0 / (f0 - f1);
+
+                if (t0 < 0 || t0 > 1)
+                {
+                    return;
+                }
+
+                var p0 = e.P1 + t0 * (e.P2 - e.P1);
+
+                if (t0 < 0.45 && e.P1.Movable && e.P1.MoveTo(p0, true))
+                {
+                    e.P1.Movable = false;
+                }
+                else if (t0 > 0.55 && e.P2.Movable && e.P2.MoveTo(p0, true))
+                {
+                    e.P2.Movable = false;
+                }
+                else
+                {
+                    foreach (Tetrahedron t in e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons).ToArray())
+                    {
+                        cutTetras.Remove(t);
+                    }
+                    DivideEdge(e, -1, p0);
+                    p0.Movable = false;
+                    if (!e.P1.Movable && !e.P2.Movable)
+                    {
+                        p0.Forced = true;
+                    }
+                    cutTetras.UnionWith(p0.Tetrahedrons);
+                }
+            }
+        }
+
+        public Point ForcePoint(Point p)
+        {
+            if (p.Forced)
+            {
+                return p;
+            }
+
+            var np = Points.OrderBy(pp => pp.Distance(p)).First();
+
+            if (np.Forced && np.Distance(p) <= 1e-6)
+            {
+                return np;
+            }
+
+            if (!np.Forced && np.Movable && np.MoveTo(p, true))
+            {
+                np.Forced = true;
+                np.Movable = false;
+
+                return np;
+            }
+
+            var t = Tetrahedrons.FirstOrDefault(tt => tt.ContainsPoint(p));
+
+            p = AddPoint(p.X, p.Y, p.Z);
+            AddTetrahedron(t.P0, t.P1, t.P2, p);
+            AddTetrahedron(t.P0, t.P1, p, t.P3);
+            AddTetrahedron(t.P0, p, t.P2, t.P3);
+            AddTetrahedron(p, t.P1, t.P2, t.P3);
+
+            DeleteTetrahedron(t);
+
+            p.Forced = true;
+            p.Movable = false;
+
+            return p;
         }
     }
 }
