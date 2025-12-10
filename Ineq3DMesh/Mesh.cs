@@ -272,7 +272,7 @@ namespace MeshData
                 .Intersect
                 (
                     P3.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i)
-                ).FirstOrDefault();
+                ).Cast<int?>().FirstOrDefault();
             }
         }
 

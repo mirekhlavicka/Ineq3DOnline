@@ -132,14 +132,14 @@ namespace Ineq3DOnline
             }
         }
 
-        public static IneqTree Prism(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, int count = 4)
+        public static IneqTree Prism(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, int count = 4, double[] v = null, double sa = 0)
         {
             IneqTree res = new IneqTree();
 
             for (int i = 0; i < count; i++)
             {
-                double x0 = r * Math.Cos(i * 2 * Math.PI / count);
-                double y0 = r * Math.Sin(i * 2 * Math.PI / count);
+                double x0 = r * Math.Cos(sa + i * 2 * Math.PI / count);
+                double y0 = r * Math.Sin(sa + i * 2 * Math.PI / count);
                 double z0 = 0;
 
                 res = res & ((x, y, z) => (x - x0) * x0 + (y - y0) * y0 + (z - z0) * z0);
@@ -151,7 +151,7 @@ namespace Ineq3DOnline
             var n = (p2 - p1);
             var nn = p1.Distance(p2);
 
-            var m = ComputeBasis(n.X / nn, n.Y / nn, n.Z / nn, 'z');
+            var m = ComputeBasis(n.X / nn, n.Y / nn, n.Z / nn, 'z', v);
 
             res = res & ((x, y, z) => z - nn);
             res = res & ((x, y, z) => -z);
@@ -398,7 +398,7 @@ namespace Ineq3DOnline
         }
 
 
-        public static double[,] ComputeBasis(double nx, double ny, double nz, char axis = 'x')
+        public static double[,] ComputeBasis(double nx, double ny, double nz, char axis = 'x', double[] b1 = null, double[] b2 = null)
         {
             // The input vector (nx, ny, nz) is assumed to be a unit vector.
             double[] n = { nx, ny, nz };
@@ -406,28 +406,32 @@ namespace Ineq3DOnline
             // Choose an arbitrary vector different from n
             double[] t = Math.Abs(nz) < Math.Abs(nx) ? new double[] { 0, 0, 1 } : new double[] { 1, 0, 0 };
 
-            // Compute first perpendicular vector b1 = t × n
-            double[] b1 = new double[]
+            if (b1 == null)
             {
-                t[1] * n[2] - t[2] * n[1],
-                t[2] * n[0] - t[0] * n[2],
-                t[0] * n[1] - t[1] * n[0]
-            };
+                // Compute first perpendicular vector b1 = t × n
+                b1 = new double[]
+                {
+                    t[1] * n[2] - t[2] * n[1],
+                    t[2] * n[0] - t[0] * n[2],
+                    t[0] * n[1] - t[1] * n[0]
+                };
 
-            // Normalize b1
-            double normB1 = Math.Sqrt(b1[0] * b1[0] + b1[1] * b1[1] + b1[2] * b1[2]);
-            b1[0] /= normB1;
-            b1[1] /= normB1;
-            b1[2] /= normB1;
-
-            // Compute second perpendicular vector b2 = n × b1
-            double[] b2 = new double[]
+                // Normalize b1
+                double normB1 = Math.Sqrt(b1[0] * b1[0] + b1[1] * b1[1] + b1[2] * b1[2]);
+                b1[0] /= normB1;
+                b1[1] /= normB1;
+                b1[2] /= normB1;
+            }
+            if (b2 == null)
             {
-                n[1] * b1[2] - n[2] * b1[1],
-                n[2] * b1[0] - n[0] * b1[2],
-                n[0] * b1[1] - n[1] * b1[0]
-            };
-
+                // Compute second perpendicular vector b2 = n × b1
+                b2 = new double[]
+                {
+                    n[1] * b1[2] - n[2] * b1[1],
+                    n[2] * b1[0] - n[0] * b1[2],
+                    n[0] * b1[1] - n[1] * b1[0]
+                };
+            }
             /*// Compute determinant of the basis matrix
             double determinant = n[0] * (b1[1] * b2[2] - b1[2] * b2[1])
                                - n[1] * (b1[0] * b2[2] - b1[2] * b2[0])

@@ -95,6 +95,8 @@ namespace MeshData
                 DeleteTetrahedron(t);
             DeleteLonelyPoints();
 
+            //Tetrahedrons.SelectMany(t => t.Triangles().Where(tr => !tr.Boundary)).SelectMany(t => t).Distinct().AsParallel().ForAll(p => p.Movable = false);
+
             ResolveMesh(ineqTreeBoxed.Root, 0);
             foreach (Tetrahedron t in Tetrahedrons.AsParallel().Where(t => !t.IsIn[0]).ToArray())
                 DeleteTetrahedron(t);
@@ -2276,14 +2278,15 @@ namespace MeshData
                 }
             }
 
-            foreach (var p in Points.Where(pp => pp.BoundaryCount > 2))
+            //!!!!!!!!!!!!!!!!!!!!!
+            /*foreach (var p in Points.Where(pp => pp.BoundaryCount > 2))
             {
                 foreach (int ineqNumber in p.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i).ToArray())
                 {
                     if (!p.Points.Any(p1 => p1.Boundary[ineqNumber] && p1.BoundaryCount < p.BoundaryCount))
                         p.Boundary[ineqNumber] = false;
                 }
-            }
+            }*/
 
             DeleteLonelyPoints();
 

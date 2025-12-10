@@ -62,14 +62,14 @@ end_header
                 //.Where(t => t.Quality > 0.25d)
                 .ToArray();
 
-            for (int ineqNumber = 0; ineqNumber < ineqMesh.IneqTree.ExpressionList.Count + 3; ineqNumber++)
+            for (int ineqNumber = -1; ineqNumber < ineqMesh.IneqTree.ExpressionList.Count + 3; ineqNumber++)
             {
-                var triangles = boundaryTriangles.Where(t => t.CommonBoundaryFlag == ineqNumber).ToArray();
+                var triangles = boundaryTriangles.Where(t => t.CommonBoundaryFlag == (ineqNumber == -1 ? null: (int?)ineqNumber)).ToArray();
                 var points = triangles.SelectMany(t => t).Distinct().Select((p, i) => new { Point = p, index = i }).ToDictionary(pi => pi.Point, pi => pi.index);
 
                 foreach (var p in points.OrderBy(p => p.Value))
                 {
-                    sbPoints.Append(String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} {1} {2} {3} 255 {4}", p.Key.X, p.Key.Y, p.Key.Z, colors[ineqNumber % colors.Length], System.Environment.NewLine));
+                    sbPoints.Append(String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} {1} {2} {3} 255 {4}", p.Key.X, p.Key.Y, p.Key.Z, ineqNumber < 0 ? "64 64 64" : colors[ineqNumber % colors.Length], System.Environment.NewLine));
                 }
 
                 foreach (var t in triangles)

@@ -117,7 +117,7 @@ namespace Ineq3DOnline
             return (a + b - MeshData.IneqTree.IneqNode.SmoothAbs(a - b, eps)) / 2.0d;
         }
 
-        public IneqTree ToPrism(double r, int count, double f = 1.0d)
+        public IneqTree ToPrism(double r, int count, double f = 1.0d, double[] v = null, double sa = 0)
         { 
             var res = new IneqTree();
 
@@ -132,7 +132,7 @@ namespace Ineq3DOnline
                 x1 = xc + f * (x1 - xc); y1 = yc + f * (y1 - yc); z1 = zc + f * (z1 - zc);
                 x2 = xc + f * (x2 - xc); y2 = yc + f * (y2 - yc); z2 = zc + f * (z2 - zc);
 
-                res = res | IneqLib.Prism(x1, y1, z1, x2, y2, z2, r, count);
+                res = res | IneqLib.Prism(x1, y1, z1, x2, y2, z2, r, count, v, sa);
             }
 
             return res;

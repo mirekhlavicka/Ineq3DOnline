@@ -6,6 +6,7 @@ using MeshData;
 
 namespace Ineq3DOnline.PlatonicSolids
 {
+    using FuncXYZ = Func<double, double, double, double>;
     public struct Vec3
     {
         public double X, Y, Z;
@@ -36,6 +37,8 @@ namespace Ineq3DOnline.PlatonicSolids
         public IReadOnlyList<int[]> Faces { get; }
         public IReadOnlyList<(int, int)> Edges { get; }
 
+        private List<FuncXYZ> funcs = new List<FuncXYZ>();
+
         private Polyhedron(List<Vec3> vertices, List<int[]> faces)
         {
             Vertices = vertices;
@@ -52,6 +55,12 @@ namespace Ineq3DOnline.PlatonicSolids
                     if (a > b) (a, b) = (b, a);
                     edgeSet.Add((a, b));
                 }
+
+                var vx = face.Sum(i => Vertices[i].X) / face.Length;
+                var vy = face.Sum(i => Vertices[i].Y) / face.Length;
+                var vz = face.Sum(i => Vertices[i].Z) / face.Length;
+
+                funcs.Add((x, y, z) => (x - vx) * vx + (y - vy) * vy + (z - vz) * vz);
             }
             Edges = edgeSet.ToList();
         }
@@ -60,13 +69,13 @@ namespace Ineq3DOnline.PlatonicSolids
         { 
             var res = new IneqTree();
 
-            foreach (var face in Faces)
-            { 
-                var vx = face.Sum(i => Vertices[i].X) / face.Length;
+            foreach (var f in funcs) //face in Faces)
+            {
+                /*var vx = face.Sum(i => Vertices[i].X) / face.Length;
                 var vy = face.Sum(i => Vertices[i].Y) / face.Length;
-                var vz = face.Sum(i => Vertices[i].Z) / face.Length;
+                var vz = face.Sum(i => Vertices[i].Z) / face.Length;*/
 
-                res = res & ((x, y ,z) => (x - vx) * vx + (y - vy) * vy + (z - vz) * vz) ;
+                res = res & f; //((x, y ,z) => (x - vx) * vx + (y - vy) * vy + (z - vz) * vz) ;
             }
 
             return res;
@@ -102,6 +111,41 @@ namespace Ineq3DOnline.PlatonicSolids
 
             return res;
         }
+
+        public double ProjectNorm(double x, double y, double z)
+        { 
+            var p0 = funcs.Select(f => 
+            {
+                var f0 = f(0, 0, 0);
+                var f1 = f(x, y, z);
+
+                if (f0 == f1)
+                    return null;
+
+                var t0 = f0 / (f0 - f1);
+
+                if(t0 <= 0)
+                    return null;
+
+                return new
+                {
+                    x = t0 * x,
+                    y = t0 * y,
+                    z = t0 * z,
+                    f 
+                };
+            }).Where(p => p != null && funcs.Where(f => f != p.f).All(f => f(p.x, p.y, p.z) <=0)).FirstOrDefault();
+
+            if (p0 == null)
+            {
+                return 0;
+            }
+            else
+            {
+                return Math.Sqrt(p0.x * p0.x + p0.y * p0.y + p0.z * p0.z);
+            }
+        }
+
 
         public static Polyhedron CreateIcosahedron(double r = 1.0d)
         {
