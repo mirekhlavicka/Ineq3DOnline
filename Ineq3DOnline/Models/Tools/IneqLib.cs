@@ -132,24 +132,70 @@ namespace Ineq3DOnline
             }
         }
 
-        public static IneqTree Prism(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, int count = 4, double[] v = null, double sa = 0)
+        public static IneqTree Prism(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, int count = 4, double[] v = null, double sa = 0, double? r1 = null)
         {
             IneqTree res = new IneqTree();
 
-            for (int i = 0; i < count; i++)
-            {
-                double x0 = r * Math.Cos(sa + i * 2 * Math.PI / count);
-                double y0 = r * Math.Sin(sa + i * 2 * Math.PI / count);
-                double z0 = 0;
-
-                res = res & ((x, y, z) => (x - x0) * x0 + (y - y0) * y0 + (z - z0) * z0);
-            }
+            r1 = r1 ?? r;
 
             var p1 = new Point(x1, y1, z1);
             var p2 = new Point(x2, y2, z2);
 
             var n = (p2 - p1);
             var nn = p1.Distance(p2);
+
+            for (int i = 0; i < count; i++)
+            {
+                var pa = new Point(r * Math.Cos(sa + i * 2 * Math.PI / count), r * Math.Sin(sa + i * 2 * Math.PI / count), 0);
+                var pb = new Point(r * Math.Cos(sa + (i + 1) * 2 * Math.PI / count), r * Math.Sin(sa + (i + 1) * 2 * Math.PI / count), 0);
+                var pc = new Point(r1.Value * Math.Cos(sa + i * 2 * Math.PI / count), r1.Value * Math.Sin(sa + i * 2 * Math.PI / count), nn);
+
+                var nv = Point.Cross(pb - pa, pc - pa);
+
+
+                res = res & ((x, y, z) => (x - pa.X) * nv.X + (y - pa.Y) * nv.Y + (z - pa.Z) * nv.Z);
+            }
+
+            var m = ComputeBasis(n.X / nn, n.Y / nn, n.Z / nn, 'z', v);
+
+            res = res & ((x, y, z) => z - nn);
+            res = res & ((x, y, z) => -z);
+
+            res.Transform(delegate (ref double x, ref double y, ref double z)
+            {
+                Transform(ref x, ref y, ref z, p1, m);
+            });
+
+            return res;
+        }
+
+        public static IneqTree PrismStar(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, int count = 4, double f = 0.5d, double[] v = null, double sa = 0, double? r1 = null)
+        {
+            IneqTree res = new IneqTree();
+
+            r1 = r1 ?? r;
+
+            var p1 = new Point(x1, y1, z1);
+            var p2 = new Point(x2, y2, z2);
+
+            var n = (p2 - p1);
+            var nn = p1.Distance(p2);
+
+            for (int i = 0; i < count; i++)
+            {
+                var pa = new Point(r * Math.Cos(sa + i * 2 * Math.PI / count), r * Math.Sin(sa + i * 2 * Math.PI / count), 0);
+                var pb = new Point(r * Math.Cos(sa + (i + 1) * 2 * Math.PI / count), r * Math.Sin(sa + (i + 1)  * 2 * Math.PI / count), 0);
+
+                var pab =  new Point(f * r *        Math.Cos(sa + ((double)i + 0.5d) * 2 * Math.PI / count), f * r *        Math.Sin(sa + ((double)i + 0.5d) * 2 * Math.PI / count), 0);
+                var pab1 = new Point(f * r1.Value * Math.Cos(sa + ((double)i + 0.5d) * 2 * Math.PI / count), f * r1.Value * Math.Sin(sa + ((double)i + 0.5d) * 2 * Math.PI / count), nn);
+
+
+                var nv1 = Point.Cross(pa - pab, pab1 - pab);
+                var nv2 = Point.Cross(pb - pab, pab - pab1);
+
+
+                res = res & !((IneqTree)((x, y, z) => (x - pab.X) * nv1.X + (y - pab.Y) * nv1.Y + (z - pab.Z) * nv1.Z) & (IneqTree)((x, y, z) => (x - pab.X) * nv2.X + (y - pab.Y) * nv2.Y + (z - pab.Z) * nv2.Z));
+            }
 
             var m = ComputeBasis(n.X / nn, n.Y / nn, n.Z / nn, 'z', v);
 
