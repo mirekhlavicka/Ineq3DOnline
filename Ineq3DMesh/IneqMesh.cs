@@ -169,7 +169,7 @@ namespace MeshData
             }
         }
 
-        private void ResolveIneq(int ineqNumber, int domaiNumber)
+        private void ResolveIneq(int ineqNumber, int domaiNumber/*, int refCount = 0*/)
         {
             if (OnProgress != null)
                 OnProgress(0.5 + 0.5 * (double)(ineqNumber + 1) / (ineqTreeBoxed.ExpressionList.Count));
@@ -273,6 +273,34 @@ namespace MeshData
             {
                 t.IsIn[domaiNumber] = t.Points.Any(p => p.U < 0);// || t.Points.All(p => p.U == 0);
             });
+
+            /*if (refCount < 2)
+            {
+                var badTetra = Tetrahedrons
+                       .AsParallel()
+                       .Where(t => t.Boundary[ineqNumber] && t.Points.Any(pp => pp.U == 0))
+                       .Where(t =>
+                       {
+                           var p = t.Points.Average();
+                           Eval(p, ineqNumber);
+
+                           return t.Points.Any(pp => pp.U * p.U < 0);
+
+                       })
+                       .ToArray();
+
+                if (badTetra.Length > 0)
+                {
+                    RefineTetrahedralMeshRedGreen(badTetra);
+
+                    Points.AsParallel().Where(p => isBoundaryPoint(p)).ForAll(p =>
+                    {
+                        p.Boundary[ineqNumber] = false;
+                    });
+
+                    ResolveIneq(ineqNumber, domaiNumber, refCount + 1);
+                }
+            }*/
         }
 
         private void ResolveEdges(ParallelQuery<Edge> qEdges, int ineqNumber, bool onSurface)
