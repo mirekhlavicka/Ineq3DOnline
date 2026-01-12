@@ -53,6 +53,42 @@ namespace Ineq3DOnline
             });
         }
 
+        public static IneqTree PrismTorus(double r, double R, int n, double mobfactor = 0)
+        {
+            IneqTree res = new IneqTree();
+
+            for (int i = 0; i < n; i++)
+            {
+                double a = 2.0d * i * Math.PI / n;
+                res = res & ((x, y, z) => 
+                {
+                    
+                    double nxy = Math.Sqrt(x * x + y * y);
+
+                    if(nxy == 0)
+                        return 1;
+
+                    double aa = Math.Atan2(y, x);
+
+                    double aaa = a + mobfactor * aa; 
+
+                    double x00 = R * x / nxy;
+                    double y00 = R * y / nxy;
+                    double z00 = 0;
+
+                    double x0 = (R + r * Math.Cos(aaa)) * x / nxy;
+                    double y0 = (R + r * Math.Cos(aaa)) * y / nxy;
+                    double z0 = r * Math.Sin(aaa);
+
+
+                    return (x0 - x00) * (x - x0) + (y0 - y00) * (y - y0) + (z0 - z00) * (z - z0);
+                });
+            };
+
+            return res;
+        }
+
+
         public static IneqTree Cylinder(double x1, double y1, double z1, double x2, double y2, double z2, double r = 1.0d, double d = 0, bool outside = false, Func<double, double> rf = null)
         {
             double nx, ny, nz, n;
