@@ -546,7 +546,7 @@
                     $.get('@Url.Action("ImproveCurvatureQuality")' + '?ts=' + $.now(), function () {
                         loadMesh(() => {
                             step++;
-                            if (step < 1) {
+                            if (step < 3) {
                                 improveAndLoad();
                             } else {
                                 keepSpinner = false;
