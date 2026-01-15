@@ -53,13 +53,13 @@ namespace Ineq3DOnline
             });
         }
 
-        public static IneqTree PrismTorus(double r, double R, int n, double mobfactor = 0)
+        public static IneqTree PrismTorus(double r, double R, int n, double mobfactor = 0, double sa = 0, Func<double, double,double> af = null)
         {
             IneqTree res = new IneqTree();
 
             for (int i = 0; i < n; i++)
             {
-                double a = 2.0d * i * Math.PI / n;
+                double a = sa + 2.0d * i * Math.PI / n;
                 res = res & ((x, y, z) => 
                 {
                     
@@ -68,18 +68,25 @@ namespace Ineq3DOnline
                     if(nxy == 0)
                         return 1;
 
-                    double aa = Math.Atan2(y, x);
+                    double a1 = a;
 
-                    double aaa = a + mobfactor * aa; 
+                    if (mobfactor != 0)
+                    {
+                        a1 += mobfactor * Math.Atan2(y, x);
+                    }
+
+                    if (af != null)
+                    {
+                        a1 = af(a1, Math.Atan2(y, x));
+                    }
 
                     double x00 = R * x / nxy;
                     double y00 = R * y / nxy;
                     double z00 = 0;
 
-                    double x0 = (R + r * Math.Cos(aaa)) * x / nxy;
-                    double y0 = (R + r * Math.Cos(aaa)) * y / nxy;
-                    double z0 = r * Math.Sin(aaa);
-
+                    double x0 = (R + r * Math.Cos(a1)) * x / nxy;
+                    double y0 = (R + r * Math.Cos(a1)) * y / nxy;
+                    double z0 = r * Math.Sin(a1);
 
                     return (x0 - x00) * (x - x0) + (y0 - y00) * (y - y0) + (z0 - z00) * (z - z0);
                 });
