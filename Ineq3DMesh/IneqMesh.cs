@@ -25,6 +25,9 @@ namespace MeshData
 
         public Action<double> OnProgress { get; set; }
 
+        public int MaxCheckCount = 0;
+        public int CheckDivisionCount = 2;
+
         public Dictionary<Func<double, double, double, double>, Func<Point, bool>> ProjectToSurfaceSpec = new Dictionary<Func<double, double, double, double>, Func<Point, bool>>();
 
         private IneqTree ineqTreeBoxed;
@@ -169,7 +172,7 @@ namespace MeshData
             }
         }
 
-        private void ResolveIneq(int ineqNumber, int domaiNumber/*, int refCount = 0*/)
+        private void ResolveIneq(int ineqNumber, int domaiNumber, int refCount = 0)
         {
             if (OnProgress != null)
                 OnProgress(0.5 + 0.5 * (double)(ineqNumber + 1) / (ineqTreeBoxed.ExpressionList.Count));
@@ -178,26 +181,31 @@ namespace MeshData
 
             Points.AsParallel().Where(p => isBoundaryPoint(p)).ForAll(p =>
             {
-                Eval(p, ineqNumber);
                 if (p.Boundary[ineqNumber])
                     p.U = 0;
+                else
+                    Eval(p, ineqNumber);
             });
 
-            ResolveEdges(EdgesForBoundary(ineqNumber).Where(e => (e.P1.U * e.P2.U < 0 && e.P1.HasAnyBoundary(e.P2))), ineqNumber, true);
-
-            foreach (Point p in Points.AsParallel().Where(p => p.U == 0 && p.BoundaryCount > 0 && isBoundaryPoint(p)))
+            //if (refCount == 0)
             {
-                foreach (int bi in p.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b).Select(bi => bi.i))
+
+                ResolveEdges(EdgesForBoundary(ineqNumber).Where(e => (e.P1.U * e.P2.U < 0 && e.P1.HasAnyBoundary(e.P2))), ineqNumber, true);
+
+                foreach (Point p in Points.AsParallel().Where(p => p.U == 0 && p.BoundaryCount > 0 && isBoundaryPoint(p)))
                 {
-                    if (p.Points.Where(p1 => p1.Boundary[bi] && isBoundaryPoint(p1)).All(p1 => p1.U <= 0))
+                    foreach (int bi in p.Boundary.Cast<bool>().Select((b, i) => new { b = b, i = i }).Where(bi => bi.b && bi.i != ineqNumber).Select(bi => bi.i))
                     {
-                        p.U = -1;
-                        CenterPoint(p, 100, true);
-                    }
-                    else if (p.Points.Where(p1 => p1.Boundary[bi] && isBoundaryPoint(p1)).All(p1 => p1.U >= 0))
-                    {
-                        p.U = 1;
-                        CenterPoint(p, 100, true);
+                        if (p.Points.Where(p1 => p1.Boundary[bi] && isBoundaryPoint(p1)).All(p1 => p1.U <= 0))
+                        {
+                            p.U = -1;
+                            CenterPoint(p, 100, true);
+                        }
+                        else if (p.Points.Where(p1 => p1.Boundary[bi] && isBoundaryPoint(p1)).All(p1 => p1.U >= 0))
+                        {
+                            p.U = 1;
+                            CenterPoint(p, 100, true);
+                        }
                     }
                 }
             }
@@ -274,33 +282,59 @@ namespace MeshData
                 t.IsIn[domaiNumber] = t.Points.Any(p => p.U < 0);// || t.Points.All(p => p.U == 0);
             });
 
-            /*if (refCount < 2)
+            if (refCount < MaxCheckCount)
             {
                 var badTetra = Tetrahedrons
                        .AsParallel()
-                       .Where(t => t.Boundary[ineqNumber] && t.Points.Any(pp => pp.U == 0))
-                       .Where(t =>
-                       {
-                           var p = t.Points.Average();
-                           Eval(p, ineqNumber);
-
-                           return t.Points.Any(pp => pp.U * p.U < 0);
-
-                       })
+                       .Where(t => t.Boundary[ineqNumber] && t.Points.All(pp => pp.U == 0))
                        .ToArray();
 
-                if (badTetra.Length > 0)
+                foreach (var t in badTetra)
                 {
-                    RefineTetrahedralMeshRedGreen(badTetra);
 
-                    Points.AsParallel().Where(p => isBoundaryPoint(p)).ForAll(p =>
+                    if (!Tetrahedrons.Contains(t))
+                        continue;
+
+                    var ee = t.Edges().OrderByDescending(e => e.SqrLength).First(); 
+
+                    DivideEdge(ee, -1, (ee.P1 + ee.P2) / 2).Movable = false;
+                }
+
+                var badEdges = EdgesForBoundary(ineqNumber)
+                    .Where(e => (e.P1.U != 0 || e.P2.U != 0) && (e.P1.Tetrahedrons.Intersect(e.P2.Tetrahedrons).SelectMany(t => t.Points).Where(pp => pp != e.P1 && pp != e.P2).Distinct().All(pp => pp.U == 0 )))
+                    .Where(e =>
                     {
-                        p.Boundary[ineqNumber] = false;
-                    });
+                        for (int i = 1; i < CheckDivisionCount; i++)
+                        {
+                            var p = e.P1 + ((double)i / (double)CheckDivisionCount) * (e.P2 - e.P1);
 
+                            Eval(p, ineqNumber);
+
+                            if (e.P1.U * p.U < 0 || e.P2.U * p.U < 0)
+                            {
+                                return true;
+                            }
+                        }
+                        return false;
+
+                    })
+                    .OrderByDescending(e => e.SqrLength)
+                    .ToArray();
+
+                foreach (var e in badEdges)
+                {
+
+                    if (!e.Valid)
+                        continue;
+
+                    DivideEdge(e, -1, (e.P1 + e.P2) / 2).Movable = false;
+                }
+
+                if (badEdges.Length > 0 || badTetra.Length > 0)
+                {
                     ResolveIneq(ineqNumber, domaiNumber, refCount + 1);
                 }
-            }*/
+            }
         }
 
         private void ResolveEdges(ParallelQuery<Edge> qEdges, int ineqNumber, bool onSurface)
@@ -374,7 +408,7 @@ namespace MeshData
                 }
             }*/
 
-            foreach (var e in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && e.Edge.Valid))
+            foreach (var e in edges.Where(e => e.Edge.P1.U * e.Edge.P2.U < 0 && e.Edge.Valid).OrderByDescending(e => e.Edge.SqrLength))
             {
                 ResolveEdge(e.Edge, e.MidPoint, e.NearPoint, false, ineqNumber);
             }
@@ -1578,7 +1612,7 @@ namespace MeshData
             {
                 p.U = 0;
             }*/
-            }
+        }
 
         private double Eval(double x, double y, double z, int ineqNumber)
         {
