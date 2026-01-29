@@ -397,6 +397,35 @@ namespace Ineq3DOnline
             return res;
         }
 
+        public static IneqTree Levels(FuncXYZ f, FuncXYZ p, int count, double df, double dp, bool complement, double df0 = 0)
+        {
+            IneqTree res = f;
+            IneqTree lev = new IneqTree();
+
+            if (df0 == 0)
+            { 
+                df0 = df;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                int ii = i;
+                FuncXYZ fi = (x, y, z) => f(x, y, z) + df0 + ii * df;
+                FuncXYZ pi = (x, y, z) => p(x, y, z) + ii * dp;
+
+                lev = lev | (!(IneqTree)fi & pi);
+            }
+
+            if (complement)
+            {
+                lev = !lev;
+            }
+
+            res = res & lev;
+
+            return res;
+        }
+
         public static void Gradient(Func<double, double, double, double> f, Point P, out double nx, out double ny, out double nz, double d = 1e-4)
         {
             double w = f(P.X, P.Y, P.Z);
