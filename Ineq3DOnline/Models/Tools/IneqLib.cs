@@ -397,10 +397,11 @@ namespace Ineq3DOnline
             return res;
         }
 
-        public static IneqTree Levels(FuncXYZ f, FuncXYZ p, int count, double df, double dp, bool complement, double df0 = 0)
+        public static IneqTree Levels(FuncXYZ f, FuncXYZ p, int count, double df, double dp, bool complement, double df0 = 0, bool empty = false)
         {
             IneqTree res = f;
             IneqTree lev = new IneqTree();
+            IneqTree tmp = null;
 
             if (df0 == 0)
             { 
@@ -413,7 +414,15 @@ namespace Ineq3DOnline
                 FuncXYZ fi = (x, y, z) => f(x, y, z) + df0 + ii * df;
                 FuncXYZ pi = (x, y, z) => p(x, y, z) + ii * dp;
 
-                lev = lev | (!(IneqTree)fi & pi);
+                if (complement && empty && i == count - 1)
+                {
+                    res = res & !(IneqTree)fi & !(IneqTree)pi;
+                    //tmp = !(IneqTree)fi;
+                }
+                else
+                {
+                    lev = lev | (!(IneqTree)fi & pi);
+                }
             }
 
             if (complement)
@@ -422,6 +431,12 @@ namespace Ineq3DOnline
             }
 
             res = res & lev;
+
+            /*if (complement && empty )
+            {
+                res = res & tmp;
+            }*/
+
 
             return res;
         }
