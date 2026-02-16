@@ -1,12 +1,17 @@
 ﻿using System;
 using MeshData;
 
-
 namespace Ineq3DOnline
 {
     using FuncXYZ = Func<double, double, double, double>;
+
     public static class IneqLib
     {
+        public static FuncXYZ Not(this FuncXYZ f)
+        {
+            return (x, y, z) => -f(x, y, z);
+        }
+
         public static IneqTree Ball(double x0, double y0, double z0, double r, double p = 2, bool outside = false)
         {
             if (outside)
@@ -439,6 +444,70 @@ namespace Ineq3DOnline
             if (complement)
             {
                 lev = !lev;
+            }
+
+            res = res & lev;
+
+            return res;
+        }
+
+
+        public static IneqTree Levels1(FuncXYZ f, FuncXYZ[] p, int count, double df, double dp, bool complement = false)
+        {
+            IneqTree res;
+            IneqTree lev = new IneqTree();
+
+            if (complement)
+            {
+                FuncXYZ cf = (x, y, z) => f(x, y, z) + count * df;
+                res = !(IneqTree)cf;
+            }
+            else
+            {
+                res = (IneqTree)f;
+            }
+
+            for (int i = 1; i <= count; i++)
+            {
+                int ii = i;
+                FuncXYZ fi;
+
+                if (complement)
+                {
+                    fi = (x, y, z) => f(x, y, z) + (count - ii) * df;
+                }
+                else
+                {
+                    fi = (x, y, z) => f(x, y, z) + ii * df;
+                }
+
+
+                IneqTree pit = new IneqTree();
+
+                foreach (var pp in p)
+                {
+                    var ppp = pp;
+                    FuncXYZ pi;
+                    if (complement)
+                    {
+                        pi = (x, y, z) => ppp(x, y, z) + (ii - 1) * dp - (count - 1) * dp;
+                    }
+                    else
+                    {
+                        pi = (x, y, z) => ppp(x, y, z) + (ii -1) * dp;
+                    }
+
+                    pit = pit & pi;
+                }
+
+                if (complement)
+                {
+                    lev = lev | ((IneqTree)fi & pit);
+                }
+                else
+                {
+                    lev = lev | (!(IneqTree)fi & pit);
+                }
             }
 
             res = res & lev;
