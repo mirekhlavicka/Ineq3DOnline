@@ -452,16 +452,21 @@ namespace Ineq3DOnline
         }
 
 
-        public static IneqTree Levels1(FuncXYZ f, FuncXYZ[] p, int count, double df, double dp, bool complement = false)
+        public static IneqTree Levels1(FuncXYZ f, FuncXYZ[] p, int count, double df, double dp, bool complement = false, bool fill = false)
         {
             IneqTree res;
             IneqTree lev = new IneqTree();
 
-            if (complement)
+            if (complement && !fill)
             {
                 FuncXYZ cf = (x, y, z) => f(x, y, z) + count * df;
                 res = !(IneqTree)cf;
             }
+            else if (complement && fill)
+            {
+                res = new IneqTree();
+            }
+
             else
             {
                 res = (IneqTree)f;
@@ -471,14 +476,20 @@ namespace Ineq3DOnline
             {
                 int ii = i;
                 FuncXYZ fi;
+                double dfi = df;
+
+                if (fill & (i == count && !complement))
+                {
+                    dfi = Double.MaxValue;
+                }
 
                 if (complement)
                 {
-                    fi = (x, y, z) => f(x, y, z) + (count - ii) * df;
+                    fi = (x, y, z) => f(x, y, z) + (count - ii) * dfi;
                 }
                 else
                 {
-                    fi = (x, y, z) => f(x, y, z) + ii * df;
+                    fi = (x, y, z) => f(x, y, z) + ii * dfi;
                 }
 
 
