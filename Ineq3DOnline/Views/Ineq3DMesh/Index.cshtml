@@ -432,7 +432,7 @@
 
             var resetRotation = function (a) {
                 if (axis != a && mesh.rotation[a] != 0) {
-                    let angle = mesh.rotation[a]; 
+                    let angle = mesh.rotation[a];
                     angle = normalizeAngle(angle)
                     mesh.rotation[a] = angle;
                     mesh.rotation[a] -= 0.1;
@@ -445,7 +445,7 @@
                 resetRotation('x');
                 resetRotation('y');
                 resetRotation('z');
-                
+
             } else if (mesh && start_dangle > 0) {
                 mesh.rotation.x += start_dangle;
                 mesh.rotation.y += 2 * start_dangle;
@@ -564,6 +564,14 @@
                     loadMesh();
                 });
             });
+
+            $('#lnkImproveMeshJiggleNoProject').click(function (e) {
+                showSpinner();
+                $.get('@Url.Action("Jiggle")' + '?noproject=true&ts=' + $.now(), function () {
+                    loadMesh();
+                });
+            });
+
 
             $('#lnkImproveMeshRefine').click(function (e) {
                 showSpinner();

@@ -1489,14 +1489,14 @@ namespace MeshData
         //    }
         //}
 
-        public void Jiggle(int count, bool edges = true)
+        public void Jiggle(int count, bool edges = true, bool project = true)
         {
             if (Point.EnableUnsafeMove)
             {
                 for (int i = 0; i < count; i++)
                     Points.AsParallel().ForAll(point =>
                     {
-                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges, project);
                     });
             }
             else
@@ -1504,12 +1504,12 @@ namespace MeshData
                 for (int i = 0; i < count; i++)
                     foreach (var point in Points)
                     {
-                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges, project);
                     }
             }
         }
 
-        public void Jiggle(int count, IEnumerable<Point> points, bool edges = true)
+        public void Jiggle(int count, IEnumerable<Point> points, bool edges = true, bool project = true)
         {
             if (Point.EnableUnsafeMove)
             {
@@ -1517,7 +1517,7 @@ namespace MeshData
                 {
                     points.AsParallel().ForAll(point =>
                     {
-                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges, project);
                     });
                 }
             }
@@ -1527,7 +1527,7 @@ namespace MeshData
                 {
                     foreach (var point in points)
                     {
-                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges);
+                        CenterPoint(point, i == count - 1 ? 1000 : 100, true, edges, project);
                     }
                 }
             }
@@ -1552,7 +1552,7 @@ namespace MeshData
                 });
         }
 
-        private void CenterPoint(Point point, double precision, bool safe, bool edges = true)
+        private void CenterPoint(Point point, double precision, bool safe, bool edges = true, bool project = true)
         {
             if (point.Forced)
             {
@@ -1572,8 +1572,11 @@ namespace MeshData
                 Point average = point.Points.Where(p => p.Boundary[ineqNumber]).Average();
                 if (average != null)
                 {
+                    /*var d = point.Distance(average);
+                    var md = point.Points.Max(pp => pp.Distance(point));*/
+
                     point.MoveTo(average, safe);
-                    ProjectToSurface(point, precision, ineqNumber, safe);
+                    if(project /*|| d < md/30*/) ProjectToSurface(point, precision, ineqNumber, safe);
                 }
             }
             else if (edges && boundaryCount == 2)
@@ -1584,7 +1587,7 @@ namespace MeshData
                 if (average != null)
                 {
                     point.MoveTo(average, safe);
-                    ProjectToEdge(point, ineqNumber1, ineqNumber2, safe);
+                    if (project) ProjectToEdge(point, ineqNumber1, ineqNumber2, safe);
                 }
             }
             else if (edges && boundaryCount == 3)
@@ -1592,7 +1595,7 @@ namespace MeshData
                 int ineqNumber1 = point.BoundaryFirstIndex;
                 int ineqNumber2 = point.BoundarySecondIndex;
                 int ineqNumber3 = point.BoundaryThirdIndex;
-                ProjectToCorner(point, ineqNumber1, ineqNumber2, ineqNumber3, safe);
+                if (project) ProjectToCorner(point, ineqNumber1, ineqNumber2, ineqNumber3, safe);
             }
         }
 

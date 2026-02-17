@@ -151,7 +151,7 @@ namespace Ineq3DOnline.Controllers
         }
 
 
-        public ActionResult Jiggle()
+        public ActionResult Jiggle(bool noproject = false)
         {
             IneqMeshViewModel ineqMeshViewModel = (IneqMeshViewModel)Session["IneqMeshViewModel"];
 
@@ -162,7 +162,7 @@ namespace Ineq3DOnline.Controllers
 
             var ineqMesh = ineqMeshViewModel.IneqMesh;
 
-            ineqMesh.Jiggle(3); 
+            ineqMesh.Jiggle(3, project: !noproject); 
 
             ineqMeshViewModel.PLY = PLYTools.GetPLY(ineqMesh);
 
