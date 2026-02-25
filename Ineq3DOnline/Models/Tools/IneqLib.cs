@@ -452,7 +452,7 @@ namespace Ineq3DOnline
         }
 
 
-        public static IneqTree Levels1(FuncXYZ f, FuncXYZ[] p, int count, double df, double dp, bool complement = false, bool fill = false)
+        public static IneqTree Levels1(FuncXYZ f, FuncXYZ[] p, int count, double df, double dp, bool complement = false, bool fill = false, bool shift = false)
         {
             IneqTree res;
             IneqTree lev = new IneqTree();
@@ -495,20 +495,63 @@ namespace Ineq3DOnline
 
                 IneqTree pit = new IneqTree();
 
-                foreach (var pp in p)
+
+                if (p.Length == 2 && complement)
                 {
-                    var ppp = pp;
-                    FuncXYZ pi;
-                    if (complement)
+                    var p1 = p[0];
+                    var p2 = p[1];
+
+                    FuncXYZ pi1 = (x, y, z) => p1(x, y, z) + (ii - 1) * dp - (count - 1) * dp;
+                    FuncXYZ pi1c;
+
+                    if (shift)
                     {
-                        pi = (x, y, z) => ppp(x, y, z) + (ii - 1) * dp - (count - 1) * dp;
+                        pi1c = (x, y, z) => p1(x, y, z) + (ii == count ? 0 : ((count - ii) - 1) * dp);
+
                     }
                     else
                     {
-                        pi = (x, y, z) => ppp(x, y, z) + (ii -1) * dp;
+                        pi1c = (x, y, z) => p1(x, y, z) + ((count - ii) - 0) * dp;
                     }
 
-                    pit = pit & pi;
+                    FuncXYZ pi2 = (x, y, z) => p2(x, y, z) + (ii - 1) * dp - (count - 1) * dp;
+                    FuncXYZ pi2c;
+
+                    if (shift)
+                    {
+                        pi2c = (x, y, z) => p2(x, y, z) + (ii == count ? 0 : ((count - ii) - 1) * dp);
+                    }
+                    else
+                    {
+                        pi2c = (x, y, z) => p2(x, y, z) + ((count - ii) - 0) * dp;
+                    }
+
+                    if (i < count)
+                    {
+                        pit = pit & (((IneqTree)pi1 & pi2c) | ((IneqTree)pi2 & pi1c));
+                    }
+                    else
+                    {
+                        pit = pit & ((IneqTree)pi1 & pi2c);
+                    }
+                }
+                else
+                {
+                    foreach (var pp in p)
+                    {
+                        var ppp = pp;
+                        FuncXYZ pi;
+                        if (complement)
+                        {
+                            pi = (x, y, z) => ppp(x, y, z) + (ii - 1) * dp - (count - 1) * dp;
+                        }
+                        else
+                        {
+                            pi = (x, y, z) => ppp(x, y, z) + (ii - 1) * dp;
+                        }
+
+                        pit = pit & pi;
+                    }
                 }
 
                 if (complement)
