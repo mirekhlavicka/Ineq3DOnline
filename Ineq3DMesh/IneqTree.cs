@@ -322,7 +322,7 @@ namespace MeshData
                         {
                             var a = l(x, y, z);
                             var b = r(x, y, z);
-                            return (a + b + SmoothAbs(a - b,eps)) / 2.0d;
+                            return SmoothMax(a, b, eps); //(a + b + SmoothAbs(a - b,eps)) / 2.0d;
                         });
                     }
                     else
@@ -338,7 +338,7 @@ namespace MeshData
                         {
                             var a = l(x, y, z);
                             var b = r(x, y, z);
-                            return (a + b - SmoothAbs(a - b, eps )) / 2.0d;
+                            return SmoothMin(a, b, eps); // (a + b - SmoothAbs(a - b, eps )) / 2.0d;
                         });
 
                     }
@@ -384,6 +384,31 @@ namespace MeshData
                 if (Math.Abs(t) >= 1.0) return 0.0;
                 double denom = 1.0 - t * t;
                 return Math.Exp(-1.0 / denom);
+            }
+
+            public static double SmoothMin(double a, double b, double k)
+            {
+                // If k is 0, return the sharp minimum to avoid division by zero
+                if (k <= 0) return Math.Min(a, b);
+
+                // h is our "interpolation factor" between 0 and 1
+                double h = Math.Max(k - Math.Abs(a - b), 0.0f) / k;
+
+                // Return the standard min minus the polynomial correction
+                return Math.Min(a, b) - h * h * k * 0.25f;
+            }
+
+            /// <summary>
+            /// Smoothly blends the intersection of two values (Smooth Intersection).
+            /// </summary>
+            public static double SmoothMax(double a, double b, double k)
+            {
+                if (k <= 0) return Math.Max(a, b);
+
+                double h = Math.Max(k - Math.Abs(a - b), 0.0f) / k;
+
+                // For max, we add the correction instead of subtracting it
+                return Math.Max(a, b) + h * h * k * 0.25f;
             }
         }
     }

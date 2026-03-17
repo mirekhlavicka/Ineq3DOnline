@@ -58,6 +58,32 @@ namespace Ineq3DOnline
             });
         }
 
+        public static IneqTree TorusPath(double x1, double y1, double z1, double x2, double y2, double z2, double r)
+        { 
+            var p1 = new Point(x1, y1, z1);
+            var p2 = new Point(x2, y2, z2);
+
+            double R = Math.Sqrt(x1 * x1 + y1 * y1 + z1 * z1);
+
+            var n = Point.Cross(p1, p2);
+            n = n / Math.Sqrt(n.X * n.X + n.Y * n.Y + n.Z * n.Z);
+
+            var p1n = p1 / R;
+            var p2n = p2 / R;
+
+            var d1 = p1.X * p2n.X + p1.Y * p2n.Y + p1.Z * p2n.Z;
+            var dir1 = p1 - d1 * p2n;
+            var plane1 = new IneqTree((x, y, z) => dir1.X * (x - p2.X) + dir1.Y * (y - p2.Y) + dir1.Z * (z - p2.Z));
+
+            var d2 = p2.X * p1n.X + p2.Y * p1n.Y + p2.Z * p1n.Z;
+            var dir2 = p2 - d2 * p1n;
+            var plane2 = new IneqTree((x, y, z) => dir2.X * (x - p1.X) + dir2.Y * (y - p1.Y) + dir2.Z * (z - p1.Z));
+
+
+            return Torus(0, 0 ,0, r, R, n.X, n.Y, n.Z) & plane1 & plane2;
+
+        }
+
         public static IneqTree PrismTorus(double r, double R, int n, double mobfactor = 0, double sa = 0, Func<double, double,double> af = null)
         {
             IneqTree res = new IneqTree();
