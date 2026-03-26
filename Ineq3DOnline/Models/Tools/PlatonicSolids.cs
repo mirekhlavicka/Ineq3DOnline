@@ -66,7 +66,7 @@ namespace Ineq3DOnline.PlatonicSolids
         }
 
         public IneqTree ToIneqTree()
-        { 
+        {
             var res = new IneqTree();
 
             foreach (var f in funcs) //face in Faces)
@@ -91,13 +91,13 @@ namespace Ineq3DOnline.PlatonicSolids
                 var vy = face.Sum(i => Vertices[i].Y) / face.Length;
                 var vz = face.Sum(i => Vertices[i].Z) / face.Length;
 
-                var v = factor * (new Vec3(vx, vy, vz));   
+                var v = factor * (new Vec3(vx, vy, vz));
 
                 IneqTree f = (IneqTree)((x, y, z) => (x - factor1 * vx) * vx + (y - factor1 * vy) * vy + (z - factor1 * vz) * vz);
                 var f1 = new IneqTree();
 
                 for (int j = 0; j <= face.Length - 1; j++)
-                { 
+                {
                     var v0 = Vertices[face[j]];
                     var v1 = Vertices[face[(j + 1) % face.Length]];
 
@@ -113,8 +113,8 @@ namespace Ineq3DOnline.PlatonicSolids
         }
 
         public double ProjectNorm(double x, double y, double z)
-        { 
-            var p0 = funcs.Select(f => 
+        {
+            var p0 = funcs.Select(f =>
             {
                 var f0 = f(0, 0, 0);
                 var f1 = f(x, y, z);
@@ -124,7 +124,7 @@ namespace Ineq3DOnline.PlatonicSolids
 
                 var t0 = f0 / (f0 - f1);
 
-                if(t0 <= 0)
+                if (t0 <= 0)
                     return null;
 
                 return new
@@ -132,9 +132,9 @@ namespace Ineq3DOnline.PlatonicSolids
                     x = t0 * x,
                     y = t0 * y,
                     z = t0 * z,
-                    f 
+                    f
                 };
-            }).Where(p => p != null && funcs.Where(f => f != p.f).All(f => f(p.x, p.y, p.z) <=0)).FirstOrDefault();
+            }).Where(p => p != null && funcs.Where(f => f != p.f).All(f => f(p.x, p.y, p.z) <= 0)).FirstOrDefault();
 
             if (p0 == null)
             {
@@ -225,6 +225,66 @@ namespace Ineq3DOnline.PlatonicSolids
             }
 
             return new Polyhedron(dodeVerts, dodeFaces);
+        }
+
+        public static Polyhedron CreateGeodesicSphere(double r = 1.0d)
+        {
+            // 1. Generate the base Icosahedron
+            Polyhedron ico = CreateIcosahedron(r);
+
+            var newVertices = ico.Vertices.ToList();
+            var newFaces = new List<int[]>();
+
+            // Cache to prevent duplicate vertices on shared edges
+            // Key: (min_index, max_index), Value: index in newVertices
+            var edgeMidpointCache = new Dictionary<(int, int), int>();
+
+            // Local helper function to get or create a midpoint vertex
+            int GetMidpointIndex(int a, int b)
+            {
+                if (a > b) (a, b) = (b, a); // Order indices to prevent duplicates
+                var key = (a, b);
+
+                if (edgeMidpointCache.TryGetValue(key, out int existingIndex))
+                {
+                    return existingIndex;
+                }
+
+                // Calculate midpoint
+                Vec3 v1 = newVertices[a];
+                Vec3 v2 = newVertices[b];
+                Vec3 mid = (v1 + v2) / 2.0;
+
+                // Push it out to the spherical radius
+                mid = mid.Normalize(r);
+
+                newVertices.Add(mid);
+                int newIndex = newVertices.Count - 1;
+                edgeMidpointCache[key] = newIndex;
+
+                return newIndex;
+            }
+
+            // 2. Subdivide each face into 4 smaller triangles
+            foreach (var face in ico.Faces)
+            {
+                int v1 = face[0];
+                int v2 = face[1];
+                int v3 = face[2];
+
+                int m12 = GetMidpointIndex(v1, v2);
+                int m23 = GetMidpointIndex(v2, v3);
+                int m31 = GetMidpointIndex(v3, v1);
+
+                // Subdivide original face (v1, v2, v3) into 4 triangles
+                // Keeps the same winding order (Counter-Clockwise / Clockwise)
+                newFaces.Add(new[] { v1, m12, m31 });
+                newFaces.Add(new[] { v2, m23, m12 });
+                newFaces.Add(new[] { v3, m31, m23 });
+                newFaces.Add(new[] { m12, m23, m31 }); // Center triangle
+            }
+
+            return new Polyhedron(newVertices, newFaces);
         }
     }
 }
