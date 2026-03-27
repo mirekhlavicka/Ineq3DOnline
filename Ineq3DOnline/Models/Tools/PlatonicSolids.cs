@@ -60,7 +60,14 @@ namespace Ineq3DOnline.PlatonicSolids
                 var vy = face.Sum(i => Vertices[i].Y) / face.Length;
                 var vz = face.Sum(i => Vertices[i].Z) / face.Length;
 
-                funcs.Add((x, y, z) => (x - vx) * vx + (y - vy) * vy + (z - vz) * vz);
+                var v = Vec3.Cross(Vertices[face[1]] - Vertices[face[0]], Vertices[face[2]] - Vertices[face[0]]);
+
+                if (Vec3.Dot(new Vec3(0, 0, 0) - Vertices[face[0]], v) > 0) 
+                {
+                    v = new Vec3(0, 0, 0) - v;
+                }
+
+                funcs.Add((x, y, z) => (x - vx) * v.X + (y - vy) * v.Y + (z - vz) * v.Z);
             }
             Edges = edgeSet.ToList();
         }
@@ -227,10 +234,11 @@ namespace Ineq3DOnline.PlatonicSolids
             return new Polyhedron(dodeVerts, dodeFaces);
         }
 
-        public static Polyhedron CreateGeodesicSphere(double r = 1.0d)
+        public static Polyhedron CreateGeodesicSphere(double r = 1.0d, Polyhedron ico = null)
         {
             // 1. Generate the base Icosahedron
-            Polyhedron ico = CreateIcosahedron(r);
+            if(ico == null)
+                ico = CreateIcosahedron(r);
 
             var newVertices = ico.Vertices.ToList();
             var newFaces = new List<int[]>();
