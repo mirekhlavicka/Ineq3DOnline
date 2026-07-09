@@ -10,7 +10,10 @@ namespace Ineq3DOnline.PlatonicSolids
     public struct Vec3
     {
         public double X, Y, Z;
-        public Vec3(double x, double y, double z) { X = x; Y = y; Z = z; }
+
+        public int Tag;
+
+        public Vec3(double x, double y, double z) { X = x; Y = y; Z = z; Tag = 0; }
 
         public static Vec3 operator +(Vec3 a, Vec3 b) => new Vec3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
         public static Vec3 operator -(Vec3 a, Vec3 b) => new Vec3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
@@ -265,6 +268,8 @@ namespace Ineq3DOnline.PlatonicSolids
 
                 // Push it out to the spherical radius
                 mid = mid.Normalize(r);
+
+                mid.Tag = v1.Tag + 1;
 
                 newVertices.Add(mid);
                 int newIndex = newVertices.Count - 1;
